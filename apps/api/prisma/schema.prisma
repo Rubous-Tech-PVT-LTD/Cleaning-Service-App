@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// SQLite doesn't support enums, so we'll use strings with validation in the code
+// enum UserRole {
+//   CLIENT
+//   PROVIDER
+//   ADMIN
+// }
+
+model User {
+  id           String   @id @default(uuid())
+  phone        String   @unique
+  fullName     String?
+  role         String   @default("CLIENT")
+  languagePref String   @default("hi")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Sync Metadata
+  version      Int      @default(1)
+  
+  profile      Profile?
+  
+  @@map("users")
+}
+
+model Profile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  avatarUrl    String?  // Profile picture
+  bio          String?  // Multi-language support
+  
+  // Location & Address
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  pincode      String?
+  latitude     Float?   // For searching nearby providers
+  longitude    Float?
+  
+  // Service Metrics
+  rating       Float    @default(0.0)
+  isVerified   Boolean  @default(false)
+  availability String?  // Flexible schedule storage
+  
+  // Sync Metadata
+  version      Int      @default(1)
+  lastModified DateTime @updatedAt
+  
+  @@map("profiles")
+}
