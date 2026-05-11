@@ -1,8 +1,7 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-dotenv.config(); // Loads .env from current directory (apps/api)
-dotenv.config({ path: path.join(process.cwd(), '../../.env') }); // Loads .env from root
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
+dotenv.config();
+dotenv.config({ path: path.join(process.cwd(), '../../.env') });
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
@@ -13,8 +12,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Security
-  app.use(helmet());
-  app.enableCors();
+  // app.use(helmet());
+  
+  //  🌐 Wide CORS for Mobile Testing
+  app.enableCors({
+    origin: true,
+    methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+    credentials: true,
+  });
 
   // Versioning
   app.enableVersioning({
@@ -31,14 +36,6 @@ async function bootstrap() {
     }),
   );
 
-  //  🌐 Secure CORS
-  app.enableCors({
-    origin: ['http://localhost:3000'], // frontend URL
-    methods: 'GET,POST,PUT,DELETE',
-    credentials: true,
-  });
-
-
   // Swagger Documentation
   const config = new DocumentBuilder()
     .setTitle('Local Service Marketplace API')
@@ -52,7 +49,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  console.log(`🚀 Server is running on: http://localhost:${port}/v1`);
+  console.log(`🚀 Server is running on: http://0.0.0.0:${port}/v1`);
   console.log(`📝 API Documentation: http://localhost:${port}/api/docs`);
 }
 bootstrap();

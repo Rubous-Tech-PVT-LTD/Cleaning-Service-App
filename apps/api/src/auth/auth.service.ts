@@ -51,4 +51,8 @@ export class AuthService {
       user,
     };
   }
+
+  async updatePushToken(userId: string, token: string) {
+    return this.usersService.update(userId, { pushToken: token });
+  }
 }
