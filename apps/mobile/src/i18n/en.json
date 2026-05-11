@@ -1,0 +1,20 @@
+{
+  "common": {
+    "expertise_on_demand": "Expertise\non Demand.",
+    "phone_number": "PHONE NUMBER",
+    "continue": "Continue",
+    "verify_identity": "Verify Identity",
+    "verify_continue": "Verify & Continue",
+    "services": "Services",
+    "location": "LOCATION",
+    "my_bookings": "My Bookings",
+    "proceed_to_booking": "Proceed to Booking",
+    "confirm_booking": "Confirm Booking",
+    "confirm_book": "Confirm & Book",
+    "processing": "Processing...",
+    "rate_service": "Rate Service",
+    "submit_review": "Submit Review",
+    "chat_with_expert": "Chat with Expert",
+    "type_message": "Type a message..."
+  }
+}

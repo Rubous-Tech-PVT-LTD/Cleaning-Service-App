@@ -5,26 +5,28 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
 }
 
-// SQLite doesn't support enums, so we'll use strings with validation in the code
-// enum UserRole {
-//   CLIENT
-//   PROVIDER
-//   ADMIN
-// }
+enum UserRole {
+  CLIENT
+  PROVIDER
+  ADMIN
+}
 
 model User {
   id           String   @id @default(uuid())
   phone        String   @unique
   fullName     String?
-  role         String   @default("CLIENT")
+  role         UserRole @default(CLIENT)
   languagePref String   @default("hi")
+  pushToken    String?
+  referralCode String   @unique @default(uuid())
+  referredBy   String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
@@ -33,7 +35,37 @@ model User {
   
   profile      Profile?
   
+  // Relations
+  clientBookings   Booking[] @relation("ClientBookings")
+  providerBookings Booking[] @relation("ProviderBookings")
+  addresses        Address[]
+  
   @@map("users")
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  label        String   @default("Home") // Home, Work, Other
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  pincode      String
+  latitude     Float?
+  longitude    Float?
+  
+  isDefault    Boolean  @default(false)
+  
+  // Sync Metadata
+  offlineId    String?  @unique
+  version      Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("addresses")
 }
 
 model Profile {
@@ -42,7 +74,7 @@ model Profile {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   avatarUrl    String?  // Profile picture
-  bio          String?  // Multi-language support
+  bio          Json?    // Multi-language support in JSON
   
   // Location & Address
   addressLine1 String?
@@ -56,11 +88,161 @@ model Profile {
   // Service Metrics
   rating       Float    @default(0.0)
   isVerified   Boolean  @default(false)
-  availability String?  // Flexible schedule storage
+  availability Json?    // Flexible schedule storage
   
   // Sync Metadata
   version      Int      @default(1)
   lastModified DateTime @updatedAt
   
   @@map("profiles")
+}
+
+model Category {
+  id                String    @id @default(uuid())
+  nameTranslations  Json      // { "en": "Cleaning", "hi": "सफाई" }
+  slug              String    @unique
+  iconUrl           String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  services          Service[]
+
+  @@map("categories")
+}
+
+model Service {
+  id                      String    @id @default(uuid())
+  categoryId              String
+  category                Category  @relation(fields: [categoryId], references: [id])
+  nameTranslations        Json      // { "en": "Deep Cleaning", "hi": "गहरी सफाई" }
+  descriptionTranslations Json      // { "en": "Full house deep cleaning", "hi": "पूरे घर की गहरी सफाई" }
+  basePrice               Decimal
+  imageUrl                String?
+  status                  String    @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  bookings                Booking[]
+
+  @@map("services")
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+  clientId     String
+  client       User          @relation("ClientBookings", fields: [clientId], references: [id])
+  providerId   String?
+  provider     User?         @relation("ProviderBookings", fields: [providerId], references: [id])
+  serviceId    String
+  service      Service       @relation(fields: [serviceId], references: [id])
+  
+  scheduledAt  DateTime
+  status       BookingStatus @default(PENDING)
+  totalPrice   Decimal
+  items        Json?         // [{ serviceId, title, price, quantity }]
+  
+  // Mobile sync
+  offlineId    String?       @unique
+  version      Int           @default(1)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  review       Review?
+  payment      Payment?
+  chats        Chat[]
+
+  @@map("bookings")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  bookingId  String   @unique
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  rating     Int      @default(5)
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@map("reviews")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum EscrowStatus {
+  HELD
+  RELEASED
+  REFUNDED
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  bookingId         String        @unique
+  booking           Booking       @relation(fields: [bookingId], references: [id])
+  
+  amount            Decimal
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  escrowStatus      EscrowStatus  @default(HELD)
+  
+  // Razorpay Specifics
+  razorpayOrderId   String?       @unique
+  razorpayPaymentId String?       @unique
+  razorpaySignature String?
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+model Chat {
+  id          String    @id @default(uuid())
+  bookingId   String
+  booking     Booking   @relation(fields: [bookingId], references: [id])
+  
+  // Participants
+  clientId    String
+  providerId  String
+  
+  messages    Message[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Mobile sync
+  offlineId    String?       @unique
+  version      Int           @default(1)
+
+  @@map("chats")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  
+  senderId  String
+  content   String
+  isRead    Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Mobile sync
+  offlineId    String?       @unique
+  version      Int           @default(1)
+
+  @@map("messages")
 }

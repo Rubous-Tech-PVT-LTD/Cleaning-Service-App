@@ -26,10 +26,12 @@ export class UsersService {
   }
 
   async create(data: { phone: string, languagePref?: string }) {
+    const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
     return this.prisma.user.create({
       data: {
         phone: data.phone,
         languagePref: data.languagePref || 'hi',
+        referralCode,
         profile: {
           create: {} // Create an empty profile by default
         }
@@ -46,14 +48,6 @@ export class UsersService {
     if (fullName !== undefined) userUpdate.fullName = fullName;
     if (languagePref !== undefined) userUpdate.languagePref = languagePref;
 
-    // Handle JSON fields for SQLite (stored as strings)
-    if (profileData.bio && typeof profileData.bio === 'object') {
-      profileData.bio = JSON.stringify(profileData.bio);
-    }
-    if (profileData.availability && typeof profileData.availability === 'object') {
-      profileData.availability = JSON.stringify(profileData.availability);
-    }
-
     return this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -64,6 +58,14 @@ export class UsersService {
           }
         }
       },
+      include: { profile: true },
+    });
+  }
+
+  async update(userId: string, data: any) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
       include: { profile: true },
     });
   }

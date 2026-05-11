@@ -1,0 +1,20 @@
+{
+  "common": {
+    "expertise_on_demand": "मांग पर\nविशेषज्ञता।",
+    "phone_number": "फ़ोन नंबर",
+    "continue": "जारी रखें",
+    "verify_identity": "पहचान सत्यापित करें",
+    "verify_continue": "सत्यापित करें और आगे बढ़ें",
+    "services": "सेवाएं",
+    "location": "स्थान",
+    "my_bookings": "मेरी बुकिंग",
+    "proceed_to_booking": "बुकिंग के लिए आगे बढ़ें",
+    "confirm_booking": "बुकिंग की पुष्टि करें",
+    "confirm_book": "पुष्टि करें और बुक करें",
+    "processing": "प्रक्रिया जारी है...",
+    "rate_service": "सेवा को रेट करें",
+    "submit_review": "समीक्षा भेजें",
+    "chat_with_expert": "विशेषज्ञ के साथ चैट करें",
+    "type_message": "एक संदेश लिखें..."
+  }
+}
