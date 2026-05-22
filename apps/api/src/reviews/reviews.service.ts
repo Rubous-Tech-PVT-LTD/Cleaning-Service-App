@@ -55,13 +55,41 @@ export class ReviewsService {
       },
       include: {
         booking: {
-          select: {
+          include: {
             client: { select: { fullName: true } },
+            service: { select: { nameTranslations: true } }
           },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async findByProvider(providerId: string) {
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        booking: { providerId },
+      },
+      include: {
+        booking: {
+          include: {
+            client: { select: { fullName: true } },
+            service: { select: { nameTranslations: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const averageRating = reviews.length > 0 
+      ? reviews.reduce((acc: number, rev: any) => acc + rev.rating, 0) / reviews.length 
+      : 0;
+
+    return {
+      reviews,
+      averageRating,
+      totalReviews: reviews.length,
+    };
   }
 
   private async updateProviderRating(providerId: string) {
@@ -72,7 +100,7 @@ export class ReviewsService {
     });
 
     if (reviews.length > 0) {
-      const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+      const avgRating = reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length;
       await this.prisma.profile.update({
         where: { userId: providerId },
         data: { rating: avgRating },

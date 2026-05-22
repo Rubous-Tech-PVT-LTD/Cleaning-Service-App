@@ -47,7 +47,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={{ backgroundColor: 'white', padding: 24, alignItems: 'center', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 5 }}>
@@ -57,40 +57,35 @@ export const ProfileScreen = ({ navigation }: any) => {
               <Settings size={16} color={Theme.primary} />
             </TouchableOpacity>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '900', color: Theme.textPrimary }}>{userName}</Text>
-          <Text style={{ fontSize: 14, color: Theme.textSecondary, marginTop: 4, fontWeight: '600' }}>{phone}</Text>
+          <Text style={{ fontSize: 24, fontWeight: '900', color: Theme.textPrimary, marginTop: 16 }}>{userName}</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('ProfileEdit')}>
+            <Text style={{ color: Theme.primary, fontWeight: '700', marginTop: 4 }}>{t('profile.edit_profile')}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Action List */}
         <View style={{ padding: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: Theme.textPrimary, marginBottom: 16 }}>My Account</Text>
-          <View style={{ backgroundColor: 'white', borderRadius: 24, overflow: 'hidden' }}>
-            <MenuItem icon={<History size={20} color={Theme.primary} />} title="My Bookings" onPress={() => navigation.navigate('MyBookings')} />
-            <MenuItem icon={<MapPin size={20} color="#10B981" />} title="Saved Addresses" onPress={() => navigation.navigate('AddressPicker')} />
-            <MenuItem icon={<CreditCard size={20} color="#F59E0B" />} title="Promo Codes" onPress={() => navigation.navigate('PromoCode')} />
-          </View>
-
           <Text style={{ fontSize: 18, fontWeight: '800', color: Theme.textPrimary, marginTop: 32, marginBottom: 16 }}>Support & Settings</Text>
           <View style={{ backgroundColor: 'white', borderRadius: 24, overflow: 'hidden' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
-                <Bell size={20} color="#3B82F6" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: Theme.muted }}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: Theme.infoLight, justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+                <Bell size={20} color={Theme.info} />
               </View>
-              <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>Notifications</Text>
+              <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>{t('profile.notifications')}</Text>
               <Switch value={notifications} onValueChange={setNotifications} trackColor={{ false: '#CBD5E1', true: Theme.primary }} thumbColor="white" />
             </View>
             <TouchableOpacity 
               onPress={toggleLanguage}
-              style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: Theme.muted }}
             >
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#F0FDF4', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
-                <Globe size={20} color="#10B981" />
+                <Globe size={20} color={Theme.success} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>Language</Text>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>{t('profile.language')}</Text>
                 <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '600' }}>{i18n.language === 'en' ? 'English' : 'हिंदी'}</Text>
               </View>
-              <View style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+              <View style={{ backgroundColor: Theme.muted, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
                 <Text style={{ fontSize: 11, fontWeight: '800', color: Theme.primary }}>SWITCH</Text>
               </View>
             </TouchableOpacity>
@@ -118,8 +113,8 @@ export const ProfileScreen = ({ navigation }: any) => {
             onPress={handleLogout}
             style={{ marginTop: 40, marginBottom: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#FEE2E2', borderRadius: 24 }}
           >
-            <LogOut size={20} color="#EF4444" />
-            <Text style={{ marginLeft: 12, fontSize: 16, fontWeight: '800', color: '#EF4444' }}>Logout</Text>
+            <LogOut size={20} color={Theme.error} />
+            <Text style={{ marginLeft: 12, fontSize: 16, fontWeight: '800', color: Theme.error }}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -130,9 +125,9 @@ export const ProfileScreen = ({ navigation }: any) => {
 const MenuItem = ({ icon, title, onPress }: any) => (
   <TouchableOpacity 
     onPress={onPress}
-    style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}
+    style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: Theme.muted }}
   >
-    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: Theme.background, justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
       {icon}
     </View>
     <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>{title}</Text>

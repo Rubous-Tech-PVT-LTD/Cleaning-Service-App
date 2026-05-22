@@ -10,20 +10,43 @@ import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { database } from '../db';
 import { Theme } from '../theme';
+import { syncDatabase } from '../db/sync';
+import { io, Socket } from 'socket.io-client';
+import { SOCKET_URL } from '../api';
 
 const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   const { t } = useTranslation();
   const { bookingId, serviceName, providerId } = route.params;
   const [text, setText] = useState('');
   const [myId, setMyId] = useState<string>('');
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     const loadUser = async () => {
       const userId = await AsyncStorage.getItem('user_id');
       if (userId) setMyId(userId);
+      
+      const newSocket = io(SOCKET_URL);
+      setSocket(newSocket);
+      
+      newSocket.on('connect', () => {
+        newSocket.emit('register', { userId, role: 'CLIENT' });
+        if (chat) {
+          newSocket.emit('joinChat', { chatId: chat.id });
+        }
+      });
+      
+      newSocket.on('sync_ping', () => {
+        console.log('[Chat] Received sync_ping, syncing DB...');
+        syncDatabase();
+      });
+
+      return () => {
+        newSocket.disconnect();
+      };
     };
     loadUser();
-  }, []);
+  }, [chat?.id]);
 
   const handleSend = async () => {
     if (!text.trim() || !myId || !chat) return;
@@ -31,14 +54,24 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
     const messageContent = text;
     setText('');
 
-    await database.write(async () => {
-      await database.get('messages').create((m: any) => {
-        m.chatId = chat.id;
-        m.senderId = myId;
-        m.content = messageContent;
-        m.createdAt = Date.now();
+    try {
+      await database.write(async () => {
+        await database.get('messages').create((m: any) => {
+          m.chatId = chat.id;
+          m.senderId = myId;
+          m.content = messageContent;
+          m.createdAt = Date.now();
+        });
       });
-    });
+      
+      await syncDatabase();
+      
+      if (socket) {
+        socket.emit('send_sync_ping', { chatId: chat.id, senderId: myId });
+      }
+    } catch (e) {
+      console.log('Failed to send message', e);
+    }
   };
 
   return (

@@ -5,7 +5,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -21,6 +20,7 @@ enum UserRole {
 model User {
   id           String   @id @default(uuid())
   phone        String   @unique
+  email        String?  @unique
   fullName     String?
   role         UserRole @default(CLIENT)
   languagePref String   @default("hi")
@@ -65,6 +65,8 @@ model Address {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  bookings     Booking[]
+
   @@map("addresses")
 }
 
@@ -81,9 +83,14 @@ model Profile {
   addressLine2 String?
   city         String?
   state        String?
+  country      String?
   pincode      String?
   latitude     Float?   // For searching nearby providers
   longitude    Float?
+  
+  // Professional Details
+  professionId String?
+  documents    Json?    // e.g., { pan: 'url', aadhar: 'url' }
   
   // Service Metrics
   rating       Float    @default(0.0)
@@ -144,10 +151,14 @@ model Booking {
   serviceId    String
   service      Service       @relation(fields: [serviceId], references: [id])
   
+  addressId    String?
+  address      Address?      @relation(fields: [addressId], references: [id])
+  
   scheduledAt  DateTime
   status       BookingStatus @default(PENDING)
   totalPrice   Decimal
   items        Json?         // [{ serviceId, title, price, quantity }]
+  otp          String?       // 4-digit PIN for completion
   
   // Mobile sync
   offlineId    String?       @unique

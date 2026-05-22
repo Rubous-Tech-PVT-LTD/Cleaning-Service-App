@@ -51,4 +51,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Broadcast to the chat room
     this.server.to(data.chatId).emit('newMessage', message);
   }
+
+  @SubscribeMessage('send_sync_ping')
+  handleSyncPing(
+    @MessageBody() data: { chatId: string; senderId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    // Broadcast a sync ping to the chat room so the other person's app syncs
+    client.to(data.chatId).emit('sync_ping', { senderId: data.senderId });
+    console.log(`Broadcasted sync_ping for chat ${data.chatId}`);
+  }
 }

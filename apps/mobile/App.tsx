@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { applyWorkarounds } from './src/utils/bootstrap';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { syncDatabase } from './src/db/sync';
 import { NotificationService } from './src/services/NotificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import './src/i18n';
 
 // Apply critical React Native 0.81 bug fixes
@@ -13,6 +14,7 @@ applyWorkarounds();
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
+  const navigationRef = useRef<NavigationContainerRef<any>>(null);
 
   useEffect(() => {
     const initApp = async () => {
@@ -45,8 +47,6 @@ export default function App() {
       }
     };
 
-    NotificationService.registerForPushNotificationsAsync();
-
     // Initial sync delay
     const initialDelay = setTimeout(startSync, 3000);
     // Periodic sync every minute
@@ -58,12 +58,30 @@ export default function App() {
     };
   }, []);
 
+  // 🔔 Global: handle tap on push notification (works from background + killed state)
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data as any;
+        if (data?.bookingId && navigationRef.current) {
+          // Small delay to ensure navigation container is ready
+          setTimeout(() => {
+            navigationRef.current?.navigate('BookingDetail', {
+              bookingId: data.bookingId,
+            });
+          }, 500);
+        }
+      },
+    );
+    return () => subscription.remove();
+  }, []);
+
   // Wait until we know the initial route
   if (!initialRoute) return null;
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <AppNavigator initialRouteName={initialRoute} />
       </NavigationContainer>
     </SafeAreaProvider>

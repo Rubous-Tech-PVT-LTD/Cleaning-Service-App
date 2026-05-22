@@ -1,15 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
-import { BookingStatus, EscrowStatus } from '@prisma/client';
+import { BookingStatus, Prisma, EscrowStatus } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TrackingGateway } from '../tracking/tracking.gateway';
 
 @Injectable()
 export class BookingsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+    private readonly trackingGateway: TrackingGateway,
+  ) {}
 
   async create(clientId: string, createBookingDto: CreateBookingDto) {
-    return this.prisma.booking.create({
+    const booking = await this.prisma.booking.create({
       data: {
         clientId,
         serviceId: createBookingDto.serviceId,
@@ -24,6 +30,23 @@ export class BookingsService {
         client: true,
       },
     });
+
+    // Notify the specific provider if assigned, else notify all providers
+    if (booking.providerId) {
+      this.trackingGateway.notifyUser(booking.providerId, 'new_booking', booking);
+      
+      // Also send a push notification
+      await this.notifications.notifyBookingStatusChange(
+        booking.client?.pushToken, // We probably want provider push token here, but keeping logic consistent
+        booking.id,
+        booking.status,
+        'new service request'
+      ).catch(() => {});
+    } else {
+      this.trackingGateway.broadcastNewBooking(booking);
+    }
+
+    return booking;
   }
 
   async completeAll() {
@@ -53,14 +76,52 @@ export class BookingsService {
     });
 
     if (!booking) throw new NotFoundException('Booking not found');
+
     return booking;
   }
 
-  async updateStatus(id: string, updateStatusDto: UpdateBookingStatusDto) {
+  async updateStatus(id: string, updateStatusDto: UpdateBookingStatusDto, user?: any) {
+    const updateData: any = { status: updateStatusDto.status };
+    
+    // If a provider accepts the job, assign it to them
+    if (updateStatusDto.status === BookingStatus.ACCEPTED && user && user.role === 'PROVIDER') {
+      updateData.providerId = user.id;
+    }
+
+    const currentBooking = await this.prisma.booking.findUnique({ where: { id } });
+    if (!currentBooking) throw new NotFoundException('Booking not found');
+
+    // 🔒 OTP Validation for completion
+    if (updateStatusDto.status === BookingStatus.COMPLETED) {
+      if (!currentBooking.otp) {
+        throw new BadRequestException('This booking does not have an OTP set up.');
+      }
+      if (currentBooking.otp !== updateStatusDto.otp) {
+        throw new BadRequestException('Invalid OTP. Please ask the client for the correct 4-digit PIN.');
+      }
+    }
+
     const booking = await this.prisma.booking.update({
       where: { id },
-      data: { status: updateStatusDto.status },
+      data: updateData,
+      include: {
+        service: true,
+        client: true,
+      },
     });
+
+    // 🔔 Send push notification to client
+    const serviceName =
+      (booking.service as any)?.nameTranslations?.en ||
+      (booking.service as any)?.nameTranslations ||
+      'your service';
+
+    await this.notifications.notifyBookingStatusChange(
+      booking.client?.pushToken,
+      booking.id,
+      booking.status,
+      serviceName,
+    ).catch(() => {});
 
     if (updateStatusDto.status === BookingStatus.COMPLETED) {
       await this.prisma.payment.update({
@@ -69,6 +130,11 @@ export class BookingsService {
       }).catch(() => {
         console.warn(`Payment record not found for booking ${id}, skipping escrow release.`);
       });
+    }
+
+    // If a provider accepts the job, notify the client via WebSockets
+    if (updateStatusDto.status === BookingStatus.ACCEPTED && booking.clientId) {
+      this.trackingGateway.notifyUser(booking.clientId, 'booking_accepted', booking);
     }
 
     return booking;

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api';
 import { Theme } from '../theme';
+import { NotificationService } from '../services/NotificationService';
 
 export const OtpVerifyScreen = ({ route, navigation }: any) => {
   const { t } = useTranslation();
@@ -21,6 +22,12 @@ export const OtpVerifyScreen = ({ route, navigation }: any) => {
       if (response.data.accessToken) {
         await AsyncStorage.setItem('user_token', response.data.accessToken);
         await AsyncStorage.setItem('user_id', response.data.user.id);
+
+        // 🔔 Register push token immediately after login
+        NotificationService.registerForPushNotificationsAsync().catch(
+          (e) => console.warn('[OTP] Push token registration failed:', e),
+        );
+
         navigation.navigate('Home');
       } else {
         Alert.alert('Error', 'No access token received');

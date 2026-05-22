@@ -15,6 +15,8 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { SyncModule } from './sync/sync.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ChatModule } from './chat/chat.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { TrackingModule } from './tracking/tracking.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { ChatModule } from './chat/chat.module';
     SyncModule,
     PaymentsModule,
     ChatModule,
+    NotificationsModule,
+    TrackingModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

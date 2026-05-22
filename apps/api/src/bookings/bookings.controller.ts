@@ -37,7 +37,7 @@ export class BookingsController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update the status of a booking' })
-  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateBookingStatusDto) {
-    return this.bookingsService.updateStatus(id, updateStatusDto);
+  updateStatus(@Request() req: any, @Param('id') id: string, @Body() updateStatusDto: UpdateBookingStatusDto) {
+    return this.bookingsService.updateStatus(id, updateStatusDto, req.user);
   }
 }

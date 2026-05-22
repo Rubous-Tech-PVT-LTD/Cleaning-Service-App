@@ -8,20 +8,22 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}
 
-  // Pull is public — categories/services are read-only public data
+  // Pull handles categories/services (public) and user-data (private)
   @Get('pull')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Pull changes from server since last sync' })
   @ApiQuery({ name: 'lastPulledAt', required: false, type: Number })
-  pull(@Query('lastPulledAt') lastPulledAt?: string) {
+  @ApiQuery({ name: 'userId', required: false, type: String })
+  @ApiQuery({ name: 'role', required: false, type: String })
+  pull(@Query('lastPulledAt') lastPulledAt?: string, @Query('userId') userId?: string, @Query('role') role?: string) {
     const timestamp = lastPulledAt ? parseInt(lastPulledAt) : null;
-    return this.syncService.pullChanges(timestamp);
+    return this.syncService.pullChanges(timestamp, userId, role);
   }
 
   @Post('push')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Push local changes from client to server' })
   push(@Body() body: any, @Query('lastPulledAt') lastPulledAt: string) {
-    return this.syncService.pushChanges(body, parseInt(lastPulledAt));
+    return this.syncService.pushChanges(body.changes || body, parseInt(lastPulledAt));
   }
 }

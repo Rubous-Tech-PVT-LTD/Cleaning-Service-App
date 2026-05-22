@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
 import { BookingStatus } from '@prisma/client';
 
 export class UpdateBookingStatusDto {
@@ -7,4 +7,10 @@ export class UpdateBookingStatusDto {
   @IsEnum(BookingStatus)
   @IsNotEmpty()
   status: BookingStatus;
+
+  @ApiPropertyOptional({ description: 'The 4-digit OTP provided by the client to complete the job' })
+  @IsOptional()
+  @IsString()
+  @Length(4, 4)
+  otp?: string;
 }
