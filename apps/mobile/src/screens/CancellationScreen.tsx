@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { switchMap } from 'rxjs/operators';
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Calendar, X, Clock } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Theme } from '../theme';
 import api from '../api';
+import { SlotSelector } from '../components/SlotSelector';
 
 const CANCEL_REASONS = [
   'Plans changed',
@@ -15,11 +17,16 @@ const CANCEL_REASONS = [
   'Other',
 ];
 
-export const CancellationScreen = ({ navigation, route }: any) => {
-  const { bookingId, bookingTitle, scheduledAt } = route.params || {};
+import withObservables from '@nozbe/with-observables';
+import { database } from '../db';
+
+const CancellationScreenBase = ({ navigation, route, booking, service }: any) => {
   const [selectedReason, setSelectedReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'cancel' | 'reschedule'>('cancel');
+  const [newDate, setNewDate] = useState(new Date());
+
+  const bookingTitle = service ? (route.params.i18n?.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
 
   const handleCancel = async () => {
     if (!selectedReason) {
@@ -37,12 +44,16 @@ export const CancellationScreen = ({ navigation, route }: any) => {
           onPress: async () => {
             setLoading(true);
             try {
-              await api.put(`/bookings/${bookingId}/cancel`, { reason: selectedReason });
-              Alert.alert('Cancelled', 'Your booking has been cancelled successfully.', [
+              await database.write(async () => {
+                await booking.update((record: any) => {
+                  record.status = 'CANCELLED';
+                });
+              });
+              Alert.alert('Cancelled', 'Your booking has been cancelled locally. It will sync once online.', [
                 { text: 'OK', onPress: () => navigation.goBack() }
               ]);
             } catch (e) {
-              Alert.alert('Error', 'Could not cancel booking. Please try again.');
+              Alert.alert('Error', 'Could not cancel booking.');
             } finally {
               setLoading(false);
             }
@@ -52,7 +63,7 @@ export const CancellationScreen = ({ navigation, route }: any) => {
     );
   };
 
-  const scheduledDate = scheduledAt ? new Date(scheduledAt) : new Date();
+  const scheduledDate = booking?.scheduledAt ? new Date(booking.scheduledAt) : new Date();
   const formattedDate = scheduledDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
   const formattedTime = scheduledDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
@@ -139,17 +150,41 @@ export const CancellationScreen = ({ navigation, route }: any) => {
             </TouchableOpacity>
           </>
         ) : (
-          <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-            <Text style={{ fontSize: 48, marginBottom: 16 }}>📅</Text>
-            <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 8 }}>Reschedule Coming Soon</Text>
-            <Text style={{ fontSize: 14, color: Theme.textSecondary, textAlign: 'center', lineHeight: 22 }}>
-              Rescheduling will be available in the next update. For urgent changes, please contact support.
-            </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('HelpCenter')}
-              style={{ marginTop: 24, backgroundColor: Theme.primary, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 16 }}
+          <View style={{ paddingVertical: 10 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary, marginBottom: 16 }}>Select New Slot</Text>
+            <SlotSelector 
+              onSlotSelect={(date, time) => {
+                const finalDate = new Date(date);
+                const [timeStr, period] = time.split(' ');
+                let [hours, minutes] = timeStr.split(':').map(Number);
+                if (period === 'PM' && hours < 12) hours += 12;
+                if (period === 'AM' && hours === 12) hours = 0;
+                finalDate.setHours(hours, minutes, 0, 0);
+                setNewDate(finalDate);
+              }} 
+            />
+            
+            <TouchableOpacity 
+              onPress={async () => {
+                setLoading(true);
+                try {
+                  await database.write(async () => {
+                    await booking.update((record: any) => {
+                      record.scheduledAt = newDate.getTime();
+                    });
+                  });
+                  Alert.alert('Rescheduled', 'Booking updated successfully.');
+                  navigation.goBack();
+                } catch (e) {
+                  Alert.alert('Error', 'Could not reschedule.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              style={{ marginTop: 32, backgroundColor: Theme.primary, paddingVertical: 18, borderRadius: 16, alignItems: 'center' }}
             >
-              <Text style={{ color: 'white', fontWeight: '800', fontSize: 14 }}>Contact Support</Text>
+              {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '900', fontSize: 16 }}>Confirm Reschedule</Text>}
             </TouchableOpacity>
           </View>
         )}
@@ -157,3 +192,14 @@ export const CancellationScreen = ({ navigation, route }: any) => {
     </SafeAreaView>
   );
 };
+
+export const CancellationScreen = withObservables(['route'], ({ route }: any) => {
+  const booking = database.collections.get('bookings').findAndObserve(route.params.bookingId);
+  return {
+    booking,
+    service: booking.pipe(
+      // @ts-ignore
+      switchMap(b => b.service.observe())
+    )
+  };
+})(CancellationScreenBase);

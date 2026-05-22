@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './strategies/jwt-auth.guard';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { RegisterProviderDto } from './dto/register-provider.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Authentication')
@@ -40,5 +41,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Update user push token' })
   async updatePushToken(@Body() body: { userId: string; token: string }) {
     return this.authService.updatePushToken(body.userId, body.token);
+  }
+
+  @Post('register-provider')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register a new provider profile' })
+  @ApiResponse({ status: 201, description: 'Provider registered successfully.' })
+  async registerProvider(@Body() registerDto: RegisterProviderDto) {
+    return this.authService.registerProvider(registerDto);
   }
 }

@@ -22,4 +22,12 @@ export class ReviewsController {
   findByService(@Param('serviceId') serviceId: string) {
     return this.reviewsService.findByService(serviceId);
   }
+
+  @Get('me')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all reviews for the logged-in provider' })
+  findProviderReviews(@Request() req: any) {
+    return this.reviewsService.findByProvider(req.user.id);
+  }
 }

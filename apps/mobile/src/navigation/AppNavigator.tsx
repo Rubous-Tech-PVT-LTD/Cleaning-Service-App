@@ -12,6 +12,9 @@ import { BookingScreen } from '../screens/BookingScreen';
 import { MyBookingsScreen } from '../screens/MyBookingsScreen';
 import { BookingSuccessScreen } from '../screens/BookingSuccessScreen';
 import { AddressListScreen } from '../screens/AddressListScreen';
+import { AddressPickerScreen } from '../screens/AddressPickerScreen';
+import { BookingDetailScreen } from '../screens/BookingDetailScreen';
+import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { ReferEarnScreen } from '../screens/ReferEarnScreen';
 import { HelpCenterScreen } from '../screens/HelpCenterScreen';
 import { ReviewScreen } from '../screens/ReviewScreen';
@@ -19,7 +22,6 @@ import { ChatScreen } from '../screens/ChatScreen';
 import { CancellationScreen } from '../screens/CancellationScreen';
 import { PromoCodeScreen } from '../screens/PromoCodeScreen';
 import { TermsScreen } from '../screens/TermsScreen';
-import { OnboardingScreen } from '../screens/OnboardingScreen';
 import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
 
@@ -43,7 +45,9 @@ export const AppNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?
       <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Booking" component={BookingScreen} />
       <Stack.Screen name="BookingSuccess" component={BookingSuccessScreen} options={{ headerShown: false, gestureEnabled: false }} />
-      <Stack.Screen name="AddressPicker" component={AddressListScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+      <Stack.Screen name="AddressList" component={AddressListScreen} />
+      <Stack.Screen name="AddressPicker" component={AddressPickerScreen} />
       <Stack.Screen name="MyBookings" component={MyBookingsScreen} />
       <Stack.Screen name="Cancellation" component={CancellationScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Review" component={ReviewScreen} />

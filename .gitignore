@@ -30,3 +30,6 @@ Thumbs.db
 # Prisma
 /apps/api/prisma/dev.db
 /apps/api/prisma/dev.db-journal
+
+apps/provider/.expo
+apps/provider/node_modules

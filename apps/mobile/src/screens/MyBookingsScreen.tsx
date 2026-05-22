@@ -18,7 +18,11 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
   const primaryServiceTitle = service ? (i18n.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
 
   return (
-    <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 28, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}>
+    <TouchableOpacity 
+      activeOpacity={0.7}
+      onPress={() => navigation.navigate('BookingDetail', { bookingId: booking.id })}
+      style={{ backgroundColor: 'white', padding: 20, borderRadius: 28, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
+    >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary }}>
@@ -32,7 +36,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
           </View>
         </View>
         <View style={{ backgroundColor: booking.status === 'COMPLETED' ? '#ECFDF5' : '#FEF3C7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
-          <Text style={{ fontSize: 11, fontWeight: '900', color: booking.status === 'COMPLETED' ? '#10B981' : '#D97706', textTransform: 'uppercase' }}>
+          <Text style={{ fontSize: 11, fontWeight: '900', color: booking.status === 'COMPLETED' ? Theme.success : '#D97706', textTransform: 'uppercase' }}>
             {booking.status}
           </Text>
         </View>
@@ -49,6 +53,14 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
           >
             <MessageCircle size={20} color={Theme.primary} />
           </TouchableOpacity>
+          {(booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED') && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Cancellation', { bookingId: booking.id })}
+              style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, justifyContent: 'center', marginRight: 8 }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.textPrimary }}>MANAGE</Text>
+            </TouchableOpacity>
+          )}
           {booking.status === 'COMPLETED' && (
             <TouchableOpacity
               onPress={() => navigation.navigate('Review', { bookingId: booking.id, serviceName: primaryServiceTitle })}
@@ -59,7 +71,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
           )}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

@@ -16,9 +16,10 @@ async function bootstrap() {
   
   //  🌐 Wide CORS for Mobile Testing
   app.enableCors({
-    origin: true,
+    origin: '*',
     methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
     credentials: true,
+    allowedHeaders: '*',
   });
 
   // Versioning
@@ -48,8 +49,9 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`🚀 Server is running on: http://0.0.0.0:${port}/v1`);
   console.log(`📝 API Documentation: http://localhost:${port}/api/docs`);
+  console.log(`🔄 Server forced hot-reload triggered!`);
 }
 bootstrap();

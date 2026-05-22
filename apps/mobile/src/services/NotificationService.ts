@@ -66,8 +66,6 @@ export class NotificationService {
 
   static async sendLocalNotification(title: string, body: string, data = {}) {
     console.log('🔔 [Notification] Sending local notification:', title);
-    // Debug Alert to confirm the function is called
-    Alert.alert(title, body);
 
     try {
       await Notifications.scheduleNotificationAsync({

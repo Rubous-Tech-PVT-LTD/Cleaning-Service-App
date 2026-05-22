@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '../theme';
 
 interface SlotSelectorProps {
@@ -7,6 +8,7 @@ interface SlotSelectorProps {
 }
 
 export const SlotSelector = ({ onSlotSelect }: SlotSelectorProps) => {
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState('10:00 AM');
 
@@ -18,9 +20,9 @@ export const SlotSelector = ({ onSlotSelect }: SlotSelectorProps) => {
   });
 
   const timeSlots = [
-    { label: 'Morning', slots: ['09:00 AM', '10:00 AM', '11:00 AM'] },
-    { label: 'Afternoon', slots: ['12:00 PM', '02:00 PM', '04:00 PM'] },
-    { label: 'Evening', slots: ['06:00 PM', '07:00 PM', '08:00 PM'] },
+    { label: t('booking.morning'), slots: ['09:00 AM', '10:00 AM', '11:00 AM'] },
+    { label: t('booking.afternoon'), slots: ['12:00 PM', '02:00 PM', '04:00 PM'] },
+    { label: t('booking.evening'), slots: ['06:00 PM', '07:00 PM', '08:00 PM'] },
   ];
 
   const handleSelect = (date: Date, time: string) => {
@@ -31,7 +33,7 @@ export const SlotSelector = ({ onSlotSelect }: SlotSelectorProps) => {
 
   return (
     <View style={{ marginVertical: 20 }}>
-      <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary, marginBottom: 16 }}>Select Date</Text>
+      <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary, marginBottom: 16 }}>{t('booking.select_date')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}>
         {dates.map((date, i) => {
           const isSelected = date.toDateString() === selectedDate.toDateString();
@@ -48,7 +50,7 @@ export const SlotSelector = ({ onSlotSelect }: SlotSelectorProps) => {
                 alignItems: 'center',
                 marginRight: 12,
                 borderWidth: 1.5,
-                borderColor: isSelected ? Theme.primary : '#F1F5F9',
+                borderColor: isSelected ? Theme.primary : Theme.muted,
                 shadowColor: isSelected ? Theme.primary : '#000',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: isSelected ? 0.3 : 0.05,
@@ -67,7 +69,7 @@ export const SlotSelector = ({ onSlotSelect }: SlotSelectorProps) => {
         })}
       </ScrollView>
 
-      <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary, marginTop: 24, marginBottom: 16 }}>Select Time Slot</Text>
+      <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary, marginTop: 24, marginBottom: 16 }}>{t('booking.select_time')}</Text>
       {timeSlots.map((section, idx) => (
         <View key={idx} style={{ marginBottom: 20 }}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: Theme.textSecondary, marginBottom: 12 }}>{section.label}</Text>
@@ -82,11 +84,11 @@ export const SlotSelector = ({ onSlotSelect }: SlotSelectorProps) => {
                     paddingHorizontal: 16,
                     paddingVertical: 12,
                     borderRadius: 14,
-                    backgroundColor: isSelected ? Theme.primary : '#F8FAFC',
+                    backgroundColor: isSelected ? Theme.primary : Theme.background,
                     marginRight: 10,
                     marginBottom: 10,
                     borderWidth: 1.5,
-                    borderColor: isSelected ? Theme.primary : '#F1F5F9',
+                    borderColor: isSelected ? Theme.primary : Theme.muted,
                   }}
                 >
                   <Text style={{ color: isSelected ? 'white' : Theme.textPrimary, fontWeight: 'bold', fontSize: 14 }}>{slot}</Text>

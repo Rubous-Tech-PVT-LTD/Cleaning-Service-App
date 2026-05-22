@@ -2,17 +2,32 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Star, ArrowRight, Minus, Plus, ShieldCheck, Clock, Sparkles, User } from 'lucide-react-native';
+import { ChevronLeft, Star, ArrowRight, Minus, Plus, ShieldCheck, Clock, Sparkles, User, Image as ImageIcon } from 'lucide-react-native';
 import withObservables from '@nozbe/with-observables';
 import { Q } from '@nozbe/watermelondb';
 import { switchMap } from 'rxjs/operators';
 import { database } from '../db';
 import { Theme } from '../theme';
+import api from '../api';
 
 const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }: any) => {
   const { t, i18n } = useTranslation();
   const [bookingType, setBookingType] = useState<'day' | 'bulk'>('day');
   const [quantity, setQuantity] = useState(1);
+  const [reviewsData, setReviewsData] = useState<{ reviews: any[], average: number, total: number }>({ reviews: [], average: 0, total: 0 });
+
+  React.useEffect(() => {
+    if (service?.id) {
+      api.get(`/reviews/service/${service.id}`)
+        .then(res => {
+          const fetchedReviews = res.data;
+          const total = fetchedReviews.length;
+          const avg = total > 0 ? fetchedReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / total : 0;
+          setReviewsData({ reviews: fetchedReviews, average: avg, total });
+        })
+        .catch(err => console.log('Failed to fetch reviews', err));
+    }
+  }, [service?.id]);
   
   // Calculate total based on type (for bulk, we can offer a slight discount or just multiply)
   const isLabour = service?.nameEn?.toLowerCase().includes('labour');
@@ -28,12 +43,19 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 160 }}>
-        <Image source={{ uri: service?.imageUrl || 'https://images.unsplash.com/photo-1581578731548-c64695ce6958?q=80&w=800' }} style={{ width: '100%', height: 400 }} />
+        <View style={{ width: '100%', height: 400, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+          <ImageIcon size={48} color={'#94A3B8'} style={{ position: 'absolute' }} />
+          <Image source={{ uri: service?.imageUrl || 'https://images.unsplash.com/photo-1581578731548-c64695ce6958?q=80&w=800' }} style={{ width: '100%', height: '100%', position: 'absolute' }} />
+        </View>
         <View style={{ paddingHorizontal: 24, paddingVertical: 32, marginTop: -40, backgroundColor: Theme.background, borderTopLeftRadius: 40, borderTopRightRadius: 40 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
             <Star size={18} color={Theme.accent} fill={Theme.accent} />
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: Theme.textPrimary, marginLeft: 8 }}>4.8</Text>
-            <Text style={{ fontSize: 14, color: Theme.textSecondary, marginLeft: 8 }}>(120+ reviews)</Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: Theme.textPrimary, marginLeft: 8 }}>
+              {reviewsData.total > 0 ? reviewsData.average.toFixed(1) : '5.0'}
+            </Text>
+            <Text style={{ fontSize: 14, color: Theme.textSecondary, marginLeft: 8 }}>
+              ({reviewsData.total > 0 ? reviewsData.total : '0'} reviews)
+            </Text>
           </View>
 
           <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.textPrimary, lineHeight: 38, marginBottom: 32 }}>
@@ -45,28 +67,28 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
               <Text style={{ fontSize: 13, color: Theme.textSecondary, fontWeight: '800', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total Price</Text>
               <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary }}>₹{totalPrice.toFixed(0)}</Text>
             </View>
-            <View style={{ backgroundColor: '#ECFDF5', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 }}>
-              <Text style={{ color: '#10B981', fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>Verified</Text>
+            <View style={{ backgroundColor: Theme.infoLight, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 }}>
+              <Text style={{ color: Theme.success, fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>{t('service.verified')}</Text>
             </View>
           </View>
 
           {/* Dynamic Booking Options - Only for Labour or specific services */}
           {isLabour && (
             <View style={{ marginBottom: 32, backgroundColor: '#F8FAFC', borderRadius: 28, padding: 24, borderWidth: 1, borderColor: '#F1F5F9' }}>
-              <Text style={{ fontSize: 16, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>Booking Options</Text>
+              <Text style={{ fontSize: 16, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('service.booking_options')}</Text>
               
               <View style={{ flexDirection: 'row', backgroundColor: '#E2E8F0', borderRadius: 16, padding: 4, marginBottom: 24 }}>
                 <TouchableOpacity 
                   onPress={() => setBookingType('day')}
                   style={{ flex: 1, paddingVertical: 12, backgroundColor: bookingType === 'day' ? 'white' : 'transparent', borderRadius: 12, alignItems: 'center', shadowColor: bookingType === 'day' ? '#000' : 'transparent', shadowOpacity: 0.05, shadowRadius: 4, elevation: bookingType === 'day' ? 2 : 0 }}
                 >
-                  <Text style={{ fontWeight: '800', color: bookingType === 'day' ? Theme.primary : Theme.textSecondary }}>Day-wise</Text>
+                  <Text style={{ fontWeight: '800', color: bookingType === 'day' ? Theme.primary : Theme.textSecondary }}>{t('service.day_wise')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => setBookingType('bulk')}
                   style={{ flex: 1, paddingVertical: 12, backgroundColor: bookingType === 'bulk' ? 'white' : 'transparent', borderRadius: 12, alignItems: 'center', shadowColor: bookingType === 'bulk' ? '#000' : 'transparent', shadowOpacity: 0.05, shadowRadius: 4, elevation: bookingType === 'bulk' ? 2 : 0 }}
                 >
-                  <Text style={{ fontWeight: '800', color: bookingType === 'bulk' ? Theme.primary : Theme.textSecondary }}>Bulk Hiring</Text>
+                  <Text style={{ fontWeight: '800', color: bookingType === 'bulk' ? Theme.primary : Theme.textSecondary }}>{t('service.bulk_hiring')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -96,8 +118,8 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
           {/* Inclusions & Exclusions Section */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginBottom: 40 }}>
             {/* Left: What is Included */}
-            <View style={{ flex: 1, backgroundColor: '#F0FDF4', padding: 20, borderRadius: 24, borderWidth: 1, borderColor: '#DCFCE7' }}>
-              <Text style={{ fontSize: 14, fontWeight: '900', color: '#166534', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>What's Included</Text>
+            <View style={{ flex: 1, backgroundColor: Theme.infoLight, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: Theme.border }}>
+              <Text style={{ fontSize: 14, fontWeight: '900', color: Theme.info, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('service.included')}</Text>
               <InclusionItem text="Professional Equipment" included />
               <InclusionItem text="Verified Partner" included />
               <InclusionItem text="Post-service Cleanup" included />
@@ -105,8 +127,8 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
             </View>
 
             {/* Right: What is NOT Included */}
-            <View style={{ flex: 1, backgroundColor: '#FEF2F2', padding: 20, borderRadius: 24, borderWidth: 1, borderColor: '#FEE2E2' }}>
-              <Text style={{ fontSize: 14, fontWeight: '900', color: '#991B1B', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>What's Not</Text>
+            <View style={{ flex: 1, backgroundColor: Theme.background, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: Theme.border }}>
+              <Text style={{ fontSize: 14, fontWeight: '900', color: Theme.error, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('service.not_included')}</Text>
               <InclusionItem text="Material Costs" included={false} />
               <InclusionItem text="Extra Spare Parts" included={false} />
               <InclusionItem text="Deep Stains removal" included={false} />
@@ -116,7 +138,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
 
           {/* How it Works Section */}
           <View style={{ marginBottom: 40 }}>
-            <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>How it works</Text>
+            <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('service.how_it_works')}</Text>
             <View style={{ gap: 20 }}>
               <StepItem 
                 icon={<Sparkles size={20} color={Theme.primary} />} 
@@ -139,24 +161,27 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
           {/* Customer Reviews Section */}
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary }}>Customer Reviews</Text>
-              <TouchableOpacity>
-                <Text style={{ color: Theme.primary, fontWeight: '800' }}>See All</Text>
-              </TouchableOpacity>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary }}>{t('service.reviews')}</Text>
+              {reviewsData.total > 0 && (
+                <TouchableOpacity>
+                  <Text style={{ color: Theme.primary, fontWeight: '800' }}>{t('service.see_all')}</Text>
+                </TouchableOpacity>
+              )}
             </View>
             
-            <ReviewCard 
-              name="Rahul Sharma" 
-              rating={5} 
-              date="2 days ago" 
-              comment="The cleaning was extremely thorough. The professional was very polite and arrived exactly on time. Highly recommended!" 
-            />
-            <ReviewCard 
-              name="Priya Singh" 
-              rating={4} 
-              date="1 week ago" 
-              comment="Great service. They used professional chemicals and equipment. My sofa looks brand new now. Minor delay in starting but overall good." 
-            />
+            {reviewsData.total === 0 ? (
+              <Text style={{ fontSize: 14, color: Theme.textSecondary, fontStyle: 'italic' }}>No reviews yet. Be the first to review!</Text>
+            ) : (
+              reviewsData.reviews.slice(0, 3).map((r: any) => (
+                <ReviewCard 
+                  key={r.id}
+                  name={r.booking?.client?.fullName || 'Anonymous'} 
+                  rating={r.rating} 
+                  date={new Date(r.createdAt).toLocaleDateString()} 
+                  comment={r.comment} 
+                />
+              ))
+            )}
           </View>
 
           {/* Related Services Section */}

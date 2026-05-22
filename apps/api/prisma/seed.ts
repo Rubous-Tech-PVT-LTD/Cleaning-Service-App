@@ -1,12 +1,14 @@
 import { PrismaClient } from '@prisma/client';
-import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-process.env.DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/marketplace_db?schema=public";
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/marketplace_db?schema=public';
+const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
+
 
 async function main() {
   console.log('Clearing old data...');
@@ -20,15 +22,15 @@ async function main() {
     data: {
       nameTranslations: { en: 'Cleaning', hi: 'सफाई' },
       slug: 'cleaning',
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/995/995053.png',
+      iconUrl: 'https://res.cloudinary.com/dfi6krhcl/image/upload/f_auto,q_auto/v1779445173/home-services_c7gaql.png',
     }
   });
   await prisma.service.createMany({
     data: [
       { categoryId: cleaning.id, nameTranslations: { en: 'Home Cleaning', hi: 'घर की सफाई' }, descriptionTranslations: { en: 'Full home cleaning service', hi: 'पूर्ण घर की सफाई सेवा' }, basePrice: 1499, imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695ce6958?q=80&w=800' },
       { categoryId: cleaning.id, nameTranslations: { en: 'Deep Cleaning', hi: 'डीप क्लीनिंग' }, descriptionTranslations: { en: 'Intensive deep cleaning', hi: 'गहन डीप क्लीनिंग' }, basePrice: 2499, imageUrl: 'https://images.unsplash.com/photo-1527515545081-5db817172677?q=80&w=800' },
-      { categoryId: cleaning.id, nameTranslations: { en: 'Bathroom Cleaning', hi: 'बाथरूम की सफाई' }, descriptionTranslations: { en: 'Professional bathroom cleaning', hi: 'पेशेवर बाथरूम सफाई' }, basePrice: 499, imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800' },
-      { categoryId: cleaning.id, nameTranslations: { en: 'Sofa / Carpet Cleaning', hi: 'सोफा / कालीन सफाई' }, descriptionTranslations: { en: 'Sofa and carpet dry cleaning', hi: 'सोफा और कालीन ड्राई क्लीनिंग' }, basePrice: 799, imageUrl: 'https://images.unsplash.com/photo-1558227691-41ea78d1f631?q=80&w=800' },
+      { categoryId: cleaning.id, nameTranslations: { en: 'Bathroom Cleaning', hi: 'बाथरूम की सफाई' }, descriptionTranslations: { en: 'Professional bathroom cleaning', hi: 'पेशेवर बाथरूम सफाई' }, basePrice: 499, imageUrl: 'https://res.cloudinary.com/dfi6krhcl/image/upload/f_auto,q_auto/v1779445170/female-bathroom-cleaner_iym2s9.png' },
+      { categoryId: cleaning.id, nameTranslations: { en: 'Sofa / Carpet Cleaning', hi: 'सोफा / कालीन सफाई' }, descriptionTranslations: { en: 'Sofa and carpet dry cleaning', hi: 'सोफा और कालीन ड्राई क्लीनिंग' }, basePrice: 799, imageUrl: 'https://res.cloudinary.com/dfi6krhcl/image/upload/f_auto,q_auto/v1779445173/female-sofa-cleaner_b4nv6v.png' },
     ]
   });
 
@@ -37,7 +39,7 @@ async function main() {
     data: {
       nameTranslations: { en: 'Plumbing', hi: 'प्लंबिंग' },
       slug: 'plumbing',
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/2921/2921226.png',
+      iconUrl: 'https://res.cloudinary.com/dfi6krhcl/image/upload/f_auto,q_auto/v1779445181/plumber_jjcdg0.png',
     }
   });
   await prisma.service.createMany({
@@ -54,7 +56,7 @@ async function main() {
     data: {
       nameTranslations: { en: 'Electrical', hi: 'इलेक्ट्रिकल' },
       slug: 'electrical',
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/3062/3062335.png',
+      iconUrl: 'https://res.cloudinary.com/dfi6krhcl/image/upload/f_auto,q_auto/v1779445167/electric_ev354t.png',
     }
   });
   await prisma.service.createMany({
@@ -71,7 +73,7 @@ async function main() {
     data: {
       nameTranslations: { en: 'Painting', hi: 'पेंटिंग' },
       slug: 'painting',
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/2763/2763134.png',
+      iconUrl: 'https://res.cloudinary.com/dfi6krhcl/image/upload/f_auto,q_auto/v1779445174/wall-painting_u4rpc2.png',
     }
   });
   await prisma.service.createMany({
@@ -88,7 +90,7 @@ async function main() {
     data: {
       nameTranslations: { en: 'Labour', hi: 'मज़दूर' },
       slug: 'labour',
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/2921/2921226.png', // Placeholder
+      iconUrl: 'https://res.cloudinary.com/dfi6krhcl/image/upload/f_auto,q_auto/v1779445175/labour_qxjaxk.png',
     }
   });
   await prisma.service.createMany({

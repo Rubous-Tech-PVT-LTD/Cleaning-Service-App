@@ -6,5 +6,12 @@ export const Theme = {
   background: '#F8FAFC',   // Clean light slate background
   textPrimary: '#0F172A',  // Dark slate text
   textSecondary: '#475569', // Medium slate text
-  border: '#E2E8F0'        // Light slate border
+  border: '#E2E8F0',       // Light slate border
+  
+  // Semantic Colors
+  success: '#8B5CF6',      // Vibrant Violet (Matches Houcee Branding)
+  error: '#EF4444',        // Red
+  info: '#3B82F6',         // Blue
+  infoLight: '#EFF6FF',    // Light Blue Background
+  muted: '#F1F5F9',        // Light Grey Background
 };
