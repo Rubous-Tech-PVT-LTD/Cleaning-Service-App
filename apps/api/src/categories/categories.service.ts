@@ -6,19 +6,46 @@ export class CategoriesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
-    return this.prisma.category.findMany({
+    const categories = await this.prisma.category.findMany({
+      orderBy: {
+        order: 'asc',
+      },
       include: {
         _count: {
-          select: { services: true }
-        }
+          select: {
+            services: true,
+            subcategories: true
+          }
+        },
+        subcategories: true
       }
     });
+
+    return categories.map((category) => ({
+      ...category,
+      hasSubcategories: (category._count as any)?.subcategories > 0 || false
+    }));
   }
 
   async findOne(id: string) {
-    return this.prisma.category.findUnique({
+    const category = await this.prisma.category.findUnique({
       where: { id },
-      include: { services: true }
+      include: {
+        services: true,
+        subcategories: true,
+        _count: {
+          select: {
+            subcategories: true
+          }
+        }
+      }
     });
+
+    if (!category) return null;
+
+    return {
+      ...category,
+      hasSubcategories: (category._count as any)?.subcategories > 0 || false
+    };
   }
 }

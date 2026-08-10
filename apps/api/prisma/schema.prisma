@@ -1,6 +1,5 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
@@ -29,26 +28,26 @@ model User {
   referredBy   String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
+
   // Sync Metadata
-  version      Int      @default(1)
-  
-  profile      Profile?
-  
+  version Int @default(1)
+
+  profile Profile?
+
   // Relations
   clientBookings   Booking[] @relation("ClientBookings")
   providerBookings Booking[] @relation("ProviderBookings")
   addresses        Address[]
-  
+
   @@map("users")
 }
 
 model Address {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  label        String   @default("Home") // Home, Work, Other
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label        String  @default("Home") // Home, Work, Other
   addressLine1 String
   addressLine2 String?
   city         String
@@ -56,28 +55,27 @@ model Address {
   pincode      String
   latitude     Float?
   longitude    Float?
-  
-  isDefault    Boolean  @default(false)
-  
-  // Sync Metadata
-  offlineId    String?  @unique
-  version      Int      @default(1)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isDefault    Boolean @default(false)
 
-  bookings     Booking[]
+  // Sync Metadata
+  offlineId String?  @unique
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
 
   @@map("addresses")
 }
 
 model Profile {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  avatarUrl    String?  // Profile picture
-  bio          Json?    // Multi-language support in JSON
-  
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  avatarUrl String?
+  bio       Json?
+
   // Location & Address
   addressLine1 String?
   addressLine2 String?
@@ -85,52 +83,95 @@ model Profile {
   state        String?
   country      String?
   pincode      String?
-  latitude     Float?   // For searching nearby providers
+  latitude     Float?
   longitude    Float?
-  
+
   // Professional Details
   professionId String?
-  documents    Json?    // e.g., { pan: 'url', aadhar: 'url' }
-  
+  documents    Json?
+
   // Service Metrics
-  rating       Float    @default(0.0)
-  isVerified   Boolean  @default(false)
-  availability Json?    // Flexible schedule storage
-  
+  rating       Float   @default(0.0)
+  isVerified   Boolean @default(false)
+  availability Json?
+
   // Sync Metadata
   version      Int      @default(1)
   lastModified DateTime @updatedAt
-  
+
   @@map("profiles")
 }
 
 model Category {
-  id                String    @id @default(uuid())
-  nameTranslations  Json      // { "en": "Cleaning", "hi": "सफाई" }
-  slug              String    @unique
-  iconUrl           String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id               String   @id @default(uuid())
+  nameTranslations Json
+  slug             String   @unique
+  iconUrl          String?
+  order            Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  services          Service[]
+  // Relations
+  services      Service[]
+  subcategories Subcategory[]
 
   @@map("categories")
 }
 
+model Subcategory {
+  id         String @id @default(uuid())
+  categoryId String
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  nameTranslations Json
+  slug             String
+  iconUrl          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  services Service[]
+
+  // A slug only needs to be unique within its category.
+  // Example:
+  // cleaning/bathroom
+  // kitchen/bathroom
+  @@unique([categoryId, slug])
+  @@index([categoryId])
+  @@map("subcategories")
+}
+
 model Service {
-  id                      String    @id @default(uuid())
-  categoryId              String
-  category                Category  @relation(fields: [categoryId], references: [id])
-  nameTranslations        Json      // { "en": "Deep Cleaning", "hi": "गहरी सफाई" }
-  descriptionTranslations Json      // { "en": "Full house deep cleaning", "hi": "पूरे घर की गहरी सफाई" }
+  id String @id @default(uuid())
+
+  // Category
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  // Subcategory
+  // Optional so existing services continue working.
+  subcategoryId String?
+  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+
+  // Service Details
+  nameTranslations        Json
+  descriptionTranslations Json
   basePrice               Decimal
   imageUrl                String?
-  status                  String    @default("ACTIVE") // ACTIVE, INACTIVE
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  status                  String  @default("ACTIVE")
 
-  bookings                Booking[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  // Relations
+  bookings Booking[]
+
+  // Indexes
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([categoryId, subcategoryId])
   @@map("services")
 }
 
@@ -143,43 +184,54 @@ enum BookingStatus {
 }
 
 model Booking {
-  id           String        @id @default(uuid())
-  clientId     String
-  client       User          @relation("ClientBookings", fields: [clientId], references: [id])
-  providerId   String?
-  provider     User?         @relation("ProviderBookings", fields: [providerId], references: [id])
-  serviceId    String
-  service      Service       @relation(fields: [serviceId], references: [id])
-  
-  addressId    String?
-  address      Address?      @relation(fields: [addressId], references: [id])
-  
-  scheduledAt  DateTime
-  status       BookingStatus @default(PENDING)
-  totalPrice   Decimal
-  items        Json?         // [{ serviceId, title, price, quantity }]
-  otp          String?       // 4-digit PIN for completion
-  
-  // Mobile sync
-  offlineId    String?       @unique
-  version      Int           @default(1)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id String @id @default(uuid())
 
-  review       Review?
-  payment      Payment?
-  chats        Chat[]
+  clientId String
+  client   User   @relation("ClientBookings", fields: [clientId], references: [id])
+
+  providerId String?
+  provider   User?   @relation("ProviderBookings", fields: [providerId], references: [id])
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id])
+
+  scheduledAt DateTime
+  status      BookingStatus @default(PENDING)
+  totalPrice  Decimal
+
+  // [{ serviceId, title, price, quantity }]
+  items Json?
+
+  // 4-digit PIN for completion
+  otp String?
+
+  // Mobile sync
+  offlineId String? @unique
+  version   Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  review  Review?
+  payment Payment?
+  chats   Chat[]
 
   @@map("bookings")
 }
 
 model Review {
-  id         String   @id @default(uuid())
-  bookingId  String   @unique
-  booking    Booking  @relation(fields: [bookingId], references: [id])
-  rating     Int      @default(5)
-  comment    String?
-  createdAt  DateTime @default(now())
+  id        String @id @default(uuid())
+  bookingId String @unique
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  rating  Int     @default(5)
+  comment String?
+
+  createdAt DateTime @default(now())
 
   @@map("reviews")
 }
@@ -198,62 +250,65 @@ enum EscrowStatus {
 }
 
 model Payment {
-  id                String        @id @default(uuid())
-  bookingId         String        @unique
-  booking           Booking       @relation(fields: [bookingId], references: [id])
-  
-  amount            Decimal
-  currency          String        @default("INR")
-  status            PaymentStatus @default(PENDING)
-  escrowStatus      EscrowStatus  @default(HELD)
-  
+  id        String @id @default(uuid())
+  bookingId String @unique
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  amount       Decimal
+  currency     String        @default("INR")
+  status       PaymentStatus @default(PENDING)
+  escrowStatus EscrowStatus  @default(HELD)
+
   // Razorpay Specifics
-  razorpayOrderId   String?       @unique
-  razorpayPaymentId String?       @unique
+  razorpayOrderId   String? @unique
+  razorpayPaymentId String? @unique
   razorpaySignature String?
-  
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("payments")
 }
 
 model Chat {
-  id          String    @id @default(uuid())
-  bookingId   String
-  booking     Booking   @relation(fields: [bookingId], references: [id])
-  
+  id        String @id @default(uuid())
+  bookingId String
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
   // Participants
-  clientId    String
-  providerId  String
-  
-  messages    Message[]
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  clientId   String
+  providerId String
+
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Mobile sync
-  offlineId    String?       @unique
-  version      Int           @default(1)
+  offlineId String? @unique
+  version   Int     @default(1)
 
   @@map("chats")
 }
 
 model Message {
-  id        String   @id @default(uuid())
-  chatId    String
-  chat      Chat     @relation(fields: [chatId], references: [id])
-  
-  senderId  String
-  content   String
-  isRead    Boolean  @default(false)
-  
+  id     String @id @default(uuid())
+  chatId String
+
+  chat Chat @relation(fields: [chatId], references: [id])
+
+  senderId String
+  content  String
+  isRead   Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Mobile sync
-  offlineId    String?       @unique
-  version      Int           @default(1)
+  offlineId String? @unique
+  version   Int     @default(1)
 
   @@map("messages")
 }

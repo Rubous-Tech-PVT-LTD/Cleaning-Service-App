@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Star, Image as ImageIcon } from 'lucide-react-native';
+import { ChevronLeft, Star, Image as ImageIcon, Home } from 'lucide-react-native';
 import withObservables from '@nozbe/with-observables';
 import { Q } from '@nozbe/watermelondb';
 import { database } from '../db';
@@ -68,17 +68,15 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
       <ScrollView style={{ flex: 1 }}>
         <View style={{ paddingHorizontal: 20, paddingVertical: 24, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {sortedServices.length === 0 ? (
-            <>
-              {[1, 2, 3, 4].map((i: number) => (
-                <View key={i} style={{ width: '47.5%', backgroundColor: 'white', borderRadius: 24, marginBottom: 20, elevation: 4 }}>
-                  <Skeleton style={{ width: '100%', aspectRatio: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24 }} />
-                  <View style={{ padding: 12 }}>
-                    <Skeleton style={{ width: '80%', height: 16, borderRadius: 8, marginBottom: 8 }} />
-                    <Skeleton style={{ width: '40%', height: 20, borderRadius: 8 }} />
-                  </View>
-                </View>
-              ))}
-            </>
+            <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
+              <Home size={64} color={Theme.textSecondary} style={{ marginBottom: 16 }} />
+              <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textSecondary, textAlign: 'center', marginBottom: 8 }}>
+                {t('common.noServices')}
+              </Text>
+              <Text style={{ fontSize: 14, color: Theme.textSecondary, textAlign: 'center' }}>
+                {t('common.noServicesDescription')}
+              </Text>
+            </View>
           ) : sortedServices.map((service: any) => (
             <TouchableOpacity
               key={service.id}
@@ -121,8 +119,24 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
   );
 };
 
-export const ServiceListScreen = withObservables(['route'], ({ route }: any) => ({
-  services: database.collections.get('services').query(
-    Q.where('category_id', route.params.categoryId)
-  ),
-}))(ServiceListScreenBase);
+export const ServiceListScreen = withObservables(['route'], ({ route }: any) => {
+  const { categoryId, subcategoryId } = route.params;
+  
+  if (subcategoryId) {
+    return {
+      services: database.collections.get('services').query(
+        Q.where('subcategory_id', subcategoryId)
+      ),
+    };
+  } else if (categoryId) {
+    return {
+      services: database.collections.get('services').query(
+        Q.where('category_id', categoryId)
+      ),
+    };
+  }
+  
+  return {
+    services: database.collections.get('services').query(),
+  };
+})(ServiceListScreenBase);

@@ -3,6 +3,7 @@ import LokiJSAdapter from '@nozbe/watermelondb/adapters/lokijs';
 
 import schema from './schema';
 import Category from './models/Category';
+import Subcategory from './models/Subcategory';
 import Service from './models/Service';
 import Booking from './models/Booking';
 import Message from './models/Message';
@@ -21,6 +22,7 @@ export const database = new Database({
   adapter,
   modelClasses: [
     Category,
+    Subcategory,
     Service,
     Booking,
     Message,
@@ -29,3 +31,9 @@ export const database = new Database({
     Address,
   ],
 });
+
+// Helper function to get categories sorted by order
+export const getCategoriesSorted = async () => {
+  const categories = await database.get('categories').query().fetch();
+  return categories.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+};

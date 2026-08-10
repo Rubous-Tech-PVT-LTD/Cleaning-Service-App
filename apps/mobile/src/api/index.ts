@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.0.200:3000/v1';
-export const SOCKET_URL = 'http://192.168.0.200:3000';
+const BASE_URL = 'http://192.168.207.209:3000/v1';
+export const SOCKET_URL = 'http://192.168.207.209:3000';
 console.log('📡 [API] Using Fetch API Wrapper to bypass Axios Event.NONE bug');
 
 async function request(method: string, endpoint: string, data?: any) {
@@ -43,6 +43,19 @@ const api = {
   delete: (endpoint: string) => request('DELETE', endpoint),
   // For backwards compatibility where `api.interceptors` is accessed, return a dummy object
   interceptors: { request: { use: () => {} } }
+};
+
+// Category and Subcategory API helpers
+export const categoryApi = {
+  getSubcategories: (categoryId: string) => 
+    api.get(`/categories/${categoryId}/subcategories`),
+  getServices: (categoryId: string) => 
+    api.get(`/categories/${categoryId}/services`),
+};
+
+export const subcategoryApi = {
+  getServices: (subcategoryId: string) => 
+    api.get(`/subcategories/${subcategoryId}/services`),
 };
 
 export default api;

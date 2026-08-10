@@ -1,13 +1,27 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 6,
+  version: 10,
   tables: [
     tableSchema({
       name: 'categories',
       columns: [
         { name: 'name_en', type: 'string' },
         { name: 'name_hi', type: 'string' },
+        { name: 'icon_url', type: 'string', isOptional: true },
+        { name: 'order', type: 'number' },
+        { name: 'has_subcategories', type: 'boolean' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'subcategories',
+      columns: [
+        { name: 'category_id', type: 'string', isIndexed: true },
+        { name: 'name_en', type: 'string' },
+        { name: 'name_hi', type: 'string' },
+        { name: 'slug', type: 'string' },
         { name: 'icon_url', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
@@ -17,8 +31,11 @@ export default appSchema({
       name: 'services',
       columns: [
         { name: 'category_id', type: 'string', isIndexed: true },
+        { name: 'subcategory_id', type: 'string', isOptional: true, isIndexed: true },
         { name: 'name_en', type: 'string' },
         { name: 'name_hi', type: 'string' },
+        { name: 'description_en', type: 'string', isOptional: true },
+        { name: 'description_hi', type: 'string', isOptional: true },
         { name: 'base_price', type: 'number' },
         { name: 'image_url', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
