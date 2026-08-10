@@ -7,8 +7,11 @@ export default class Category extends Model {
   @field('name_en') nameEn!: string;
   @field('name_hi') nameHi!: string;
   @field('icon_url') iconUrl?: string;
+  @field('order') order!: number;
+  @field('has_subcategories') hasSubcategories!: boolean;
   
   @children('services') services!: any;
+  @children('subcategories') subcategories!: any;
 
   @date('updated_at') updatedAt!: number;
 }
