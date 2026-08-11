@@ -2,7 +2,7 @@ import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SYNC_URL = 'http://192.168.207.209:3000/v1/sync';
+const SYNC_URL = 'http://10.0.2.2:3000/v1/sync';
 
 // ─── Status priority: higher number = "more final" state ─────────────────────
 // Server wins if its status is more advanced than the local status.
@@ -74,8 +74,11 @@ export async function syncDatabase() {
     pullChanges: async ({ lastPulledAt }) => {
       const token = await AsyncStorage.getItem('user_token');
       const userId = await AsyncStorage.getItem('user_id');
+      const queryParams = new URLSearchParams({ lastPulledAt: (lastPulledAt || 0).toString() });
+      if (userId && userId !== 'null') queryParams.append('userId', userId);
+
       const response = await fetch(
-        `${SYNC_URL}/pull?lastPulledAt=${lastPulledAt || 0}&userId=${userId || ''}`,
+        `${SYNC_URL}/pull?${queryParams.toString()}`,
         {
           method: 'GET',
           headers: {
