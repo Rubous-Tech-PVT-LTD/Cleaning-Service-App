@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
+import { SubcategoriesModule } from './subcategories/subcategories.module';
 import { ServicesModule } from './services/services.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { ReviewsModule } from './reviews/reviews.module';
@@ -35,6 +36,7 @@ import { Request, Response, NextFunction } from 'express';
     UsersModule,
     AuthModule,
     CategoriesModule,
+    SubcategoriesModule,
     ServicesModule,
     BookingsModule,
     ReviewsModule,

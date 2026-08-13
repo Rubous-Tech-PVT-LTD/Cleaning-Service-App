@@ -5,6 +5,7 @@ import { OtpVerifyScreen } from '../screens/OtpVerifyScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ServiceListScreen } from '../screens/ServiceListScreen';
 import { ServiceDetailScreen } from '../screens/ServiceDetailScreen';
+import { SubcategoryListScreen } from '../screens/SubcategoryListScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
@@ -23,12 +24,12 @@ import { CancellationScreen } from '../screens/CancellationScreen';
 import { PromoCodeScreen } from '../screens/PromoCodeScreen';
 import { TermsScreen } from '../screens/TermsScreen';
 import withObservables from '@nozbe/with-observables';
-import { database } from '../db';
+import { database, getCategoriesSorted } from '../db';
 
 const Stack = createStackNavigator();
 
 const EnhancedHomeScreen = withObservables([], () => ({
-  categories: database.collections.get('categories').query().observe(),
+  categories: database.collections.get('categories').query().observeWithColumns(['order']),
 }))(HomeScreen);
 
 export const AppNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?: string }) => {
@@ -38,6 +39,7 @@ export const AppNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} />
       <Stack.Screen name="Home" component={EnhancedHomeScreen} />
+      <Stack.Screen name="SubcategoryList" component={SubcategoryListScreen} />
       <Stack.Screen name="ServiceList" component={ServiceListScreen} />
       <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />

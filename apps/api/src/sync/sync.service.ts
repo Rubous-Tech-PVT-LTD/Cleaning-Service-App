@@ -101,6 +101,10 @@ export class SyncService {
     private trackingGateway: TrackingGateway,
   ) {}
 
+  // ============================================================
+  // PULL CHANGES
+  // ============================================================
+
   async pullChanges(
     lastPulledAt: number | null,
     userId?: string,
@@ -111,32 +115,73 @@ export class SyncService {
         ? new Date(lastPulledAt)
         : new Date(0);
 
-      const toChangeset = <T, U>(items: T[], mapper: (r: T) => U) => ({
+      const toChangeset = (
+        items: any[],
+        mapper: (r: any) => any,
+      ) => ({
         created: items.map(mapper),
         updated: [],
         deleted: [],
       });
 
-      // Global data
-      const categories = await this.prisma.category.findMany({
-        where: { updatedAt: { gt: lastPulledDate } },
-      });
-      const services = await this.prisma.service.findMany({
-        where: { updatedAt: { gt: lastPulledDate } },
+      // ==========================================================
+      // GLOBAL DATA
+      // ==========================================================
+
+      // Categories
+      const categories = await (this.prisma as any).category.findMany({
+        where: {
+          updatedAt: {
+            gt: lastPulledDate,
+          },
+        },
+        include: {
+          _count: {
+            select: {
+              subcategories: true,
+            },
+          },
+        },
       });
 
-      let bookings: Booking[] = [];
-      let addresses: Address[] = [];
-      let chats: Chat[] = [];
-      let messages: Message[] = [];
+      // Subcategories
+      const subcategories = await (
+        this.prisma as any
+      ).subcategory.findMany({
+        where: {
+          updatedAt: {
+            gt: lastPulledDate,
+          },
+        },
+      });
+
+      // Services
+      const services = await (this.prisma as any).service.findMany({
+        where: {
+          updatedAt: {
+            gt: lastPulledDate,
+          },
+        },
+      });
+
+      // ==========================================================
+      // USER-SPECIFIC DATA
+      // ==========================================================
+
+      let bookings: any[] = [];
+      let addresses: any[] = [];
+      let chats: any[] = [];
+      let messages: any[] = [];
 
       if (userId) {
         let isProvider = role === 'PROVIDER';
 
-        // Fetch user to check their role if not explicitly passed as provider
+        // Fetch user role if role was not explicitly provided
         if (!isProvider && userId !== '1') {
-          const user = await this.prisma.user.findUnique({
-            where: { id: userId },
+          const user = await (this.prisma as any).user.findUnique({
+            where: {
+              id: userId,
+            },
           });
 
           if (user && user.role === 'PROVIDER') {
@@ -144,257 +189,541 @@ export class SyncService {
           }
         }
 
+        // ========================================================
+        // PROVIDER DATA
+        // ========================================================
+
         if (isProvider) {
-          bookings = await this.prisma.booking.findMany({
+          bookings = await (this.prisma as any).booking.findMany({
             where: {
-              OR: [{ providerId: userId }, { status: 'PENDING' }],
-              updatedAt: { gt: lastPulledDate },
+              OR: [
+                {
+                  providerId: userId,
+                },
+                {
+                  status: 'PENDING',
+                },
+              ],
+              updatedAt: {
+                gt: lastPulledDate,
+              },
             },
           });
 
           const bookingAddressIds = bookings
-            .map((b) => b.addressId)
-            .filter((id): id is string => !!id);
-          addresses = await this.prisma.address.findMany({
+            .map((booking: any) => booking.addressId)
+            .filter(Boolean);
+
+          addresses = await (this.prisma as any).address.findMany({
             where: {
-              OR: [{ userId }, { id: { in: bookingAddressIds } }],
-              updatedAt: { gt: lastPulledDate },
+              OR: [
+                {
+                  userId,
+                },
+                {
+                  id: {
+                    in: bookingAddressIds,
+                  },
+                },
+              ],
+              updatedAt: {
+                gt: lastPulledDate,
+              },
             },
           });
 
-          chats = await this.prisma.chat.findMany({
-            where: { providerId: userId, updatedAt: { gt: lastPulledDate } },
-          });
-
-          messages = await this.prisma.message.findMany({
+          chats = await (this.prisma as any).chat.findMany({
             where: {
-              chat: { providerId: userId },
-              updatedAt: { gt: lastPulledDate },
+              providerId: userId,
+              updatedAt: {
+                gt: lastPulledDate,
+              },
             },
           });
-        } else {
-          bookings = await this.prisma.booking.findMany({
-            where: { clientId: userId, updatedAt: { gt: lastPulledDate } },
-          });
 
-          addresses = await this.prisma.address.findMany({
-            where: { userId, updatedAt: { gt: lastPulledDate } },
-          });
-
-          chats = await this.prisma.chat.findMany({
-            where: { clientId: userId, updatedAt: { gt: lastPulledDate } },
-          });
-
-          // Fetch messages for those chats
-          messages = await this.prisma.message.findMany({
+          messages = await (this.prisma as any).message.findMany({
             where: {
-              chat: { clientId: userId },
-              updatedAt: { gt: lastPulledDate },
+              chat: {
+                providerId: userId,
+              },
+              updatedAt: {
+                gt: lastPulledDate,
+              },
+            },
+          });
+        }
+
+        // ========================================================
+        // CLIENT DATA
+        // ========================================================
+
+        else {
+          bookings = await (this.prisma as any).booking.findMany({
+            where: {
+              clientId: userId,
+              updatedAt: {
+                gt: lastPulledDate,
+              },
+            },
+          });
+
+          addresses = await (this.prisma as any).address.findMany({
+            where: {
+              userId,
+              updatedAt: {
+                gt: lastPulledDate,
+              },
+            },
+          });
+
+          chats = await (this.prisma as any).chat.findMany({
+            where: {
+              clientId: userId,
+              updatedAt: {
+                gt: lastPulledDate,
+              },
+            },
+          });
+
+          messages = await (this.prisma as any).message.findMany({
+            where: {
+              chat: {
+                clientId: userId,
+              },
+              updatedAt: {
+                gt: lastPulledDate,
+              },
             },
           });
         }
       }
 
-      const mapCategory = (r: Category) => {
-        const nameTrans = r.nameTranslations as Record<string, string>;
-        return {
-          id: r.id,
-          name_en: nameTrans?.en || '',
-          name_hi: nameTrans?.hi || '',
-          icon_url: r.iconUrl,
-          created_at: r.createdAt.getTime(),
-          updated_at: r.updatedAt.getTime(),
-        };
-      };
+      // ==========================================================
+      // DATA MAPPERS
+      // ==========================================================
 
-      const mapService = (r: Service) => {
-        const nameTrans = r.nameTranslations as Record<string, string>;
-        return {
-          id: r.id,
-          category_id: r.categoryId,
-          name_en: nameTrans?.en || '',
-          name_hi: nameTrans?.hi || '',
-          base_price: Number(r.basePrice),
-          image_url: r.imageUrl,
-          status: r.status,
-          created_at: r.createdAt.getTime(),
-          updated_at: r.updatedAt.getTime(),
-        };
-      };
-
-      const mapBooking = (r: Booking) => ({
+      // Category mapper
+      const mapCategory = (r: any) => ({
         id: r.id,
+
+        name_en: r.nameTranslations?.en || '',
+        name_hi: r.nameTranslations?.hi || '',
+
+        icon_url: r.iconUrl,
+
+        // Category ordering
+        order: r.order || 0,
+
+        // Used by mobile navigation
+        has_subcategories:
+          (r._count?.subcategories > 0) || false,
+
+        created_at: r.createdAt.getTime(),
+        updated_at: r.updatedAt.getTime(),
+      });
+
+      // Subcategory mapper
+      const mapSubcategory = (r: any) => ({
+        id: r.id,
+
+        category_id: r.categoryId,
+
+        name_en: r.nameTranslations?.en || '',
+        name_hi: r.nameTranslations?.hi || '',
+
+        slug: r.slug,
+        icon_url: r.iconUrl,
+
+        created_at: r.createdAt.getTime(),
+        updated_at: r.updatedAt.getTime(),
+      });
+
+      // Service mapper
+      const mapService = (r: any) => ({
+        id: r.id,
+
+        category_id: r.categoryId,
+
+        // Optional subcategory relationship
+        subcategory_id: r.subcategoryId,
+
+        name_en: r.nameTranslations?.en || '',
+        name_hi: r.nameTranslations?.hi || '',
+
+        description_en:
+          r.descriptionTranslations?.en || '',
+
+        description_hi:
+          r.descriptionTranslations?.hi || '',
+
+        base_price: Number(r.basePrice),
+
+        image_url: r.imageUrl,
+        status: r.status,
+
+        created_at: r.createdAt.getTime(),
+        updated_at: r.updatedAt.getTime(),
+      });
+
+      // Booking mapper
+      const mapBooking = (r: any) => ({
+        id: r.id,
+
         service_id: r.serviceId,
         client_id: r.clientId,
         provider_id: r.providerId,
         address_id: r.addressId,
+
         status: r.status,
+
         scheduled_at: r.scheduledAt.getTime(),
+
         total_price: Number(r.totalPrice),
-        items: r.items ? JSON.stringify(r.items) : null,
+
+        items: JSON.stringify(r.items),
+
         otp: r.otp,
+
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
 
-      const mapAddress = (r: Address) => ({
+      // Address mapper
+      const mapAddress = (r: any) => ({
         id: r.id,
+
         user_id: r.userId,
+
         label: r.label,
+
         address_line1: r.addressLine1,
         address_line2: r.addressLine2,
+
         city: r.city,
         state: r.state,
         pincode: r.pincode,
+
         is_default: r.isDefault,
+
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
 
-      const mapChat = (r: Chat) => ({
+      // Chat mapper
+      const mapChat = (r: any) => ({
         id: r.id,
+
         booking_id: r.bookingId,
+
         client_id: r.clientId,
         provider_id: r.providerId,
+
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
 
-      const mapMessage = (r: Message) => ({
+      // Message mapper
+      const mapMessage = (r: any) => ({
         id: r.id,
+
         chat_id: r.chatId,
+
         sender_id: r.senderId,
+
         content: r.content,
+
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
+
+      // ==========================================================
+      // FINAL CHANGESET
+      // ==========================================================
 
       const changes = {
-        categories: toChangeset(categories, mapCategory),
-        services: toChangeset(services, mapService),
-        bookings: toChangeset(bookings, mapBooking),
-        addresses: toChangeset(addresses, mapAddress),
-        chats: toChangeset(chats, mapChat),
-        messages: toChangeset(messages, mapMessage),
-        reviews: { created: [], updated: [], deleted: [] },
+        categories: toChangeset(
+          categories,
+          mapCategory,
+        ),
+
+        subcategories: toChangeset(
+          subcategories,
+          mapSubcategory,
+        ),
+
+        services: toChangeset(
+          services,
+          mapService,
+        ),
+
+        bookings: toChangeset(
+          bookings,
+          mapBooking,
+        ),
+
+        addresses: toChangeset(
+          addresses,
+          mapAddress,
+        ),
+
+        chats: toChangeset(
+          chats,
+          mapChat,
+        ),
+
+        messages: toChangeset(
+          messages,
+          mapMessage,
+        ),
+
+        reviews: {
+          created: [],
+          updated: [],
+          deleted: [],
+        },
       };
 
       console.log(
-        `✅ [Sync] Pull successful for user ${userId || 'guest'} — ${categories.length} cats, ${bookings.length} bookings`,
+        `✅ [Sync] Pull successful for user ${
+          userId || 'guest'
+        } — ${categories.length} cats, ${
+          subcategories.length
+        } subcats, ${services.length} services, ${
+          bookings.length
+        } bookings`,
       );
-      return { changes, timestamp: Date.now() };
-    } catch (error: unknown) {
-      const err = error as Error;
-      console.error('❌ [Sync] Pull Changes failed:', err);
-      fs.writeFileSync(
+
+      return {
+        changes,
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.error(
+        '❌ [Sync] Pull Changes failed:',
+        error,
+      );
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : String(error);
+
+      const errorStack =
+        error instanceof Error
+          ? error.stack
+          : undefined;
+
+      require('fs').writeFileSync(
         'pull-error.log',
-        JSON.stringify({ message: err.message, stack: err.stack }, null, 2),
+        JSON.stringify(
+          {
+            message: errorMessage,
+            stack: errorStack,
+          },
+          null,
+          2,
+        ),
       );
+
       throw error;
     }
   }
 
-  async pushChanges(changes: SyncChanges) {
+  // ============================================================
+  // PUSH CHANGES
+  // ============================================================
+
+  async pushChanges(
+    changes: any,
+    lastPulledAt: number,
+  ) {
     try {
-      fs.writeFileSync('sync-payload.log', JSON.stringify(changes, null, 2));
-      // Process addresses
+      require('fs').writeFileSync(
+        'sync-payload.log',
+        JSON.stringify(changes, null, 2),
+      );
+
+      // ==========================================================
+      // ADDRESSES
+      // ==========================================================
+
       if (changes.addresses) {
         for (const addr of changes.addresses.created || []) {
-          await this.prisma.address.upsert({
-            where: { offlineId: addr.offlineId || addr.id },
+          await (this.prisma as any).address.upsert({
+            where: {
+              offlineId:
+                addr.offlineId || addr.id,
+            },
+
             update: {
               label: addr.label,
-              addressLine1: addr.address_line1,
-              addressLine2: addr.address_line2,
+
+              addressLine1:
+                addr.address_line1,
+
+              addressLine2:
+                addr.address_line2,
+
               city: addr.city,
               state: addr.state,
               pincode: addr.pincode,
-              isDefault: addr.is_default,
-              version: { increment: 1 },
+
+              isDefault:
+                addr.is_default,
+
+              version: {
+                increment: 1,
+              },
             },
+
             create: {
-              offlineId: addr.offlineId || addr.id,
+              offlineId:
+                addr.offlineId || addr.id,
+
               userId: addr.user_id,
+
               label: addr.label,
-              addressLine1: addr.address_line1,
-              addressLine2: addr.address_line2,
+
+              addressLine1:
+                addr.address_line1,
+
+              addressLine2:
+                addr.address_line2,
+
               city: addr.city,
               state: addr.state,
               pincode: addr.pincode,
-              isDefault: addr.is_default,
+
+              isDefault:
+                addr.is_default,
             },
           });
         }
       }
 
-      // Process bookings
+      // ==========================================================
+      // BOOKINGS
+      // ==========================================================
+
       if (changes.bookings) {
-        // ── New bookings created offline ────────────────────────────────────────
+        // --------------------------------------------------------
+        // New bookings created offline
+        // --------------------------------------------------------
+
         for (const booking of changes.bookings.created || []) {
           const generatedOtp = Math.floor(
             1000 + Math.random() * 9000,
           ).toString();
-          const newBooking = await this.prisma.booking.upsert({
-            where: { offlineId: booking.offlineId || booking.id },
-            update: {
-              status: booking.status as BookingStatus,
-              version: { increment: 1 },
-            },
-            create: {
-              offlineId: booking.offlineId || booking.id,
-              client: {
-                connect: {
-                  id: booking.client_id || booking.clientId || undefined,
-                },
-              },
-              service: {
-                connect: {
-                  id: booking.service_id || booking.serviceId || undefined,
-                },
-              },
-              ...(await (async () => {
-                const addr = await this.prisma.address.findFirst({
+
+          const bookingOfflineId =
+            booking.offlineId || booking.id;
+
+          const clientId =
+            booking.client_id ||
+            booking.clientId;
+
+          const serviceId =
+            booking.service_id ||
+            booking.serviceId;
+
+          const addressId =
+            booking.address_id ||
+            booking.addressId;
+
+          const bookingAddress =
+            addressId
+              ? await (this.prisma as any).address.findFirst({
                   where: {
                     OR: [
                       {
-                        id:
-                          booking.address_id || booking.addressId || undefined,
+                        id: addressId,
                       },
                       {
-                        offlineId:
-                          booking.address_id || booking.addressId || undefined,
+                        offlineId: addressId,
                       },
                     ],
                   },
-                });
-                return addr?.id
-                  ? { address: { connect: { id: addr.id } } }
-                  : {};
-              })()),
-              scheduledAt: new Date(
-                booking.scheduled_at || booking.scheduledAt || Date.now(),
-              ),
-              totalPrice: new Prisma.Decimal(
-                booking.total_price || booking.totalPrice || 0,
-              ),
-              items: booking.items
-                ? (JSON.parse(booking.items) as Prisma.InputJsonValue)
-                : Prisma.DbNull,
-              status:
-                (booking.status as BookingStatus) || BookingStatus.PENDING,
-              otp: generatedOtp,
-            },
-          });
+                })
+              : null;
 
-          // 🚨 Broadcast to all providers since client created it
-          if (newBooking.status === 'PENDING') {
-            this.trackingGateway.broadcastNewBooking(newBooking);
+          const newBooking =
+            await (this.prisma as any).booking.upsert({
+              where: {
+                offlineId: bookingOfflineId,
+              },
+
+              update: {
+                status: booking.status,
+
+                version: {
+                  increment: 1,
+                },
+              },
+
+              create: {
+                offlineId:
+                  bookingOfflineId,
+
+                client: {
+                  connect: {
+                    id: clientId,
+                  },
+                },
+
+                service: {
+                  connect: {
+                    id: serviceId,
+                  },
+                },
+
+                ...(bookingAddress?.id
+                  ? {
+                      address: {
+                        connect: {
+                          id: bookingAddress.id,
+                        },
+                      },
+                    }
+                  : {}),
+
+                scheduledAt: new Date(
+                  booking.scheduled_at ||
+                    booking.scheduledAt,
+                ),
+
+                totalPrice:
+                  booking.total_price ||
+                  booking.totalPrice,
+
+                items: booking.items
+                  ? JSON.parse(booking.items)
+                  : [],
+
+                status: booking.status,
+
+                otp: generatedOtp,
+              },
+            });
+
+          // Broadcast pending booking to providers
+          if (
+            newBooking.status ===
+            'PENDING'
+          ) {
+            this.trackingGateway.broadcastNewBooking(
+              newBooking,
+            );
           }
         }
 
-        // ── Bookings updated offline (cancel / reschedule) ─────────────────────
-        // Status priority: higher = more final. Local CANCELLED always wins.
-        const STATUS_PRIORITY: Record<string, number> = {
+        // --------------------------------------------------------
+        // Offline booking updates
+        // --------------------------------------------------------
+
+        const STATUS_PRIORITY: Record<
+          string,
+          number
+        > = {
           PENDING: 1,
           ACCEPTED: 2,
           IN_PROGRESS: 3,
@@ -402,133 +731,296 @@ export class SyncService {
           CANCELLED: 5,
         };
 
-        for (const booking of changes.bookings.updated || []) {
-          // Fetch the current server state first
-          const serverBooking = await this.prisma.booking.findFirst({
-            where: { OR: [{ id: booking.id }, { offlineId: booking.id }] },
-          });
+        for (const booking of changes.bookings
+          .updated || []) {
+          const bookingId =
+            booking.id ||
+            booking.bookingId;
 
-          if (!serverBooking) continue;
+          const serverBooking =
+            await (this.prisma as any).booking.findFirst({
+              where: {
+                OR: [
+                  {
+                    id: bookingId,
+                  },
+                  {
+                    offlineId: bookingId,
+                  },
+                ],
+              },
+            });
 
-          const localStatus = booking.status;
-          const serverStatus = serverBooking.status as string;
-          const localPriority = STATUS_PRIORITY[localStatus] ?? 0;
-          const serverPriority = STATUS_PRIORITY[serverStatus] ?? 0;
+          if (!serverBooking) {
+            continue;
+          }
 
-          let resolvedStatus = serverStatus; // default: server wins
-          let resolvedScheduledAt = serverBooking.scheduledAt;
+          const localStatus =
+            booking.status as string;
 
-          if (localStatus === 'CANCELLED') {
-            // User explicitly cancelled offline → always honour
-            resolvedStatus = 'CANCELLED';
+          const serverStatus =
+            serverBooking.status as string;
+
+          const localPriority =
+            STATUS_PRIORITY[
+              localStatus
+            ] ?? 0;
+
+          const serverPriority =
+            STATUS_PRIORITY[
+              serverStatus
+            ] ?? 0;
+
+          // Default: server wins
+          let resolvedStatus =
+            serverStatus;
+
+          let resolvedScheduledAt =
+            serverBooking.scheduledAt;
+
+          // Explicit offline cancellation wins
+          if (
+            localStatus === 'CANCELLED'
+          ) {
+            resolvedStatus =
+              'CANCELLED';
+
             console.log(
               `[Sync/Conflict] Booking ${serverBooking.id}: local CANCELLED wins over server ${serverStatus}`,
             );
-          } else if (localPriority > serverPriority) {
-            // Local is more advanced (shouldn't usually happen but handle it)
-            resolvedStatus = localStatus;
           }
 
-          // Reschedule: if local scheduledAt differs and local is newer, apply it
-          if (
-            booking.scheduled_at &&
-            Number(booking.scheduled_at) !== serverBooking.scheduledAt.getTime()
+          // Local more advanced state wins
+          else if (
+            localPriority >
+            serverPriority
           ) {
-            resolvedScheduledAt = new Date(booking.scheduled_at);
+            resolvedStatus =
+              localStatus;
           }
 
-          await this.prisma.booking.update({
-            where: { id: serverBooking.id },
+          // Reschedule
+          const localScheduledAt =
+            booking.scheduled_at ||
+            booking.scheduledAt;
+
+          if (
+            localScheduledAt &&
+            localScheduledAt !==
+              serverBooking.scheduledAt.getTime()
+          ) {
+            resolvedScheduledAt =
+              new Date(localScheduledAt);
+          }
+
+          await (
+            this.prisma as any
+          ).booking.update({
+            where: {
+              id: serverBooking.id,
+            },
+
             data: {
-              status: resolvedStatus as BookingStatus,
-              scheduledAt: resolvedScheduledAt,
-              version: { increment: 1 },
+              status:
+                resolvedStatus,
+
+              scheduledAt:
+                resolvedScheduledAt,
+
+              version: {
+                increment: 1,
+              },
             },
           });
         }
       }
 
-      // Process reviews
+      // ==========================================================
+      // REVIEWS
+      // ==========================================================
+
       if (changes.reviews) {
-        for (const review of changes.reviews.created || []) {
-          // Find booking by offlineId or real ID
-          const booking = await this.prisma.booking.findFirst({
-            where: {
-              OR: [
-                { id: review.booking_id || review.bookingId || undefined },
-                {
-                  offlineId: review.booking_id || review.bookingId || undefined,
-                },
-              ],
-            },
-          });
+        for (const review of changes.reviews
+          .created || []) {
+          const reviewBookingId =
+            review.booking_id ||
+            review.bookingId;
+
+          const booking =
+            await (
+              this.prisma as any
+            ).booking.findFirst({
+              where: {
+                OR: [
+                  {
+                    id: reviewBookingId,
+                  },
+                  {
+                    offlineId:
+                      reviewBookingId,
+                  },
+                ],
+              },
+            });
 
           if (booking) {
-            await this.prisma.review.upsert({
-              where: { bookingId: booking.id },
-              update: { rating: review.rating, comment: review.comment },
-              create: {
-                bookingId: booking.id,
+            await (
+              this.prisma as any
+            ).review.upsert({
+              where: {
+                bookingId:
+                  booking.id,
+              },
+
+              update: {
                 rating: review.rating,
-                comment: review.comment,
+                comment:
+                  review.comment,
+              },
+
+              create: {
+                bookingId:
+                  booking.id,
+
+                rating:
+                  review.rating,
+
+                comment:
+                  review.comment,
               },
             });
           }
         }
       }
 
-      // Process chats
+      // ==========================================================
+      // CHATS
+      // ==========================================================
+
       if (changes.chats) {
-        for (const chat of changes.chats.created || []) {
-          const chatBookingId = chat.booking_id || chat.bookingId;
-          const booking = await this.prisma.booking.findFirst({
-            where: {
-              OR: [
-                { id: chatBookingId || undefined },
-                { offlineId: chatBookingId || undefined },
-              ],
-            },
-          });
+        for (const chat of changes.chats
+          .created || []) {
+          const chatBookingId =
+            chat.booking_id ||
+            chat.bookingId;
+
+          const booking =
+            await (
+              this.prisma as any
+            ).booking.findFirst({
+              where: {
+                OR: [
+                  {
+                    id: chatBookingId,
+                  },
+                  {
+                    offlineId:
+                      chatBookingId,
+                  },
+                ],
+              },
+            });
 
           if (booking) {
-            await this.prisma.chat.upsert({
-              where: { offlineId: chat.offlineId || chat.id },
-              update: { version: { increment: 1 } },
+            await (
+              this.prisma as any
+            ).chat.upsert({
+              where: {
+                offlineId:
+                  chat.offlineId ||
+                  chat.id,
+              },
+
+              update: {
+                version: {
+                  increment: 1,
+                },
+              },
+
               create: {
-                offlineId: chat.offlineId || chat.id,
-                bookingId: booking.id,
-                clientId: chat.client_id || chat.clientId || '',
-                providerId: chat.provider_id || chat.providerId || 'system',
+                offlineId:
+                  chat.offlineId ||
+                  chat.id,
+
+                bookingId:
+                  booking.id,
+
+                clientId:
+                  chat.client_id ||
+                  chat.clientId,
+
+                providerId:
+                  chat.provider_id ||
+                  chat.providerId ||
+                  'system',
               },
             });
           }
         }
       }
 
-      // Process messages
+      // ==========================================================
+      // MESSAGES
+      // ==========================================================
+
       if (changes.messages) {
-        for (const msg of changes.messages.created || []) {
-          const msgChatId = msg.chat_id || msg.chatId;
-          const chat = await this.prisma.chat.findFirst({
-            where: {
-              OR: [
-                { id: msgChatId || undefined },
-                { offlineId: msgChatId || undefined },
-              ],
-            },
-          });
+        for (const msg of changes.messages
+          .created || []) {
+          const msgChatId =
+            msg.chat_id ||
+            msg.chatId;
+
+          const chat =
+            await (
+              this.prisma as any
+            ).chat.findFirst({
+              where: {
+                OR: [
+                  {
+                    id: msgChatId,
+                  },
+                  {
+                    offlineId:
+                      msgChatId,
+                  },
+                ],
+              },
+            });
 
           if (chat) {
-            await this.prisma.message.upsert({
-              where: { offlineId: msg.offlineId || msg.id },
-              update: { version: { increment: 1 } },
+            await (
+              this.prisma as any
+            ).message.upsert({
+              where: {
+                offlineId:
+                  msg.offlineId ||
+                  msg.id,
+              },
+
+              update: {
+                version: {
+                  increment: 1,
+                },
+              },
+
               create: {
-                offlineId: msg.offlineId || msg.id,
-                chatId: chat.id,
-                senderId: msg.sender_id || msg.senderId || '',
-                content: msg.content,
+                offlineId:
+                  msg.offlineId ||
+                  msg.id,
+
+                chatId:
+                  chat.id,
+
+                senderId:
+                  msg.sender_id ||
+                  msg.senderId,
+
+                content:
+                  msg.content,
+
                 createdAt: new Date(
-                  msg.created_at || msg.createdAt || Date.now(),
+                  msg.created_at ||
+                    msg.createdAt,
                 ),
               },
             });
@@ -536,14 +1028,41 @@ export class SyncService {
         }
       }
 
-      return { status: 'ok' };
-    } catch (error: unknown) {
-      const err = error as Error;
-      console.error('Push Error:', err);
-      fs.writeFileSync(
-        'sync-error.log',
-        JSON.stringify({ message: err.message, stack: err.stack }, null, 2),
+      // ==========================================================
+      // SUCCESS
+      // ==========================================================
+
+      return {
+        status: 'ok',
+      };
+    } catch (error) {
+      console.error(
+        '❌ [Sync] Push Changes failed:',
+        error,
       );
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : String(error);
+
+      const errorStack =
+        error instanceof Error
+          ? error.stack
+          : undefined;
+
+      require('fs').writeFileSync(
+        'sync-error.log',
+        JSON.stringify(
+          {
+            message: errorMessage,
+            stack: errorStack,
+          },
+          null,
+          2,
+        ),
+      );
+
       throw error;
     }
   }

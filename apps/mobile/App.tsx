@@ -7,6 +7,13 @@ import { syncDatabase } from './src/db/sync';
 import { NotificationService } from './src/services/NotificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import {
+  useFonts,
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
 import './src/i18n';
 
 // Apply critical React Native 0.81 bug fixes
@@ -15,6 +22,12 @@ applyWorkarounds();
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+  });
 
   useEffect(() => {
     const initApp = async () => {
@@ -76,8 +89,8 @@ export default function App() {
     return () => subscription.remove();
   }, []);
 
-  // Wait until we know the initial route
-  if (!initialRoute) return null;
+  // Wait until we know the initial route and fonts are loaded
+  if (!initialRoute || !fontsLoaded) return null;
 
   return (
     <SafeAreaProvider>

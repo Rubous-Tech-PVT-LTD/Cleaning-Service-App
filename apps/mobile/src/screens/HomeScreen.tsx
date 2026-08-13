@@ -116,7 +116,22 @@ export const HomeScreen = ({ navigation, categories }: any) => {
             return (
               <TouchableOpacity
                 key={cat.slug}
-                onPress={() => catId && navigation.navigate('ServiceList', { categoryId: catId, title: cat.nameEn })}
+                onPress={() => {
+                  if (catId) {
+                    const category = (categories || []).find((c: any) => c?.id === catId);
+                    if (category?.hasSubcategories) {
+                      navigation.navigate('SubcategoryList', { 
+                        categoryId: catId, 
+                        categoryName: cat.nameEn 
+                      });
+                    } else {
+                      navigation.navigate('ServiceList', { 
+                        categoryId: catId, 
+                        title: cat.nameEn 
+                      });
+                    }
+                  }
+                }}
                 style={{ alignItems: 'center', marginRight: 16, flexDirection: 'row', gap: 6, backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}
               >
                 <Image source={cat.img} style={{ width: 22, height: 22 }} resizeMode="contain" />
@@ -158,17 +173,15 @@ export const HomeScreen = ({ navigation, categories }: any) => {
                 <MapPin size={22} color="white" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>{savedAddress?.label || t('common.location')}</Text>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: 'white' }} numberOfLines={1}>
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' }}>{savedAddress?.label || t('common.location')}</Text>
+                <Text style={{ fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'white' }} numberOfLines={1}>
                   {savedAddress?.address || 'Select Location'}
                 </Text>
               </View>
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {isOffline && <WifiOff size={20} color={Theme.accent} style={{ marginRight: 16 }} />}
-              <TouchableOpacity onPress={() => navigation.navigate('MyBookings')} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-                <History size={20} color="white" />
-              </TouchableOpacity>
+            
             </View>
           </View>
 
@@ -287,28 +300,64 @@ export const HomeScreen = ({ navigation, categories }: any) => {
                   acc.push(current);
                 }
                 return acc;
-              }, []).map((item: any, index: number) => {
+              }, []).sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((item: any, index: number) => {
                 const nameEn = item?.nameEn || '';
                 const displayName = i18n.language === 'hi' ? (item?.nameHi || nameEn) : nameEn;
                 const imageSource = item?.iconUrl ? { uri: item.iconUrl } : null;
 
+                const mockPrice = 25 + (index * 5);
+                const mockOldPrice = mockPrice + 100;
+                const mockRating = (4.5 + (index % 5) * 0.1).toFixed(1);
+                const mockReviews = `${(2 + index * 1.5).toFixed(1)}k`;
+                const isNew = index === 0 || index === 7;
+
                 return (
                   <TouchableOpacity
                     key={item.id}
-                    onPress={() => navigation.navigate('ServiceList', { categoryId: item.id, title: nameEn })}
-                    style={{ width: '31.33%', marginRight: (index + 1) % 3 === 0 ? 0 : '3%', marginBottom: 20, backgroundColor: 'white', borderRadius: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
+                    onPress={() => {
+                      if (item.hasSubcategories) {
+                        navigation.navigate('SubcategoryList', { 
+                          categoryId: item.id, 
+                          categoryName: nameEn 
+                        });
+                      } else {
+                        navigation.navigate('ServiceList', { 
+                          categoryId: item.id, 
+                          title: nameEn 
+                        });
+                      }
+                    }}
+                    style={{ width: '31.33%', marginRight: (index + 1) % 3 === 0 ? 0 : '3%', marginBottom: 24, backgroundColor: 'white', borderRadius: 16 }}
                   >
-                    <View style={{ width: '100%', aspectRatio: 1.1, backgroundColor: '#F4EDFF', justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{ width: '100%', aspectRatio: 1.1, backgroundColor: '#F4F5F5', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
+                      {isNew && (
+                        <View style={{ position: 'absolute', top: 0, left: 0, backgroundColor: '#FF0000', paddingHorizontal: 6, paddingVertical: 2, borderBottomRightRadius: 8, borderTopLeftRadius: 12, zIndex: 10 }}>
+                          <Text style={{ color: 'white', fontFamily: 'Poppins_600SemiBold', fontSize: 9 }}>NEW</Text>
+                        </View>
+                      )}
+                      <View style={{ position: 'absolute', top: -6, right: 6, backgroundColor: 'white', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, flexDirection: 'row', alignItems: 'center', zIndex: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 }}>
+                        <Text style={{ fontSize: 9 }}>⭐</Text>
+                        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 9, color: '#666', marginLeft: 2 }}>{mockRating} ({mockReviews})</Text>
+                      </View>
                       {imageSource ? (
-                        <Image source={imageSource} style={{ width: '70%', height: '70%' }} resizeMode="contain" />
+                        <Image source={imageSource} style={{ width: '85%', height: '85%' }} resizeMode="contain" />
                       ) : (
                         <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.border, justifyContent: 'center', alignItems: 'center' }}>
                           <Home size={20} color={Theme.textSecondary} />
                         </View>
                       )}
                     </View>
-                    <View style={{ paddingVertical: 10, paddingHorizontal: 4 }}>
-                      <Text style={{ fontSize: 12, fontWeight: '800', color: Theme.textPrimary, textAlign: 'center' }}>{displayName}</Text>
+                    <View style={{ paddingTop: 8, paddingHorizontal: 2 }}>
+                      <Text 
+                        style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#111', lineHeight: 18 }}
+                        numberOfLines={2}
+                      >
+                        {displayName}
+                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                        <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#111' }}>₹{mockPrice}</Text>
+                        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#999', textDecorationLine: 'line-through', marginLeft: 6 }}>₹{mockOldPrice}</Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 );
@@ -399,8 +448,8 @@ const TrendingCard = ({ title, price, image }: any) => (
     <View style={{ width: 160, height: 160, borderRadius: 32, backgroundColor: 'white', padding: 20, elevation: 5, marginBottom: 12, justifyContent: 'center', alignItems: 'center' }}>
       <Image source={image} style={{ width: '80%', height: '80%' }} resizeMode="contain" />
     </View>
-    <Text style={{ fontWeight: '800', color: Theme.textPrimary, fontSize: 14 }}>{title}</Text>
-    <Text style={{ color: Theme.primary, fontWeight: '900', marginTop: 4 }}>{price}</Text>
+    <Text style={{ fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, fontSize: 14 }}>{title}</Text>
+    <Text style={{ color: Theme.primary, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>{price}</Text>
   </TouchableOpacity>
 );
 
@@ -429,8 +478,8 @@ const BottomNav = ({ active, onTabPress }: any) => {
       paddingBottom: insets.bottom
     }}>
       <NavTab icon={<Home size={24} />} label="Home" active={active === 'home'} onPress={() => onTabPress('home')} />
-      <NavTab icon={<Zap size={24} />} label="Services" active={active === 'services'} onPress={() => onTabPress('services')} />
-      <NavTab icon={<MessageCircle size={24} />} label="Chat" active={active === 'chat'} onPress={() => onTabPress('chat')} />
+     
+      <NavTab icon={<History size={24} />} label="My Booking" active={active === 'chat'} onPress={() => onTabPress('chat')} />
       <NavTab icon={<User size={24} />} label="Profile" active={active === 'profile'} onPress={() => onTabPress('profile')} />
     </View>
   );
@@ -439,6 +488,6 @@ const BottomNav = ({ active, onTabPress }: any) => {
 const NavTab = ({ icon, label, active, onPress }: any) => (
   <TouchableOpacity onPress={onPress} style={{ alignItems: 'center', padding: 10 }}>
     {React.cloneElement(icon, { color: active ? Theme.primary : Theme.textSecondary })}
-    <Text style={{ fontSize: 10, fontWeight: '700', marginTop: 4, color: active ? Theme.primary : Theme.textSecondary }}>{label}</Text>
+    <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', marginTop: 4, color: active ? Theme.primary : Theme.textSecondary }}>{label}</Text>
   </TouchableOpacity>
 );

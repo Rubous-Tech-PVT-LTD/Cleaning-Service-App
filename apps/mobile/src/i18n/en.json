@@ -18,7 +18,11 @@
     "type_message": "Type a message...",
     "save": "Save",
     "edit": "Edit",
-    "all": "All"
+    "all": "All",
+    "noSubcategories": "No Subcategories Available",
+    "noSubcategoriesDescription": "This category doesn't have any subcategories yet. Check back later!",
+    "noServices": "No Services Available",
+    "noServicesDescription": "No services found in this category. Try exploring other categories."
   },
   "search": {
     "placeholder": "Search for services...",

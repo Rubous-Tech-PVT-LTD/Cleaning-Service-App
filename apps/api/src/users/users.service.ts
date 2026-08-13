@@ -1,11 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { Prisma } from '@prisma/client';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinaryService: CloudinaryService
+  ) {}
 
   async findByPhone(phone: string) {
     return this.prisma.user.findUnique({
@@ -45,8 +47,19 @@ export class UsersService {
     });
   }
 
-  async updateProfile(userId: string, data: UpdateProfileDto) {
-    const { fullName, languagePref, ...profileData } = data;
+  async updateProfile(userId: string, data: any) {
+    const { fullName, languagePref, avatar, ...profileData } = data;
+
+    // Upload avatar to Cloudinary if provided
+    let avatarUrl = undefined;
+    if (avatar && typeof avatar === 'string') {
+      try {
+        const uploadResult = await this.cloudinaryService.uploadImage(avatar, 'profile-pictures');
+        avatarUrl = uploadResult.url;
+      } catch (error) {
+        console.error('Failed to upload avatar:', error);
+      }
+    }
 
     // Update User core fields
     const userUpdate: { fullName?: string; languagePref?: string } = {};
@@ -60,8 +73,9 @@ export class UsersService {
         profile: {
           update: {
             ...profileData,
-          },
-        },
+            ...(avatarUrl && { avatarUrl })
+          }
+        }
       },
       include: { profile: true },
     });
