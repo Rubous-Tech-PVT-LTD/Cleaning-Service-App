@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Plus, X } from 'lucide-react-native';
+import { ChevronLeft, Plus, X, AlertCircle } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import withObservables from '@nozbe/with-observables';
 import { Q } from '@nozbe/watermelondb';
@@ -11,9 +11,15 @@ import { Theme } from '../theme';
 import { SlotSelector } from '../components/SlotSelector';
 import { NotificationService } from '../services/NotificationService';
 import { syncDatabase } from '../db/sync';
+import { useAuth } from '../contexts/AuthContext';
+import { useAuthGuard } from '../hooks/useAuthGuard';
+import { LoginRequiredModal } from '../components/LoginRequiredModal';
+import { getActiveLocation, ActiveLocation } from '../services/locationService';
 
 const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: any) => {
   const { t, i18n } = useTranslation();
+  const { isAuthenticated, isGuest } = useAuth();
+  const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
   const { serviceId, title, price } = route.params;
   const [loading, setLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState({
@@ -26,8 +32,19 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
     { serviceId, title, price: Number(price), quantity: 1 }
   ]);
 
+  const [activeLocation, setActiveLocation] = useState<ActiveLocation | null>(null);
+
   const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
   const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  useEffect(() => {
+    loadLocation();
+  }, []);
+
+  const loadLocation = async () => {
+    const location = await getActiveLocation();
+    setActiveLocation(location);
+  };
 
   const addItem = (service: any) => {
     if (items.find(i => i.serviceId === service.id)) return;
@@ -45,6 +62,8 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
   };
 
   const handleConfirm = async () => {
+    if (!requireAuth()) return;
+    
     setLoading(true);
     try {
       const userId = await AsyncStorage.getItem('user_id');
@@ -145,7 +164,7 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
           <View style={{ marginBottom: 24 }}>
             <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary, marginBottom: 16 }}>{t('booking.frequently_added')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-              {relatedServices.filter((s: any) => !items.find(i => i.serviceId === s.id)).map((service: any) => (
+              {relatedServices.filter((s: any) => !items.find(i => i.serviceId === s.id) && s.nameEn !== 'Hourly Service').map((service: any) => (
                 <TouchableOpacity
                   key={service.id}
                   onPress={() => addItem(service)}
@@ -170,7 +189,7 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
           <View style={{ marginBottom: 24 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary }}>{t('booking.service_address')}</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('AddressList')}>
+              <TouchableOpacity onPress={() => requireAuth(() => navigation.navigate('AddressList'))}>
                 <Text style={{ color: Theme.primary, fontWeight: '800' }}>{t('booking.change')}</Text>
               </TouchableOpacity>
             </View>
@@ -191,7 +210,7 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
               </View>
             ) : (
               <TouchableOpacity 
-                onPress={() => navigation.navigate('AddressPicker')}
+                onPress={() => requireAuth(() => navigation.navigate('AddressPicker'))}
                 style={{ backgroundColor: '#F8FAFC', padding: 20, borderRadius: 24, borderStyle: 'dashed', borderWidth: 2, borderColor: '#E2E8F0', alignItems: 'center' }}
               >
                 <Plus size={20} color={Theme.primary} style={{ marginBottom: 4 }} />
@@ -206,10 +225,31 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
       </ScrollView>
 
       <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingVertical: 20, paddingBottom: 32, backgroundColor: 'white', borderTopLeftRadius: 36, borderTopRightRadius: 36, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 25 }}>
-        <TouchableOpacity onPress={handleConfirm} disabled={loading} style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}>
-          {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('booking.confirm_with_price')}{totalPrice}</Text>}
-        </TouchableOpacity>
+        {activeLocation && !activeLocation.isSupported ? (
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <AlertCircle size={24} color={Theme.error} style={{ marginRight: 8 }} />
+              <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>Not serviceable at your location</Text>
+            </View>
+            <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 16, textAlign: 'center' }}>The location is out of our serviceable area</Text>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('SearchLocation')} 
+              style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', width: '100%', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}
+            >
+              <Text style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>Change location</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity onPress={handleConfirm} disabled={loading} style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}>
+            {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('booking.confirm_with_price')}{totalPrice}</Text>}
+          </TouchableOpacity>
+        )}
       </View>
+          <LoginRequiredModal
+        visible={showLoginModal}
+        onClose={handleCloseModal}
+        onLogin={handleLoginPress}
+      />
     </SafeAreaView>
   );
 };

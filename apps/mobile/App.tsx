@@ -15,11 +15,14 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import './src/i18n';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { fetchSupportedCities } from './src/services/locationService';
 
 // Apply critical React Native 0.81 bug fixes
 applyWorkarounds();
 
-export default function App() {
+const AppContent = () => {
+  const { isAuthenticated, isGuest, isLoading } = useAuth();
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const [fontsLoaded] = useFonts({
@@ -33,11 +36,10 @@ export default function App() {
     const initApp = async () => {
       try {
         const onboardingDone = await AsyncStorage.getItem('onboarding_done');
-        const userToken = await AsyncStorage.getItem('user_token');
 
         if (!onboardingDone) {
           setInitialRoute('Onboarding');
-        } else if (userToken) {
+        } else if (isAuthenticated || isGuest) {
           setInitialRoute('Home');
         } else {
           setInitialRoute('Login');
@@ -46,7 +48,16 @@ export default function App() {
         setInitialRoute('Login');
       }
     };
-    initApp();
+    
+    if (!isLoading) {
+      initApp();
+    }
+  }, [isAuthenticated, isGuest, isLoading]);
+
+  useEffect(() => {
+    fetchSupportedCities().catch((error) => {
+      console.warn('[Location] Could not prefetch supported cities:', error?.message);
+    });
   }, []);
 
   useEffect(() => {
@@ -98,5 +109,13 @@ export default function App() {
         <AppNavigator initialRouteName={initialRoute} />
       </NavigationContainer>
     </SafeAreaProvider>
+  );
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

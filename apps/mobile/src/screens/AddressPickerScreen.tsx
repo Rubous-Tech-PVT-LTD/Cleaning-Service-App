@@ -1,18 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, MapPin, Search, Navigation, Home, Briefcase, Plus } from 'lucide-react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
+import { ChevronLeft, MapPin, Navigation, Home, Briefcase, Plus } from 'lucide-react-native';
+import MapView, { UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-import { Theme } from '../theme';
-import { GOOGLE_MAPS_APIKEY } from '../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
-
 import { useTranslation } from 'react-i18next';
+import { Theme } from '../theme';
 import { database } from '../db';
+import { LocationSearchInput } from '../components/LocationSearchInput';
+import {
+  buildActiveLocationFromManual,
+  extractCityFromGeocode,
+  formatGeocodedAddress,
+  setActiveLocation,
+} from '../services/locationService';
 
 export const AddressPickerScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
@@ -21,9 +30,9 @@ export const AddressPickerScreen = ({ navigation }: any) => {
   const [addressString, setAddressString] = useState('Fetching address...');
   const [loading, setLoading] = useState(true);
   const [label, setLabel] = useState('Home');
+  const [isDefault, setIsDefault] = useState(false);
   const mapRef = useRef<MapView>(null);
 
-  // Default fallback region (New Delhi, India)
   const DEFAULT_REGION = {
     latitude: 28.6139,
     longitude: 77.2090,
@@ -38,7 +47,10 @@ export const AddressPickerScreen = ({ navigation }: any) => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permission Denied', 'Allow location access to pick your address. Showing default location.');
+          Alert.alert(
+            'Permission Denied',
+            'Allow location access to pick your address. Showing default location.',
+          );
           if (!cancelled) {
             setRegion(DEFAULT_REGION);
             setAddressString('New Delhi, India (Default)');
@@ -47,18 +59,15 @@ export const AddressPickerScreen = ({ navigation }: any) => {
           return;
         }
 
-        // Step 1: Try to get last known position instantly (no network needed)
         let location = await Location.getLastKnownPositionAsync({});
-
-        // Step 2: If no cached location, request a fresh one with a timeout
         if (!location) {
           const locationPromise = Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Balanced,
           });
           const timeoutPromise = new Promise<null>((resolve) =>
-            setTimeout(() => resolve(null), 10000)
+            setTimeout(() => resolve(null), 10000),
           );
-          location = await Promise.race([locationPromise, timeoutPromise]) as any;
+          location = (await Promise.race([locationPromise, timeoutPromise])) as any;
         }
 
         if (cancelled) return;
@@ -73,7 +82,6 @@ export const AddressPickerScreen = ({ navigation }: any) => {
           setRegion(initialRegion);
           reverseGeocode(initialRegion.latitude, initialRegion.longitude);
         } else {
-          // Timeout hit — use default region
           setRegion(DEFAULT_REGION);
           setAddressString('Location timed out. Drag the pin to your address.');
         }
@@ -89,26 +97,54 @@ export const AddressPickerScreen = ({ navigation }: any) => {
     };
 
     fetchLocation();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
-      let result = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      const result = await Location.reverseGeocodeAsync({
+        latitude: lat,
+        longitude: lng,
+      });
       if (result.length > 0) {
         const item = result[0];
         setAddressObj(item);
-        const formattedAddress = `${item.name || ''} ${item.street || ''}, ${item.district || ''}, ${item.city || ''}`;
-        setAddressString(formattedAddress.trim().replace(/^ ,/, ''));
+        setAddressString(formatGeocodedAddress(item));
       }
     } catch (error) {
       console.error(error);
     }
   };
 
-  const [isDefault, setIsDefault] = useState(false);
+  const handleSearchSelect = (selection: {
+    address: string;
+    city: string;
+    state?: string;
+    lat: number;
+    lng: number;
+  }) => {
+    const newRegion = {
+      latitude: selection.lat,
+      longitude: selection.lng,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    };
+    setRegion(newRegion);
+    setAddressString(selection.address);
+    setAddressObj({
+      name: selection.address.split(',')[0],
+      street: selection.address,
+      city: selection.city,
+      region: selection.state,
+    });
+    mapRef.current?.animateToRegion(newRegion, 1000);
+  };
 
   const handleConfirm = async () => {
+    if (!region) return;
+
     try {
       const userId = await AsyncStorage.getItem('user_id');
       if (!userId) {
@@ -116,26 +152,51 @@ export const AddressPickerScreen = ({ navigation }: any) => {
         return;
       }
 
+      const city =
+        addressObj?.city ||
+        addressObj?.subregion ||
+        extractCityFromGeocode(addressObj) ||
+        'Unknown City';
+
+      let savedAddressId: string | undefined;
+
       await database.write(async () => {
         if (isDefault) {
           const allAddresses = await database.get('addresses').query().fetch();
-          const updates = allAddresses.map((addr: any) => 
-            addr.prepareUpdate((record: any) => { record.isDefault = false; })
+          const updates = allAddresses.map((addr: any) =>
+            addr.prepareUpdate((record: any) => {
+              record.isDefault = false;
+            }),
           );
           await database.batch(...updates);
         }
 
-        await database.get('addresses').create((newAddress: any) => {
+        const created = await database.get('addresses').create((newAddress: any) => {
           newAddress.userId = userId;
           newAddress.label = label;
-          newAddress.addressLine1 = addressObj?.name || addressObj?.street || 'Unknown Address';
-          newAddress.addressLine2 = `${addressObj?.district || ''} ${addressObj?.subregion || ''}`.trim();
-          newAddress.city = addressObj?.city || addressObj?.subregion || 'Unknown City';
+          newAddress.addressLine1 =
+            addressObj?.name || addressObj?.street || 'Unknown Address';
+          newAddress.addressLine2 =
+            `${addressObj?.district || ''} ${addressObj?.subregion || ''}`.trim();
+          newAddress.city = city;
           newAddress.state = addressObj?.region || '';
           newAddress.pincode = addressObj?.postalCode || '';
           newAddress.isDefault = isDefault;
         });
+
+        savedAddressId = created.id;
       });
+
+      const activeLocation = await buildActiveLocationFromManual({
+        label,
+        address: addressString,
+        city,
+        state: addressObj?.region,
+        lat: region.latitude,
+        lng: region.longitude,
+        savedAddressId,
+      });
+      await setActiveLocation(activeLocation);
 
       navigation.goBack();
     } catch (error) {
@@ -155,42 +216,21 @@ export const AddressPickerScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.surface }}>
-      {/* Header with Search */}
       <View style={styles.searchContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ChevronLeft size={24} color={Theme.textPrimary} />
         </TouchableOpacity>
-        <GooglePlacesAutocomplete
-          placeholder={t('search.placeholder')}
-          onPress={(data, details = null) => {
-            if (details) {
-              const newRegion = {
-                latitude: details.geometry.location.lat,
-                longitude: details.geometry.location.lng,
-                latitudeDelta: 0.005,
-                longitudeDelta: 0.005,
-              };
-              setRegion(newRegion);
-              mapRef.current?.animateToRegion(newRegion, 1000);
-              setAddressString(data.description);
-            }
-          }}
-          query={{ key: GOOGLE_MAPS_APIKEY, language: 'en' }}
-          fetchDetails={true}
-          styles={{
-            container: { flex: 1, marginLeft: 10 },
-            textInput: styles.searchInput,
-            listView: styles.searchListView,
-          }}
-          enablePoweredByContainer={false}
-        />
+        <View style={{ flex: 1, marginLeft: 10 }}>
+          <LocationSearchInput
+            placeholder={t('search.placeholder')}
+            onSelect={handleSearchSelect}
+          />
+        </View>
       </View>
 
-      {/* Map View Section */}
       <View style={{ flex: 1, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' }}>
         <MapView
           ref={mapRef}
-          provider={GOOGLE_MAPS_APIKEY === 'YOUR_REAL_API_KEY_HERE' ? undefined : PROVIDER_GOOGLE}
           style={StyleSheet.absoluteFillObject}
           initialRegion={region}
           onRegionChangeComplete={(newRegion) => {
@@ -198,24 +238,18 @@ export const AddressPickerScreen = ({ navigation }: any) => {
             reverseGeocode(newRegion.latitude, newRegion.longitude);
           }}
         >
-          {GOOGLE_MAPS_APIKEY === 'YOUR_REAL_API_KEY_HERE' && (
-            <UrlTile 
-              urlTemplate="https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
-              maximumZ={19}
-              flipY={false}
-              zIndex={-1}
-            />
-          )}
+          <UrlTile
+            urlTemplate="https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+            maximumZ={19}
+            flipY={false}
+            zIndex={-1}
+          />
         </MapView>
-        
-        {/* OSM Mode Badge - subtle indicator only */}
-        {GOOGLE_MAPS_APIKEY === 'YOUR_REAL_API_KEY_HERE' && (
-          <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
-            <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>🗺️ OSM Mode</Text>
-          </View>
-        )}
 
-        {/* Fixed Center Marker */}
+        <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
+          <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>OSM Mode</Text>
+        </View>
+
         <View style={styles.markerFixed}>
           <View style={styles.markerContainer}>
             <View style={styles.markerDot} />
@@ -223,10 +257,9 @@ export const AddressPickerScreen = ({ navigation }: any) => {
           </View>
         </View>
 
-        {/* Current Location Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={async () => {
-            let location = await Location.getCurrentPositionAsync({});
+            const location = await Location.getCurrentPositionAsync({});
             const newRegion = {
               latitude: location.coords.latitude,
               longitude: location.coords.longitude,
@@ -241,7 +274,6 @@ export const AddressPickerScreen = ({ navigation }: any) => {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Selection Area */}
       <View style={styles.bottomContainer}>
         <View style={styles.addressRow}>
           <View style={styles.pinCircle}>
@@ -249,7 +281,9 @@ export const AddressPickerScreen = ({ navigation }: any) => {
           </View>
           <View style={{ flex: 1, marginLeft: 16 }}>
             <Text style={styles.addressTitle}>{t('address.picker_title')}</Text>
-            <Text style={styles.addressText} numberOfLines={2}>{addressString}</Text>
+            <Text style={styles.addressText} numberOfLines={2}>
+              {addressString}
+            </Text>
           </View>
         </View>
 
@@ -260,24 +294,30 @@ export const AddressPickerScreen = ({ navigation }: any) => {
           <LabelButton icon={<Plus size={18} />} title={t('address.other')} active={label === 'Other'} onPress={() => setLabel('Other')} />
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => setIsDefault(!isDefault)}
           style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}
         >
-          <View style={{ 
-            width: 24, 
-            height: 24, 
-            borderRadius: 6, 
-            borderWidth: 2, 
-            borderColor: isDefault ? Theme.primary : '#E2E8F0', 
-            backgroundColor: isDefault ? Theme.primary : 'transparent',
-            justifyContent: 'center', 
-            alignItems: 'center',
-            marginRight: 12
-          }}>
-            {isDefault && <Plus size={16} color="white" style={{ transform: [{ rotate: '45deg' }] }} />}
+          <View
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              borderWidth: 2,
+              borderColor: isDefault ? Theme.primary : '#E2E8F0',
+              backgroundColor: isDefault ? Theme.primary : 'transparent',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginRight: 12,
+            }}
+          >
+            {isDefault && (
+              <Plus size={16} color="white" style={{ transform: [{ rotate: '45deg' }] }} />
+            )}
           </View>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: Theme.textPrimary }}>{t('address.set_default')}</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: Theme.textPrimary }}>
+            {t('address.set_default')}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={handleConfirm} style={styles.confirmButton}>
@@ -289,10 +329,7 @@ export const AddressPickerScreen = ({ navigation }: any) => {
 };
 
 const LabelButton = ({ icon, title, active, onPress }: any) => (
-  <TouchableOpacity 
-    onPress={onPress}
-    style={[styles.labelBtn, active && styles.labelBtnActive]}
-  >
+  <TouchableOpacity onPress={onPress} style={[styles.labelBtn, active && styles.labelBtnActive]}>
     {React.cloneElement(icon, { color: active ? 'white' : Theme.textSecondary })}
     <Text style={[styles.labelBtnText, active && styles.labelBtnTextActive]}>{title}</Text>
   </TouchableOpacity>
@@ -314,23 +351,6 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.muted,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  searchInput: {
-    height: 44,
-    backgroundColor: Theme.muted,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    color: Theme.textPrimary,
-  },
-  searchListView: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    marginTop: 5,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
   },
   markerFixed: {
     left: '50%',

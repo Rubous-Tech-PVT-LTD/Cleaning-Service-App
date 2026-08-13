@@ -2,24 +2,31 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Animated, TextInput, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Search, ArrowRight, WifiOff, History, ShieldCheck, Clock, Star, Phone, ChevronDown, Home, Zap, MessageCircle, User, MapPin } from 'lucide-react-native';
+import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, ChevronDown, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow} from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Theme } from '../theme';
+import { Theme } from '../theme'
 import { Skeleton } from '../components/Skeleton';
 import { FAQItem } from '../components/FAQItem';
 import { QUICK_CATEGORIES, SEARCH_PLACEHOLDERS } from '../constants';
 import { syncDatabase } from '../db/sync';
+import { useAuthGuard } from '../hooks/useAuthGuard';
+import { LoginRequiredModal } from '../components/LoginRequiredModal';
+import { getActiveLocation, ActiveLocation } from '../services/locationService';
+import withObservables from '@nozbe/with-observables';
+import { database } from '../db';
 
-export const HomeScreen = ({ navigation, categories }: any) => {
+const HomeScreen = ({ navigation, categories }: any) => {
   const { t, i18n } = useTranslation();
+  const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
   const [isOffline, setIsOffline] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { width, height } = Dimensions.get('window');
   const { top: safeTop, bottom: safeBottom } = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
-  const [savedAddress, setSavedAddress] = useState<any>(null);
+  const [savedAddress, setSavedAddress] = useState<ActiveLocation | null>(null);
 
   useEffect(() => {
     loadAddress();
@@ -44,28 +51,16 @@ export const HomeScreen = ({ navigation, categories }: any) => {
   };
 
   const loadAddress = async () => {
-    const data = await AsyncStorage.getItem('user_address');
-    if (data) setSavedAddress(JSON.parse(data));
+    const data = await getActiveLocation();
+    if (data) setSavedAddress(data);
   };
 
   // Sticky header animation
   const stickyOpacity = scrollY.interpolate({ inputRange: [300, 450], outputRange: [0, 1], extrapolate: 'clamp' });
   const stickyTranslate = scrollY.interpolate({ inputRange: [300, 450], outputRange: [-70, 0], extrapolate: 'clamp' });
 
-  const bannerScrollRef = useRef<ScrollView>(null);
-  const [activeBanner, setActiveBanner] = useState(0);
-
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const placeholderAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const nextIndex = (activeBanner + 1) % 3;
-      setActiveBanner(nextIndex);
-      bannerScrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [activeBanner]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -89,7 +84,13 @@ export const HomeScreen = ({ navigation, categories }: any) => {
     <View style={{ flex: 1, backgroundColor: Theme.primary }}>
       <View style={{ height: safeTop }} />
 
-      
+    {!(savedAddress && !savedAddress.isSupported) && (
+      <Image 
+          source={require('../assets/Home.png')}
+          style={{ position: 'absolute', top: 160, left: 0, right: 0, height: '20%',width:'100%', zIndex: 0 }}
+          resizeMode="cover"
+        />
+    )}
       {/* ===== PURPLE STICKY HEADER ===== */}
       <Animated.View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 999,
@@ -98,14 +99,10 @@ export const HomeScreen = ({ navigation, categories }: any) => {
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 12,
         paddingTop: safeTop,
       }}>
-        <LinearGradient
-          colors={[Theme.primary, Theme.primaryDark]}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        />
+        
         <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 }}>
+            
             <Search size={14} color={Theme.textSecondary} />
             <Text style={{ marginLeft: 8, fontSize: 13, color: Theme.textSecondary, fontWeight: '500' }}>Search services...</Text>
           </View>
@@ -120,14 +117,14 @@ export const HomeScreen = ({ navigation, categories }: any) => {
                   if (catId) {
                     const category = (categories || []).find((c: any) => c?.id === catId);
                     if (category?.hasSubcategories) {
-                      navigation.navigate('SubcategoryList', { 
-                        categoryId: catId, 
-                        categoryName: cat.nameEn 
+                      navigation.navigate('SubcategoryList', {
+                        categoryId: catId,
+                        categoryName: cat.nameEn
                       });
                     } else {
-                      navigation.navigate('ServiceList', { 
-                        categoryId: catId, 
-                        title: cat.nameEn 
+                      navigation.navigate('ServiceList', {
+                        categoryId: catId,
+                        title: cat.nameEn
                       });
                     }
                   }
@@ -148,154 +145,141 @@ export const HomeScreen = ({ navigation, categories }: any) => {
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
-            tintColor="white" 
-            colors={[Theme.primary]} 
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="white"
+            colors={[Theme.primary]}
             progressViewOffset={safeTop + 60}
           />
         }
       >
-        <LinearGradient
-          colors={[Theme.primary, Theme.primaryDark]}
-          style={{ paddingTop: 0, paddingBottom: 30 }}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          {/* Header */}
-          <View style={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('AddressPicker')}
-              style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 }}
-            >
-              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                <MapPin size={22} color="white" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' }}>{savedAddress?.label || t('common.location')}</Text>
-                <Text style={{ fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'white' }} numberOfLines={1}>
-                  {savedAddress?.address || 'Select Location'}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {isOffline && <WifiOff size={20} color={Theme.accent} style={{ marginRight: 16 }} />}
-            
+        {/* Header */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('SearchLocation')}
+            style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 }}
+          >
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+              <MapPin size={22} color="white" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' }}>{savedAddress?.label || t('common.location')}</Text>
+              <Text style={{ fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'white' }} numberOfLines={1}>
+                {savedAddress?.address || 'Select Location'}
+              </Text>
+            </View>
+            <DownArrow size={20} color="white" />
+          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {isOffline && <WifiOff size={20} color={Theme.accent} style={{ marginRight: 16 }} />}
+
+          </View>
+        </View>
+
+        {/* Search Bar */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 24, marginTop: 4 }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Search')}
+            activeOpacity={0.8}
+            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 8 }}
+          >
+            <Search size={20} color={Theme.textSecondary} />
+            <View style={{ flex: 1, marginLeft: 12, height: 22, justifyContent: 'center', overflow: 'hidden' }}>
+              <Animated.Text style={{
+                position: 'absolute',
+                color: Theme.textSecondary,
+                fontSize: 15,
+                fontWeight: '600',
+                transform: [{ translateY: placeholderAnim }]
+              }}>
+                Search for "{SEARCH_PLACEHOLDERS[placeholderIndex]}"
+              </Animated.Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Action Cards */}
+        {!(savedAddress && !savedAddress.isSupported) && (
+          <View style={{ paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', gap: 12,marginTop:150}}>
+            <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('InstantService')}
+                style={{ flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 16, height: 110, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
+              >
+                <Text style={{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, lineHeight: 20, marginBottom: 12 }}>Get Instant{'\n'}Service</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.muted, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start' }}>
+                  <Zap size={14} color={Theme.primary} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: Theme.primary, marginLeft: 4 }}>15 mins</Text>
+                </View>
+                <View style={{ position: 'absolute', right: -6, bottom: -6 }}>
+                  <Zap size={48} color={Theme.primary} opacity={0.1} />
+                </View>
+              </TouchableOpacity>
+
+            <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('ScheduleForLater')}
+                style={{ flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 16, height: 110, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
+              >
+                <Text style={{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, lineHeight: 20, marginBottom: 12 }}>Schedule for{'\n'}Later</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.muted, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start' }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: Theme.primary }}>Today, 
+                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+                <View style={{ position: 'absolute', right: -6, bottom: -6 }}>
+                  <Calendar size={48} color={Theme.primary} opacity={0.1} />
+                </View>
+              </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Coming Soon Section - Full width when location not supported */}
+        {savedAddress && !savedAddress.isSupported && (
+          <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 32, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}>
+              <Text style={{ fontSize: 28, fontWeight: '900', color: '#6B7280', textAlign: 'center', lineHeight: 36, marginBottom: 12 }}>
+                WE ARE COMING <Text style={{ color: Theme.primary }}>SOON</Text>
+              </Text>
+              
+              <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22, marginBottom: 24, paddingHorizontal: 16 }}>
+                We're bringing our amazing cleaning and home services to your location. Stay tuned!
+              </Text>
+
+           
+              {/* Notify Me Button */}
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.primary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 30, marginBottom: 16, shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 }}>
+                <MessageCircle size={18} color="white" style={{ marginRight: 8 }} />
+                <Text style={{ fontSize: 15, fontWeight: '700', color: 'white' }}>Notify me!</Text>
+              </TouchableOpacity>
+
+              {/* Change Location Link */}
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('SearchLocation')}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <MapPin size={14} color={Theme.primary} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.primary }}>Change location</Text>
+              </TouchableOpacity>
             </View>
           </View>
-
-          {/* Search Bar */}
-          <View style={{ paddingHorizontal: 24, marginBottom: 24, marginTop: 4 }}>
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('Search')}
-              activeOpacity={0.8}
-              style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 8 }}
-            >
-              <Search size={20} color={Theme.textSecondary} />
-              <View style={{ flex: 1, marginLeft: 12, height: 22, justifyContent: 'center', overflow: 'hidden' }}>
-                <Animated.Text style={{ 
-                  position: 'absolute',
-                  color: Theme.textSecondary, 
-                  fontSize: 15, 
-                  fontWeight: '600',
-                  transform: [{ translateY: placeholderAnim }]
-                }}>
-                  Search for "{SEARCH_PLACEHOLDERS[placeholderIndex]}"
-                </Animated.Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Promo Banner Carousel */}
-          <View style={{ marginTop: 4 }}>
-            <ScrollView 
-              ref={bannerScrollRef}
-              horizontal 
-              pagingEnabled 
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={(e) => {
-                const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
-                setActiveBanner(newIndex);
-              }}
-            >
-              {/* Promo Cards */}
-              <View style={{ width: width, height: 180 }}>
-                <View style={{ flex: 1, marginHorizontal: 24, borderRadius: 24, overflow: 'hidden' }}>
-                  <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={{ flex: 1, padding: 24, justifyContent: 'center' }} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                    <View style={{ width: '65%', zIndex: 10 }}>
-                      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 8, textTransform: 'uppercase' }}>Home Services</Text>
-                      <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '900', lineHeight: 28, marginBottom: 16 }}>Quick. Reliable.{'\n'}At Your Doorstep.</Text>
-                      <TouchableOpacity style={{ backgroundColor: '#FFFFFF', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={{ color: '#312E81', fontWeight: '800', fontSize: 13 }}>Book Now</Text>
-                        <ArrowRight size={14} color="#312E81" style={{ marginLeft: 6 }} />
-                      </TouchableOpacity>
-                    </View>
-                    <Image source={require('../assets/Cleaning-Kit-Image.png')} style={{ position: 'absolute', right: -10, bottom: -10, width: 170, height: 170, opacity: 0.9 }} resizeMode="contain" />
-                  </LinearGradient>
-                </View>
-              </View>
-
-              <View style={{ width: width, height: 180 }}>
-                <View style={{ flex: 1, marginHorizontal: 24, borderRadius: 24, overflow: 'hidden' }}>
-                  <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={{ flex: 1, padding: 24, justifyContent: 'center' }} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                    <View style={{ width: '65%', zIndex: 10 }}>
-                      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 8, textTransform: 'uppercase' }}>Expert Repairs</Text>
-                      <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '900', lineHeight: 28, marginBottom: 16 }}>Expert Fixing.{'\n'}Zero Stress.</Text>
-                      <TouchableOpacity style={{ backgroundColor: '#FFFFFF', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={{ color: '#4C1D95', fontWeight: '800', fontSize: 13 }}>Fix Now</Text>
-                        <ArrowRight size={14} color="#4C1D95" style={{ marginLeft: 6 }} />
-                      </TouchableOpacity>
-                    </View>
-                    <Image source={require('../assets/plumbing_studio.png')} style={{ position: 'absolute', right: 5, bottom: 5, width: 150, height: 150 }} resizeMode="contain" />
-                  </LinearGradient>
-                </View>
-              </View>
-
-              {/* CARD 3: Electrical Expert */}
-              <View style={{ width: width, height: 180 }}>
-                <View style={{ flex: 1, marginHorizontal: 24, borderRadius: 24, overflow: 'hidden', backgroundColor: '#8B5CF6' }}>
-                  <Image 
-                    source={require('../assets/electrical_promo_final.png')} 
-                    style={{ position: 'absolute', width: '100%', height: '100%' }} 
-                    resizeMode="cover" 
-                  />
-                  <LinearGradient
-                    colors={['rgba(0,0,0,0.4)', 'transparent']}
-                    style={{ flex: 1, padding: 24, justifyContent: 'center' }}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0.6, y: 0 }}
-                  >
-                    <View style={{ width: '60%', zIndex: 10 }}>
-                      <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 6, textTransform: 'uppercase' }}>Expert Electricals</Text>
-                      <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', lineHeight: 28, marginBottom: 16 }}>
-                        Spark-Free{'\n'}Fixing.
-                      </Text>
-                      <TouchableOpacity style={{ backgroundColor: '#FFFFFF', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 5 }}>
-                        <Text style={{ color: '#5B21B6', fontWeight: '900', fontSize: 13 }}>Book Now</Text>
-                        <ArrowRight size={14} color="#5B21B6" style={{ marginLeft: 6 }} />
-                      </TouchableOpacity>
-                    </View>
-                  </LinearGradient>
-                </View>
-              </View>
-            </ScrollView>
-          </View>
-        </LinearGradient>
+        )}
 
         {/* Bottom Section */}
-        <View style={{ backgroundColor: 'white', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: 12, paddingTop: 24, minHeight: height * 0.6 }}>
+        <View style={{ backgroundColor: 'white', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: 40, paddingTop: 24, minHeight: height * 0.6 }}>
           <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('common.services')}</Text>
+
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-              {(!categories || categories.length === 0) ? (
-                [1, 2, 3, 4, 5, 6].map((i) => (
+                {(!categories || categories.length === 0) ? (
+                  [1, 2, 3, 4, 5, 6].map((i) => (
                   <View key={i} style={{ width: '31.33%', marginRight: i % 3 === 0 ? 0 : '3%', marginBottom: 16, alignItems: 'center' }}>
                     <Skeleton style={{ width: '100%', aspectRatio: 1, borderRadius: 24, marginBottom: 12 }} />
                     <Skeleton style={{ width: '70%', height: 12, borderRadius: 6 }} />
                   </View>
                 ))
-              ) : categories.filter((c: any) => c && c.nameEn).reduce((acc: any[], current: any) => {
+              ) : categories.filter((c: any) => c && c.nameEn && c.nameEn !== 'Hourly Services').reduce((acc: any[], current: any) => {
                 if (!acc.find((item: any) => item.nameEn === current.nameEn)) {
                   acc.push(current);
                 }
@@ -316,14 +300,14 @@ export const HomeScreen = ({ navigation, categories }: any) => {
                     key={item.id}
                     onPress={() => {
                       if (item.hasSubcategories) {
-                        navigation.navigate('SubcategoryList', { 
-                          categoryId: item.id, 
-                          categoryName: nameEn 
+                        navigation.navigate('SubcategoryList', {
+                          categoryId: item.id,
+                          categoryName: nameEn
                         });
                       } else {
-                        navigation.navigate('ServiceList', { 
-                          categoryId: item.id, 
-                          title: nameEn 
+                        navigation.navigate('ServiceList', {
+                          categoryId: item.id,
+                          title: nameEn
                         });
                       }
                     }}
@@ -348,7 +332,7 @@ export const HomeScreen = ({ navigation, categories }: any) => {
                       )}
                     </View>
                     <View style={{ paddingTop: 8, paddingHorizontal: 2 }}>
-                      <Text 
+                      <Text
                         style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#111', lineHeight: 18 }}
                         numberOfLines={2}
                       >
@@ -362,11 +346,12 @@ export const HomeScreen = ({ navigation, categories }: any) => {
                   </TouchableOpacity>
                 );
               })}
-            </View>
+              </View>
           </View>
 
           {/* Exclusive Offers */}
-          <View style={{ paddingBottom: 40 }}>
+        
+           <View style={{ paddingBottom: 40 }}>
             <View style={{ paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>Exclusive Offers</Text>
               <TouchableOpacity><Text style={{ color: Theme.primary, fontWeight: '700' }}>See All</Text></TouchableOpacity>
@@ -378,7 +363,7 @@ export const HomeScreen = ({ navigation, categories }: any) => {
           </View>
 
           {/* Trust Section */}
-          <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
+        <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>Why Houcee?</Text>
             <View style={{ backgroundColor: Theme.background, borderRadius: 32, padding: 28, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               <TrustItem icon={<ShieldCheck size={24} color={Theme.primary} />} label="Verified Pro" />
@@ -387,9 +372,9 @@ export const HomeScreen = ({ navigation, categories }: any) => {
               <TrustItem icon={<Phone size={24} color={Theme.primary} />} label="24/7 Support" />
             </View>
           </View>
-
+          
           {/* Trending Services */}
-          <View style={{ paddingBottom: 60 }}>
+         <View style={{ paddingBottom: 60 }}>
             <View style={{ paddingHorizontal: 24, marginBottom: 16 }}><Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>Trending Now</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
               <TrendingCard title="Full Deep Cleaning" price="₹2,499" image={require('../assets/Cleaning-Kit-Image.png')} />
@@ -399,7 +384,7 @@ export const HomeScreen = ({ navigation, categories }: any) => {
           </View>
 
           {/* FAQ Section */}
-          <View style={{ paddingHorizontal: 24, paddingBottom: 120, marginTop: 10 }}>
+   <View style={{ paddingHorizontal: 24, paddingBottom: 120, marginTop: 10 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>Common Questions</Text>
             <FAQItem question="How do I book a service?" answer="Simply select a category, choose your preferred service, select a date and time, and confirm your booking." />
             <FAQItem question="Are the professionals verified?" answer="Yes, every professional on our platform undergoes a rigorous background check and skills verification." />
@@ -409,19 +394,23 @@ export const HomeScreen = ({ navigation, categories }: any) => {
           </View>
         </View>
       </Animated.ScrollView>
-
-      {/* Bottom Nav */}
-      <BottomNav 
-        active="home" 
+     <BottomNav
+        active="home"
         onTabPress={(tab: string) => {
-          if (tab === 'profile') navigation.navigate('Profile');
+          if (tab === 'profile') requireAuth(() => navigation.navigate('Profile'));
           if (tab === 'services') navigation.navigate('Search');
-          if (tab === 'chat') navigation.navigate('MyBookings'); // Placeholder for chat
-        }} 
+          if (tab === 'chat') requireAuth(() => navigation.navigate('MyBookings')); // Placeholder for chat
+        }}
+      />
+      <LoginRequiredModal
+        visible={showLoginModal}
+        onClose={handleCloseModal}
+        onLogin={handleLoginPress}
       />
     </View>
   );
 };
+
 
 const OfferCard = ({ title, subtitle, code, label }: any) => (
   <TouchableOpacity style={{ width: 300, height: 160, borderRadius: 32, marginRight: 20, overflow: 'hidden' }}>
@@ -435,24 +424,12 @@ const OfferCard = ({ title, subtitle, code, label }: any) => (
     </LinearGradient>
   </TouchableOpacity>
 );
-
 const TrustItem = ({ icon, label }: any) => (
   <View style={{ width: '45%', marginBottom: 24, alignItems: 'center' }}>
     <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', marginBottom: 12, elevation: 3 }}>{icon}</View>
     <Text style={{ fontSize: 13, fontWeight: '800', color: Theme.textPrimary, textAlign: 'center' }}>{label}</Text>
   </View>
 );
-
-const TrendingCard = ({ title, price, image }: any) => (
-  <TouchableOpacity style={{ width: 160, marginRight: 16 }}>
-    <View style={{ width: 160, height: 160, borderRadius: 32, backgroundColor: 'white', padding: 20, elevation: 5, marginBottom: 12, justifyContent: 'center', alignItems: 'center' }}>
-      <Image source={image} style={{ width: '80%', height: '80%' }} resizeMode="contain" />
-    </View>
-    <Text style={{ fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, fontSize: 14 }}>{title}</Text>
-    <Text style={{ color: Theme.primary, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>{price}</Text>
-  </TouchableOpacity>
-);
-
 const BottomNav = ({ active, onTabPress }: any) => {
   const insets = useSafeAreaInsets();
   return (
@@ -484,10 +461,23 @@ const BottomNav = ({ active, onTabPress }: any) => {
     </View>
   );
 };
-
 const NavTab = ({ icon, label, active, onPress }: any) => (
   <TouchableOpacity onPress={onPress} style={{ alignItems: 'center', padding: 10 }}>
     {React.cloneElement(icon, { color: active ? Theme.primary : Theme.textSecondary })}
     <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', marginTop: 4, color: active ? Theme.primary : Theme.textSecondary }}>{label}</Text>
   </TouchableOpacity>
 );
+const TrendingCard = ({ title, price, image }: any) => (
+  <TouchableOpacity style={{ width: 160, marginRight: 16 }}>
+    <View style={{ width: 160, height: 160, borderRadius: 32, backgroundColor: 'white', padding: 20, elevation: 5, marginBottom: 12, justifyContent: 'center', alignItems: 'center' }}>
+      <Image source={image} style={{ width: '80%', height: '80%' }} resizeMode="contain" />
+    </View>
+    <Text style={{ fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, fontSize: 14 }}>{title}</Text>
+    <Text style={{ color: Theme.primary, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>{price}</Text>
+  </TouchableOpacity>
+);
+
+export const EnhancedHomeScreen = withObservables([], () => ({
+  categories: database.collections.get('categories').query().observeWithColumns(['order']),
+}))(HomeScreen);
+

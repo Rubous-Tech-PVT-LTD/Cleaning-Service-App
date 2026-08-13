@@ -2,10 +2,11 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Clock, MessageCircle } from 'lucide-react-native';
+import { ChevronLeft, Clock, MessageCircle, User } from 'lucide-react-native';
 import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
 import { Theme } from '../theme';
+import { useAuth } from '../contexts/AuthContext';
 
 const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
   let items = [];
@@ -82,6 +83,34 @@ const BookingItem = withObservables(['booking'], ({ booking }: any) => ({
 
 const MyBookingsScreenBase = ({ navigation, bookings }: any) => {
   const { t, i18n } = useTranslation();
+  const { isGuest } = useAuth();
+
+  // Guest mode UI
+  if (isGuest) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
+        <View style={{ padding: 24, flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.goBack()}><ChevronLeft size={28} /></TouchableOpacity>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', marginLeft: 16 }}>{t('common.my_bookings')}</Text>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: Theme.primary + '20', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+            <User size={60} color={Theme.primary} />
+          </View>
+          <Text style={{ fontSize: 28, fontWeight: '900', color: Theme.textPrimary, marginBottom: 12 }}>Guest Mode</Text>
+          <Text style={{ fontSize: 16, color: Theme.textSecondary, textAlign: 'center', marginBottom: 32, lineHeight: 24 }}>
+            Login to view your bookings and manage your services.
+          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            style={{ backgroundColor: Theme.primary, paddingVertical: 18, paddingHorizontal: 32, borderRadius: 16, width: '100%', alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 }}
+          >
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Login Now</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>

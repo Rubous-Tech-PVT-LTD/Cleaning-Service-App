@@ -15,6 +15,20 @@ export class ServicesController {
     return this.servicesService.findAll(categoryId);
   }
 
+  @Get('schedule-options')
+  @ApiOperation({ summary: 'Get schedule dates and time slots for later booking' })
+  @ApiResponse({ status: 200, description: 'Return schedule options.' })
+  getScheduleOptions() {
+    return this.servicesService.getScheduleOptions();
+  }
+
+  @Get('hourly')
+  @ApiOperation({ summary: 'Get hourly service configurations (Instant Service)' })
+  @ApiResponse({ status: 200, description: 'Return hourly service data.' })
+  getHourlyService() {
+    return this.servicesService.getHourlyServiceData();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single service detail' })
   @ApiResponse({ status: 200, description: 'Return the service.' })

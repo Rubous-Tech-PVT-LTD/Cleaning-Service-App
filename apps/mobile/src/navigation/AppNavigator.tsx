@@ -2,7 +2,7 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { LoginScreen } from '../screens/LoginScreen';
 import { OtpVerifyScreen } from '../screens/OtpVerifyScreen';
-import { HomeScreen } from '../screens/HomeScreen';
+import { EnhancedHomeScreen } from '../screens/HomeScreen';
 import { ServiceListScreen } from '../screens/ServiceListScreen';
 import { ServiceDetailScreen } from '../screens/ServiceDetailScreen';
 import { SubcategoryListScreen } from '../screens/SubcategoryListScreen';
@@ -23,14 +23,13 @@ import { ChatScreen } from '../screens/ChatScreen';
 import { CancellationScreen } from '../screens/CancellationScreen';
 import { PromoCodeScreen } from '../screens/PromoCodeScreen';
 import { TermsScreen } from '../screens/TermsScreen';
-import withObservables from '@nozbe/with-observables';
-import { database, getCategoriesSorted } from '../db';
+import { LocationPromptScreen } from '../screens/LocationPromptScreen';
+import { SearchLocationScreen } from '../screens/SearchLocationScreen';
+import { ScheduleForLaterScreen } from '../screens/ScheduleForLaterScreen';
+import { InstantServiceScreen } from '../screens/InstantServiceScreen';
+import { CartScreen } from '../screens/CartScreen';
 
 const Stack = createStackNavigator();
-
-const EnhancedHomeScreen = withObservables([], () => ({
-  categories: database.collections.get('categories').query().observeWithColumns(['order']),
-}))(HomeScreen);
 
 export const AppNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?: string }) => {
   return (
@@ -38,6 +37,7 @@ export const AppNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} />
+      <Stack.Screen name="LocationPrompt" component={LocationPromptScreen} options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="Home" component={EnhancedHomeScreen} />
       <Stack.Screen name="SubcategoryList" component={SubcategoryListScreen} />
       <Stack.Screen name="ServiceList" component={ServiceListScreen} />
@@ -50,6 +50,10 @@ export const AppNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?
       <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
       <Stack.Screen name="AddressList" component={AddressListScreen} />
       <Stack.Screen name="AddressPicker" component={AddressPickerScreen} />
+      <Stack.Screen name="SearchLocation" component={SearchLocationScreen} />
+      <Stack.Screen name="ScheduleForLater" component={ScheduleForLaterScreen} />
+      <Stack.Screen name="InstantService" component={InstantServiceScreen} />
+      <Stack.Screen name="Cart" component={CartScreen} />
       <Stack.Screen name="MyBookings" component={MyBookingsScreen} />
       <Stack.Screen name="Cancellation" component={CancellationScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Review" component={ReviewScreen} />

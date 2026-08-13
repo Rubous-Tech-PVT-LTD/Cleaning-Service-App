@@ -6,9 +6,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../theme';
 import { NotificationService } from '../services/NotificationService';
+import { useAuth } from '../contexts/AuthContext';
+import { useAuthGuard } from '../hooks/useAuthGuard';
+import { LoginRequiredModal } from '../components/LoginRequiredModal';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
+  const { isAuthenticated, isGuest, logout } = useAuth();
+  const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
   const [userName, setUserName] = useState('User Name');
   const [phone, setPhone] = useState('+91 99999 00000');
   const [notifications, setNotifications] = useState(true);
@@ -38,13 +43,40 @@ export const ProfileScreen = ({ navigation }: any) => {
           text: 'Logout', 
           style: 'destructive',
           onPress: async () => {
-            await AsyncStorage.clear();
+            await logout();
             navigation.replace('Login');
           }
         },
       ]
     );
   };
+
+  const handleLogin = () => {
+    navigation.navigate('Login');
+  };
+
+  // Guest mode UI
+  if (isGuest) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: Theme.primary + '20', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+            <User size={60} color={Theme.primary} />
+          </View>
+          <Text style={{ fontSize: 28, fontWeight: '900', color: Theme.textPrimary, marginBottom: 12 }}>Guest Mode</Text>
+          <Text style={{ fontSize: 16, color: Theme.textSecondary, textAlign: 'center', marginBottom: 32, lineHeight: 24 }}>
+            You're browsing as a guest. Login to access your profile, bookings, and more features.
+          </Text>
+          <TouchableOpacity
+            onPress={handleLogin}
+            style={{ backgroundColor: Theme.primary, paddingVertical: 18, paddingHorizontal: 32, borderRadius: 16, width: '100%', alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 }}
+          >
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Login Now</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
@@ -53,12 +85,12 @@ export const ProfileScreen = ({ navigation }: any) => {
         <View style={{ backgroundColor: 'white', padding: 24, alignItems: 'center', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 5 }}>
           <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: Theme.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
             <User size={50} color="white" />
-            <TouchableOpacity onPress={() => navigation.navigate('ProfileEdit')} style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: 'white', padding: 8, borderRadius: 20, elevation: 4 }}>
+            <TouchableOpacity onPress={() => requireAuth(() => navigation.navigate('ProfileEdit'))} style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: 'white', padding: 8, borderRadius: 20, elevation: 4 }}>
               <Settings size={16} color={Theme.primary} />
             </TouchableOpacity>
           </View>
           <Text style={{ fontSize: 24, fontWeight: '900', color: Theme.textPrimary, marginTop: 16 }}>{userName}</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('ProfileEdit')}>
+          <TouchableOpacity onPress={() => requireAuth(() => navigation.navigate('ProfileEdit'))}>
             <Text style={{ color: Theme.primary, fontWeight: '700', marginTop: 4 }}>{t('profile.edit_profile')}</Text>
           </TouchableOpacity>
         </View>
@@ -93,7 +125,7 @@ export const ProfileScreen = ({ navigation }: any) => {
             <MenuItem 
               icon={<Gift size={20} color="#F59E0B" />} 
               title="Refer & Earn" 
-              onPress={() => navigation.navigate('ReferEarn')} 
+              onPress={() => requireAuth(() => navigation.navigate('ReferEarn'))} 
             />
             <MenuItem 
               icon={<HelpCircle size={20} color="#8B5CF6" />} 
@@ -118,6 +150,11 @@ export const ProfileScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <LoginRequiredModal
+        visible={showLoginModal}
+        onClose={handleCloseModal}
+        onLogin={handleLoginPress}
+      />
     </SafeAreaView>
   );
 };

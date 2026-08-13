@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api';
 import { Theme } from '../theme';
 import { NotificationService } from '../services/NotificationService';
+import { useAuth } from '../contexts/AuthContext';
 
 export const OtpVerifyScreen = ({ route, navigation }: any) => {
   const { t } = useTranslation();
+  const { login } = useAuth();
   const { phone } = route.params;
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,15 +21,14 @@ export const OtpVerifyScreen = ({ route, navigation }: any) => {
       console.log('Verifying OTP for:', phone, 'Code:', otp);
       const response = await api.post('/auth/otp/verify', { phone, code: otp });
       if (response.data.accessToken) {
-        await AsyncStorage.setItem('user_token', response.data.accessToken);
-        await AsyncStorage.setItem('user_id', response.data.user.id);
+        await login(response.data.accessToken, response.data.user);
 
         // 🔔 Register push token immediately after login
         NotificationService.registerForPushNotificationsAsync().catch(
           (e) => console.warn('[OTP] Push token registration failed:', e),
         );
 
-        navigation.navigate('Home');
+        navigation.navigate('LocationPrompt');
       } else {
         Alert.alert('Error', 'No access token received');
       }

@@ -18,6 +18,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { ChatModule } from './chat/chat.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { TrackingModule } from './tracking/tracking.module';
+import { CartModule } from './cart/cart.module';
+import { CitiesModule } from './cities/cities.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { TrackingModule } from './tracking/tracking.module';
     ChatModule,
     NotificationsModule,
     TrackingModule,
+    CartModule,
+    CitiesModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
