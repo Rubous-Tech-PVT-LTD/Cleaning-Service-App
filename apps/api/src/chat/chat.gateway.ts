@@ -30,11 +30,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('joinChat')
-  handleJoinChat(
+  async handleJoinChat(
     @MessageBody() data: { chatId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    client.join(data.chatId);
+    await client.join(data.chatId);
     console.log(`Client ${client.id} joined chat ${data.chatId}`);
   }
 

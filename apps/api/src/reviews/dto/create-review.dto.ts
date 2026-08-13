@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber, Min, Max, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateReviewDto {
   @ApiProperty({ description: 'The ID of the booking being reviewed' })

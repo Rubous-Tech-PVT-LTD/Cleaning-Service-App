@@ -7,7 +7,7 @@ import { PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
-  private razorpay: any;
+  private razorpay: Razorpay | null = null;
 
   constructor(
     private configService: ConfigService,
@@ -41,10 +41,16 @@ export class PaymentsService {
       if (!this.razorpay) {
         // Fallback for when keys are missing during development
         console.warn('Razorpay keys missing. Returning mock order ID.');
-        return { id: `order_mock_${Date.now()}`, amount: options.amount, currency: 'INR' };
+        return {
+          id: `order_mock_${Date.now()}`,
+          amount: options.amount,
+          currency: 'INR',
+        };
       }
 
-      const order = await this.razorpay.orders.create(options);
+      const order = (await this.razorpay.orders.create(options)) as {
+        id: string;
+      };
 
       // Save order info to database
       await this.prisma.payment.upsert({
@@ -74,10 +80,12 @@ export class PaymentsService {
     razorpaySignature: string,
   ) {
     const secret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
-    
+
     if (!secret) {
-        console.warn('Razorpay secret missing. Skipping verification (Mock Success).');
-        return { status: 'success' };
+      console.warn(
+        'Razorpay secret missing. Skipping verification (Mock Success).',
+      );
+      return { status: 'success' };
     }
 
     const hmac = crypto.createHmac('sha256', secret);

@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterProviderDto } from './dto/register-provider.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -16,13 +17,16 @@ export class AuthService {
     private prisma: PrismaService,
   ) {}
 
-  async requestOtp(phone: string): Promise<{ message: string; devCode?: string }> {
+  requestOtp(phone: string): { message: string; devCode?: string } {
     // Generate a random 6-digit OTP (Mock: always '123456' for +919999999999 for test purposes)
-    const code = phone === '+919999999999' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
-    
+    const code =
+      phone === '+919999999999'
+        ? '123456'
+        : Math.floor(100000 + Math.random() * 900000).toString();
+
     // Store it temporarily
     this.otpStore.set(phone, code);
-    
+
     // 🚧 In production, integrate Firebase or MSG91 here 🚧
     console.log(`\n\n[MOCK SMS] 🟢 Sent OTP '${code}' to phone '${phone}'\n\n`);
 
@@ -32,7 +36,7 @@ export class AuthService {
 
   async verifyOtp(phone: string, code: string) {
     const storedCode = this.otpStore.get(phone);
-    
+
     if (!storedCode || storedCode !== code) {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
@@ -63,7 +67,9 @@ export class AuthService {
 
   async registerProvider(dto: RegisterProviderDto) {
     // Check if user exists by phone
-    let user = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
+    let user = await this.prisma.user.findUnique({
+      where: { phone: dto.phone },
+    });
 
     if (!user) {
       user = await this.prisma.user.create({
@@ -94,7 +100,7 @@ export class AuthService {
         state: dto.state,
         country: dto.country,
         professionId: dto.professionId,
-        documents: dto.documents || {},
+        documents: (dto.documents as Prisma.InputJsonValue) || {},
         isVerified: true, // Automatically accept as per request
       },
       create: {
@@ -104,12 +110,12 @@ export class AuthService {
         state: dto.state,
         country: dto.country,
         professionId: dto.professionId,
-        documents: dto.documents || {},
+        documents: (dto.documents as Prisma.InputJsonValue) || {},
         isVerified: true,
       },
     });
 
-    // We don't automatically request OTP here; we let the controller or client trigger it 
+    // We don't automatically request OTP here; we let the controller or client trigger it
     // to match the requested flow.
     return { success: true, message: 'Provider registered successfully' };
   }

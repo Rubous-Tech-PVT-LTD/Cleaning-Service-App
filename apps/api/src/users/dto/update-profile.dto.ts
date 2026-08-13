@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsObject, IsNumber, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsObject, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -7,12 +7,18 @@ export class UpdateProfileDto {
   @IsString()
   fullName?: string;
 
-  @ApiProperty({ required: false, description: 'Preferred language code (e.g. "hi" or "en")' })
+  @ApiProperty({
+    required: false,
+    description: 'Preferred language code (e.g. "hi" or "en")',
+  })
   @IsOptional()
   @IsString()
   languagePref?: string;
 
-  @ApiProperty({ required: false, description: 'User biography in JSON format' })
+  @ApiProperty({
+    required: false,
+    description: 'User biography in JSON format',
+  })
   @IsOptional()
   @IsObject()
   bio?: Record<string, any>;

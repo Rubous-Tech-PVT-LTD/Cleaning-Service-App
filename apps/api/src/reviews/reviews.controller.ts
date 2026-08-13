@@ -1,8 +1,24 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Request as ExpressRequest } from 'express';
+
+interface RequestWithUser extends ExpressRequest {
+  user?: {
+    id: string;
+    role: string;
+  };
+}
 
 @ApiTags('Reviews')
 @Controller('reviews')
@@ -13,8 +29,12 @@ export class ReviewsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a review for a completed booking' })
-  create(@Request() req: any, @Body() createReviewDto: CreateReviewDto) {
-    return this.reviewsService.create(req.user.id, createReviewDto);
+  create(
+    @Request() req: RequestWithUser,
+    @Body() createReviewDto: CreateReviewDto,
+  ) {
+    const userId = req.user?.id || '';
+    return this.reviewsService.create(userId, createReviewDto);
   }
 
   @Get('service/:serviceId')
@@ -27,7 +47,8 @@ export class ReviewsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all reviews for the logged-in provider' })
-  findProviderReviews(@Request() req: any) {
-    return this.reviewsService.findByProvider(req.user.id);
+  findProviderReviews(@Request() req: RequestWithUser) {
+    const userId = req.user?.id || '';
+    return this.reviewsService.findByProvider(userId);
   }
 }

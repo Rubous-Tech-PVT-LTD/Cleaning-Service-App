@@ -17,6 +17,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ChatModule } from './chat/chat.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { TrackingModule } from './tracking/tracking.module';
+import { Request, Response, NextFunction } from 'express';
 
 @Module({
   imports: [
@@ -51,7 +52,7 @@ export class AppModule implements NestModule {
 
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply((req: any, res: any, next: () => void) => {
+      .apply((req: Request, res: Response, next: NextFunction) => {
         this.logger.log(`Incoming Request: ${req.method} ${req.url}`);
         next();
       })

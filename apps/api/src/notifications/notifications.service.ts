@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface PushPayload {
-  to: string;          // Expo push token
+  to: string; // Expo push token
   title: string;
   body: string;
   data?: Record<string, any>;
@@ -38,8 +38,20 @@ export class NotificationsService {
         body: JSON.stringify(valid),
       });
 
-      const result = await response.json();
-      this.logger.log(`✅ [Push] Sent ${valid.length} notification(s): ${JSON.stringify(result?.data?.map((r: any) => r.status))}`);
+      interface ExpoPushResponse {
+        data?: Array<{
+          status: string;
+          id?: string;
+          message?: string;
+          details?: any;
+        }>;
+      }
+
+      const result = (await response.json()) as ExpoPushResponse;
+      const statuses = result?.data?.map((r) => r.status) || [];
+      this.logger.log(
+        `✅ [Push] Sent ${valid.length} notification(s): ${JSON.stringify(statuses)}`,
+      );
     } catch (error) {
       this.logger.error('❌ [Push] Failed to send notification:', error);
     }

@@ -1,11 +1,28 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Get, Request } from '@nestjs/common';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Get,
+  Request,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './strategies/jwt-auth.guard';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RegisterProviderDto } from './dto/register-provider.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Request as ExpressRequest } from 'express';
+
+interface RequestWithUser extends ExpressRequest {
+  user?: {
+    id: string;
+    phone: string;
+    role: string;
+  };
+}
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -16,23 +33,26 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request an OTP for login/signup' })
   @ApiResponse({ status: 200, description: 'OTP sent successfully.' })
-  async requestOtp(@Body() requestOtpDto: RequestOtpDto) {
+  requestOtp(@Body() requestOtpDto: RequestOtpDto) {
     return this.authService.requestOtp(requestOtpDto.phone);
   }
 
   @Post('otp/verify')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify OTP and obtain JWT' })
-  @ApiResponse({ status: 200, description: 'Successfully authenticated, returns JWT.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully authenticated, returns JWT.',
+  })
   @ApiResponse({ status: 401, description: 'Invalid OTP.' })
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
     return this.authService.verifyOtp(verifyOtpDto.phone, verifyOtpDto.code);
   }
-  
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current user profile' })
-  async getProfile(@Request() req: any) {
+  getProfile(@Request() req: RequestWithUser) {
     return req.user;
   }
 
@@ -46,7 +66,10 @@ export class AuthController {
   @Post('register-provider')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new provider profile' })
-  @ApiResponse({ status: 201, description: 'Provider registered successfully.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Provider registered successfully.',
+  })
   async registerProvider(@Body() registerDto: RegisterProviderDto) {
     return this.authService.registerProvider(registerDto);
   }

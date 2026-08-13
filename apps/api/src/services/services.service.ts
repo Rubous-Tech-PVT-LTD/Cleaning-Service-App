@@ -10,16 +10,16 @@ export class ServicesService {
       where: categoryId ? { categoryId } : {},
       include: {
         category: {
-          select: { nameTranslations: true }
-        }
-      }
+          select: { nameTranslations: true },
+        },
+      },
     });
   }
 
   async findOne(id: string) {
     return this.prisma.service.findUnique({
       where: { id },
-      include: { category: true }
+      include: { category: true },
     });
   }
 }

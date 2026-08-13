@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
@@ -6,7 +15,20 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { Request as ExpressRequest } from 'express';
+
+interface RequestWithUser extends ExpressRequest {
+  user?: {
+    id: string;
+    role: string;
+  };
+}
 
 @ApiTags('Bookings')
 @ApiBearerAuth()
@@ -19,14 +41,20 @@ export class BookingsController {
   @Roles(UserRole.CLIENT)
   @ApiOperation({ summary: 'Create a new booking' })
   @ApiResponse({ status: 201, description: 'Booking created' })
-  create(@Request() req: any, @Body() createBookingDto: CreateBookingDto) {
-    return this.bookingsService.create(req.user.id, createBookingDto);
+  create(
+    @Request() req: RequestWithUser,
+    @Body() createBookingDto: CreateBookingDto,
+  ) {
+    const userId = req.user?.id || '';
+    return this.bookingsService.create(userId, createBookingDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all bookings for the current user' })
-  findAll(@Request() req: any) {
-    return this.bookingsService.findAll(req.user.id, req.user.role);
+  findAll(@Request() req: RequestWithUser) {
+    const userId = req.user?.id || '';
+    const userRole = req.user?.role || '';
+    return this.bookingsService.findAll(userId, userRole);
   }
 
   @Get(':id')
@@ -37,7 +65,11 @@ export class BookingsController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update the status of a booking' })
-  updateStatus(@Request() req: any, @Param('id') id: string, @Body() updateStatusDto: UpdateBookingStatusDto) {
+  updateStatus(
+    @Request() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateBookingStatusDto,
+  ) {
     return this.bookingsService.updateStatus(id, updateStatusDto, req.user);
   }
 }

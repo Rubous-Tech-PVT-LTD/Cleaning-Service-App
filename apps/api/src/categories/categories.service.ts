@@ -9,16 +9,16 @@ export class CategoriesService {
     return this.prisma.category.findMany({
       include: {
         _count: {
-          select: { services: true }
-        }
-      }
+          select: { services: true },
+        },
+      },
     });
   }
 
   async findOne(id: string) {
     return this.prisma.category.findUnique({
       where: { id },
-      include: { services: true }
+      include: { services: true },
     });
   }
 }

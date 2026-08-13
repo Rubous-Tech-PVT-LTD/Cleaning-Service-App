@@ -5,7 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  async getOrCreateChat(bookingId: string, clientId: string, providerId: string) {
+  async getOrCreateChat(
+    bookingId: string,
+    clientId: string,
+    providerId: string,
+  ) {
     let chat = await this.prisma.chat.findFirst({
       where: { bookingId },
     });

@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsDateString, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateBookingDto {
   @ApiProperty({ description: 'The ID of the service to book' })

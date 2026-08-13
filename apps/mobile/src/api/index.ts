@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.0.200:3000/v1';
-export const SOCKET_URL = 'http://192.168.0.200:3000';
+const BASE_URL = 'http://10.94.207.71:3000/v1';
+export const SOCKET_URL = 'http://10.94.207.71:3000';
 console.log('📡 [API] Using Fetch API Wrapper to bypass Axios Event.NONE bug');
 
 async function request(method: string, endpoint: string, data?: any) {

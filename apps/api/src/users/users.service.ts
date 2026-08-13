@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -17,34 +19,37 @@ export class UsersService {
       where: { id },
       include: { profile: true },
     });
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    
+
     return user;
   }
 
-  async create(data: { phone: string, languagePref?: string }) {
-    const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+  async create(data: { phone: string; languagePref?: string }) {
+    const referralCode = Math.random()
+      .toString(36)
+      .substring(2, 10)
+      .toUpperCase();
     return this.prisma.user.create({
       data: {
         phone: data.phone,
         languagePref: data.languagePref || 'hi',
         referralCode,
         profile: {
-          create: {} // Create an empty profile by default
-        }
+          create: {}, // Create an empty profile by default
+        },
       },
       include: { profile: true },
     });
   }
 
-  async updateProfile(userId: string, data: any) {
+  async updateProfile(userId: string, data: UpdateProfileDto) {
     const { fullName, languagePref, ...profileData } = data;
 
     // Update User core fields
-    const userUpdate: any = {};
+    const userUpdate: { fullName?: string; languagePref?: string } = {};
     if (fullName !== undefined) userUpdate.fullName = fullName;
     if (languagePref !== undefined) userUpdate.languagePref = languagePref;
 
@@ -54,15 +59,15 @@ export class UsersService {
         ...userUpdate,
         profile: {
           update: {
-            ...profileData
-          }
-        }
+            ...profileData,
+          },
+        },
       },
       include: { profile: true },
     });
   }
 
-  async update(userId: string, data: any) {
+  async update(userId: string, data: Prisma.UserUpdateInput) {
     return this.prisma.user.update({
       where: { id: userId },
       data,

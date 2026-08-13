@@ -1,7 +1,11 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, Review } from '@prisma/client';
 
 @Injectable()
 export class ReviewsService {
@@ -57,7 +61,7 @@ export class ReviewsService {
         booking: {
           include: {
             client: { select: { fullName: true } },
-            service: { select: { nameTranslations: true } }
+            service: { select: { nameTranslations: true } },
           },
         },
       },
@@ -74,16 +78,18 @@ export class ReviewsService {
         booking: {
           include: {
             client: { select: { fullName: true } },
-            service: { select: { nameTranslations: true } }
-          }
-        }
+            service: { select: { nameTranslations: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const averageRating = reviews.length > 0 
-      ? reviews.reduce((acc: number, rev: any) => acc + rev.rating, 0) / reviews.length 
-      : 0;
+    const averageRating =
+      reviews.length > 0
+        ? reviews.reduce((acc: number, rev: Review) => acc + rev.rating, 0) /
+          reviews.length
+        : 0;
 
     return {
       reviews,
@@ -100,7 +106,11 @@ export class ReviewsService {
     });
 
     if (reviews.length > 0) {
-      const avgRating = reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length;
+      const avgRating =
+        reviews.reduce(
+          (sum: number, r: { rating: number }) => sum + r.rating,
+          0,
+        ) / reviews.length;
       await this.prisma.profile.update({
         where: { userId: providerId },
         data: { rating: avgRating },

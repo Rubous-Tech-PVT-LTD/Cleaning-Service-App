@@ -4,6 +4,12 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
 
+interface JwtPayload {
+  sub: string;
+  phone: string;
+  role: string;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -13,11 +19,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'super-secret-key-for-dev',
+      secretOrKey:
+        configService.get<string>('JWT_SECRET') || 'super-secret-key-for-dev',
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     // This payload is the decoded JWT
     const user = await this.usersService.findById(payload.sub);
     if (!user) {

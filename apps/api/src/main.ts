@@ -6,14 +6,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Security
   // app.use(helmet());
-  
+
   //  🌐 Wide CORS for Mobile Testing
   app.enableCors({
     origin: '*',
@@ -40,7 +39,9 @@ async function bootstrap() {
   // Swagger Documentation
   const config = new DocumentBuilder()
     .setTitle('Local Service Marketplace API')
-    .setDescription('The core API for connecting urban households with skilled service providers.')
+    .setDescription(
+      'The core API for connecting urban households with skilled service providers.',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -54,4 +55,6 @@ async function bootstrap() {
   console.log(`📝 API Documentation: http://localhost:${port}/api/docs`);
   console.log(`🔄 Server forced hot-reload triggered!`);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Bootstrap failed:', err);
+});

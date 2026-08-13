@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
@@ -33,15 +37,21 @@ export class BookingsService {
 
     // Notify the specific provider if assigned, else notify all providers
     if (booking.providerId) {
-      this.trackingGateway.notifyUser(booking.providerId, 'new_booking', booking);
-      
+      this.trackingGateway.notifyUser(
+        booking.providerId,
+        'new_booking',
+        booking,
+      );
+
       // Also send a push notification
-      await this.notifications.notifyBookingStatusChange(
-        booking.client?.pushToken, // We probably want provider push token here, but keeping logic consistent
-        booking.id,
-        booking.status,
-        'new service request'
-      ).catch(() => {});
+      await this.notifications
+        .notifyBookingStatusChange(
+          booking.client?.pushToken, // We probably want provider push token here, but keeping logic consistent
+          booking.id,
+          booking.status,
+          'new service request',
+        )
+        .catch(() => {});
     } else {
       this.trackingGateway.broadcastNewBooking(booking);
     }
@@ -51,7 +61,7 @@ export class BookingsService {
 
   async completeAll() {
     return this.prisma.booking.updateMany({
-      data: { status: BookingStatus.COMPLETED }
+      data: { status: BookingStatus.COMPLETED },
     });
   }
 
@@ -63,7 +73,8 @@ export class BookingsService {
     }
 
     return this.prisma.booking.findMany({
-      where: role === 'PROVIDER' ? { providerId: userId } : { clientId: userId },
+      where:
+        role === 'PROVIDER' ? { providerId: userId } : { clientId: userId },
       include: { service: true, client: true, provider: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -80,24 +91,40 @@ export class BookingsService {
     return booking;
   }
 
-  async updateStatus(id: string, updateStatusDto: UpdateBookingStatusDto, user?: any) {
-    const updateData: any = { status: updateStatusDto.status };
-    
+  async updateStatus(
+    id: string,
+    updateStatusDto: UpdateBookingStatusDto,
+    user?: { id: string; role: string },
+  ) {
+    const updateData: Prisma.BookingUpdateInput = {
+      status: updateStatusDto.status,
+    };
+
     // If a provider accepts the job, assign it to them
-    if (updateStatusDto.status === BookingStatus.ACCEPTED && user && user.role === 'PROVIDER') {
-      updateData.providerId = user.id;
+    if (
+      updateStatusDto.status === BookingStatus.ACCEPTED &&
+      user &&
+      user.role === 'PROVIDER'
+    ) {
+      updateData.provider = { connect: { id: user.id } };
     }
 
-    const currentBooking = await this.prisma.booking.findUnique({ where: { id } });
+    const currentBooking = await this.prisma.booking.findUnique({
+      where: { id },
+    });
     if (!currentBooking) throw new NotFoundException('Booking not found');
 
     // 🔒 OTP Validation for completion
     if (updateStatusDto.status === BookingStatus.COMPLETED) {
       if (!currentBooking.otp) {
-        throw new BadRequestException('This booking does not have an OTP set up.');
+        throw new BadRequestException(
+          'This booking does not have an OTP set up.',
+        );
       }
       if (currentBooking.otp !== updateStatusDto.otp) {
-        throw new BadRequestException('Invalid OTP. Please ask the client for the correct 4-digit PIN.');
+        throw new BadRequestException(
+          'Invalid OTP. Please ask the client for the correct 4-digit PIN.',
+        );
       }
     }
 
@@ -111,30 +138,40 @@ export class BookingsService {
     });
 
     // 🔔 Send push notification to client
-    const serviceName =
-      (booking.service as any)?.nameTranslations?.en ||
-      (booking.service as any)?.nameTranslations ||
-      'your service';
+    const nameTranslations = booking.service?.nameTranslations as
+      | Record<string, string>
+      | undefined;
+    const serviceName = nameTranslations?.en || 'your service';
 
-    await this.notifications.notifyBookingStatusChange(
-      booking.client?.pushToken,
-      booking.id,
-      booking.status,
-      serviceName,
-    ).catch(() => {});
+    await this.notifications
+      .notifyBookingStatusChange(
+        booking.client?.pushToken,
+        booking.id,
+        booking.status,
+        serviceName,
+      )
+      .catch(() => {});
 
     if (updateStatusDto.status === BookingStatus.COMPLETED) {
-      await this.prisma.payment.update({
-        where: { bookingId: id },
-        data: { escrowStatus: EscrowStatus.RELEASED },
-      }).catch(() => {
-        console.warn(`Payment record not found for booking ${id}, skipping escrow release.`);
-      });
+      await this.prisma.payment
+        .update({
+          where: { bookingId: id },
+          data: { escrowStatus: EscrowStatus.RELEASED },
+        })
+        .catch(() => {
+          console.warn(
+            `Payment record not found for booking ${id}, skipping escrow release.`,
+          );
+        });
     }
 
     // If a provider accepts the job, notify the client via WebSockets
     if (updateStatusDto.status === BookingStatus.ACCEPTED && booking.clientId) {
-      this.trackingGateway.notifyUser(booking.clientId, 'booking_accepted', booking);
+      this.trackingGateway.notifyUser(
+        booking.clientId,
+        'booking_accepted',
+        booking,
+      );
     }
 
     return booking;

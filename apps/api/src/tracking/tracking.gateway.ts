@@ -14,7 +14,9 @@ import { Server, Socket } from 'socket.io';
     origin: '*',
   },
 })
-export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class TrackingGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -37,19 +39,19 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   @SubscribeMessage('register')
-  handleRegister(
+  async handleRegister(
     @MessageBody() data: { userId: string; role: string },
     @ConnectedSocket() client: Socket,
   ) {
     this.userSockets.set(data.userId, client.id);
-    
+
     // Join a room based on role (useful for broadcasting to all providers)
     if (data.role === 'PROVIDER') {
-      client.join('providers');
+      await client.join('providers');
     } else if (data.role === 'CLIENT') {
-      client.join('clients');
+      await client.join('clients');
     }
-    
+
     console.log(`User ${data.userId} registered as ${data.role}`);
   }
 
@@ -69,7 +71,13 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
   // Location Tracking
   @SubscribeMessage('update_location')
   handleLocationUpdate(
-    @MessageBody() data: { providerId: string; clientId: string; latitude: number; longitude: number },
+    @MessageBody()
+    data: {
+      providerId: string;
+      clientId: string;
+      latitude: number;
+      longitude: number;
+    },
   ) {
     // Notify the specific client about the provider's new location
     this.notifyUser(data.clientId, 'provider_location', {
