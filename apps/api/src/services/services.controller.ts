@@ -29,6 +29,13 @@ export class ServicesController {
     return this.servicesService.getHourlyServiceData();
   }
 
+  @Get('trending')
+  @ApiOperation({ summary: 'Get trending services' })
+  @ApiResponse({ status: 200, description: 'Return trending services.' })
+  getTrendingServices() {
+    return this.servicesService.getTrendingServices();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single service detail' })
   @ApiResponse({ status: 200, description: 'Return the service.' })

@@ -127,4 +127,28 @@ export class ServicesService {
 
     return { dates: newDates, timeSlots: slots };
   }
+
+  async getTrendingServices() {
+    const services = await this.prisma.service.findMany({
+      where: {
+        isTrending: true,
+        status: 'ACTIVE'
+      },
+      include: {
+        category: {
+          select: { nameTranslations: true }
+        }
+      }
+    });
+
+    return services.map(service => ({
+      id: service.id,
+      nameTranslations: service.nameTranslations,
+      descriptionTranslations: service.descriptionTranslations,
+      basePrice: service.basePrice,
+      imageUrl: service.imageUrl,
+      estimatedTime: service.estimatedTime,
+      category: service.category
+    }));
+  }
 }
