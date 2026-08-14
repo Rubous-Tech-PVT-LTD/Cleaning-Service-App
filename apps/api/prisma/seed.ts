@@ -118,85 +118,99 @@ async function main() {
       nameTranslations: { en: 'Bathroom', hi: 'बाथरूम' },
       descriptionTranslations: { en: 'Professional bathroom cleaning service', hi: 'पेशेवर बाथरूम सफाई सेवा' },
       basePrice: 299,
-      estimatedTime: '40 mins'
+      estimatedTime: '40 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431895/female-bathroom-cleaner_pmjtqt.png'
     },
     {
       nameTranslations: { en: 'Kitchen cleaning', hi: 'रसोईघर सफाई' },
       descriptionTranslations: { en: 'Complete kitchen cleaning and sanitization', hi: 'पूर्ण रसोईघर सफाई और सेनिटाइजेशन' },
       basePrice: 399,
-      estimatedTime: '30 mins'
+      estimatedTime: '30 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431896/female-deep-cleaner_duj2fg.png'
     },
     {
       nameTranslations: { en: 'Cooking', hi: 'खाना बनाना' },
       descriptionTranslations: { en: 'Home cooking service', hi: 'घरेलू खाना बनाने की सेवा' },
       basePrice: 499,
-      estimatedTime: '60 mins'
+      estimatedTime: '60 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786685470/Gemini_Generated_Image_rgmpdhrgmpdhrgmp_swccun.png'
     },
     {
       nameTranslations: { en: 'Dishes', hi: 'बर्तन' },
       descriptionTranslations: { en: 'Dishwashing service', hi: 'बर्तन धोने की सेवा' },
       basePrice: 199,
-      estimatedTime: '20 mins'
+      estimatedTime: '20 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786686012/Dishes_hidrmu.png'
     },
     {
       nameTranslations: { en: 'Mopping and sweeping', hi: 'पोंछा और झाड़ू' },
       descriptionTranslations: { en: 'Floor mopping and sweeping', hi: 'फर्श पोंछा और झाड़ू' },
       basePrice: 249,
-      estimatedTime: '30 mins'
+      estimatedTime: '30 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786685842/Mopping_and_Sweeping_ixrtic.png'
     },
     {
       nameTranslations: { en: 'Dusting and wiping', hi: 'धूल और पोंछा' },
       descriptionTranslations: { en: 'Dusting and surface wiping', hi: 'धूल और सतह पोंछा' },
       basePrice: 199,
-      estimatedTime: '30 mins'
+      estimatedTime: '30 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786686627/dusting_and_wiping_rvmqf9.png'
     },
     {
       nameTranslations: { en: 'Laundry', hi: 'कपड़े धोना' },
       descriptionTranslations: { en: 'Clothes washing service', hi: 'कपड़े धोने की सेवा' },
       basePrice: 599,
-      estimatedTime: '45 mins'
+      estimatedTime: '45 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786686222/Laundry_ld23a0.png'
     },
     {
       nameTranslations: { en: 'Ironing', hi: 'इस्त्री' },
       descriptionTranslations: { en: 'Clothes ironing service', hi: 'कपड़े इस्त्री की सेवा' },
       basePrice: 399,
-      estimatedTime: '30 mins'
+      estimatedTime: '30 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786686750/ironing_2_vutyij.png'
     },
     {
       nameTranslations: { en: 'Complete bedroom cleaning', hi: 'पूर्ण बेडरूम सफाई' },
       descriptionTranslations: { en: 'Complete bedroom cleaning service', hi: 'पूर्ण बेडरूम सफाई सेवा' },
       basePrice: 699,
-      estimatedTime: '60 mins'
+      estimatedTime: '60 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431900/female-home-cleaner_cxyy6w.png'
     },
     {
       nameTranslations: { en: 'Fan cleaning', hi: 'पंखा सफाई' },
       descriptionTranslations: { en: 'Ceiling fan cleaning', hi: 'पंखा सफाई' },
       basePrice: 149,
-      estimatedTime: '20 mins'
+      estimatedTime: '20 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786687061/fan_cleaning_hq5qkn.png'
     },
     {
       nameTranslations: { en: 'Fridge cleaning', hi: 'फ्रिज सफाई' },
       descriptionTranslations: { en: 'Refrigerator cleaning service', hi: 'रेफ्रिजरेटर सफाई सेवा' },
       basePrice: 449,
-      estimatedTime: '30 mins'
+      estimatedTime: '30 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786687212/fridge_cleaning_m9crkb.png'
     },
     {
       nameTranslations: { en: 'Terrace/ Verandah cleaning', hi: 'छत/बरामदा सफाई' },
       descriptionTranslations: { en: 'Terrace and verandah cleaning', hi: 'छत और बरामदा सफाई' },
       basePrice: 799,
-      estimatedTime: '45 mins'
+      estimatedTime: '45 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786687058/Terrace_and_verandah_o2d8ll.png'
     },
     {
       nameTranslations: { en: 'Sofa cleaning', hi: 'सोफा सफाई' },
       descriptionTranslations: { en: 'Sofa deep cleaning service', hi: 'सोफा गहरी सफाई सेवा' },
       basePrice: 899,
-      estimatedTime: '60 mins'
+      estimatedTime: '60 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431898/male-sofa-cleaner_h3vrwz.png'
     },
     {
       nameTranslations: { en: 'Carpet cleaning', hi: 'कालीन सफाई' },
       descriptionTranslations: { en: 'Carpet and rug cleaning', hi: 'कालीन और गलीचा सफाई' },
       basePrice: 599,
-      estimatedTime: '45 mins'
+      estimatedTime: '45 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431892/female-carpet-cleaner_u4teld.png'
     },
   ];
 
@@ -208,6 +222,7 @@ async function main() {
         descriptionTranslations: service.descriptionTranslations,
         basePrice: service.basePrice,
         estimatedTime: service.estimatedTime,
+        imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
       },
     });
@@ -246,7 +261,7 @@ async function main() {
       },
       slug: 'plumbing',
       iconUrl:
-        'https://res.cloudinary.com/dchtlnkhn/image/upload/q_auto/f_auto/v1779723355/plumbing_md3pfq.png',
+        'https://res.cloudinary.com/dcmoseix9/image/upload/v1786699900/plumber_bmjvri.png',
     },
   });
 
@@ -282,6 +297,7 @@ async function main() {
         hi: 'नल मरम्मत और प्रतिस्थापन सेवाएं',
       },
       basePrice: 199,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431904/tap-repair_cmbhfy.png'
     },
     {
       nameTranslations: {
@@ -293,6 +309,7 @@ async function main() {
         hi: 'शावर मरम्मत और रखरखाव',
       },
       basePrice: 249,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786688409/shower_repair_hypk9y.png',
     },
     {
       nameTranslations: {
@@ -304,6 +321,7 @@ async function main() {
         hi: 'पानी के मोटर की मरम्मत सेवाएं',
       },
       basePrice: 499,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786688708/motor_repair_j6gulm.png',
     },
     {
       nameTranslations: {
@@ -315,6 +333,7 @@ async function main() {
         hi: 'पाइप लीक का पता लगाना और मरम्मत',
       },
       basePrice: 349,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431901/pipeline-leakage_qvxhf4.png',
     },
     {
       nameTranslations: {
@@ -326,6 +345,7 @@ async function main() {
         hi: 'शौचालय फ्लश तंत्र मरम्मत',
       },
       basePrice: 299,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786688921/Toilet_flush_repair_lymqzt.png',
     },
     {
       nameTranslations: {
@@ -337,6 +357,7 @@ async function main() {
         hi: 'जेट स्प्रे मरम्मत और रखरखाव',
       },
       basePrice: 199,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689145/jet_spray_repair_xcgekk.png',
     },
     {
       nameTranslations: {
@@ -348,6 +369,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर अन्य प्लंबिंग सेवाएं',
       },
       basePrice: 399,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689310/other_plumbing_service_xwdorb.png',
     },
   ];
 
@@ -359,6 +381,7 @@ async function main() {
         nameTranslations: service.nameTranslations,
         descriptionTranslations: service.descriptionTranslations,
         basePrice: service.basePrice,
+        imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
       },
     });
@@ -380,6 +403,7 @@ async function main() {
         hi: 'लाइट फिक्स्चर इंस्टालेशन',
       },
       basePrice: 199,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431891/light-installation_jiemgi.png',
     },
     {
       nameTranslations: {
@@ -391,6 +415,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर इलेक्ट्रिकल वायरिंग मरम्मत',
       },
       basePrice: 349,
+      imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431904/wiring-issues_otsci3.png'
     },
     {
       nameTranslations: {
@@ -402,6 +427,7 @@ async function main() {
         hi: 'सीलिंग पंखा इंस्टालेशन',
       },
       basePrice: 299,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431890/fan-installation_innz8k.png',
     },
     {
       nameTranslations: {
@@ -413,6 +439,7 @@ async function main() {
         hi: 'सीलिंग पंखा मरम्मत',
       },
       basePrice: 199,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786688222/Fan_repair_txvyuw.png',
     },
     {
       nameTranslations: {
@@ -424,6 +451,7 @@ async function main() {
         hi: 'वॉशिंग मशीन मरम्मत',
       },
       basePrice: 499,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689541/washing_machine_repair_txrviy.png',
     },
     {
       nameTranslations: {
@@ -435,6 +463,7 @@ async function main() {
         hi: 'वॉशिंग मशीन इंस्टालेशन',
       },
       basePrice: 399,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689494/washing_Machine_installation_yvtbx4.png',
     },
     {
       nameTranslations: {
@@ -446,6 +475,7 @@ async function main() {
         hi: 'एयर कंडीशनर इंस्टालेशन',
       },
       basePrice: 799,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689661/Ac_install_jls1ne.png',
     },
     {
       nameTranslations: {
@@ -457,6 +487,7 @@ async function main() {
         hi: 'एयर कंडीशनर सर्विसिंग',
       },
       basePrice: 599,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690000/Ac_service_yhdb9f.png',
     },
     {
       nameTranslations: {
@@ -468,6 +499,7 @@ async function main() {
         hi: 'एयर कंडीशनर मरम्मत',
       },
       basePrice: 699,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689806/Ac_repair_yshgdz.png',
     },
     {
       nameTranslations: {
@@ -479,6 +511,7 @@ async function main() {
         hi: 'एसी गैस रिफिल और चार्जिंग',
       },
       basePrice: 899,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690075/Ac_gas_refill_bwrdbh.png',
     },
     {
       nameTranslations: {
@@ -490,10 +523,11 @@ async function main() {
         hi: 'रेफ्रिजरेटर मरम्मत',
       },
       basePrice: 599,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690248/fridge_repair_bu7fsn.png',
     },
     {
       nameTranslations: {
-        en: 'Socket installation/Installation',
+        en: 'Socket repair/Installation',
         hi: 'सॉकेट इंस्टालेशन',
       },
       descriptionTranslations: {
@@ -501,6 +535,7 @@ async function main() {
         hi: 'इलेक्ट्रिकल सॉकेट इंस्टालेशन',
       },
       basePrice: 149,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690343/socket_repai_aec63c.png',
     },
     {
       nameTranslations: {
@@ -512,10 +547,11 @@ async function main() {
         hi: 'स्विच मरम्मत और इंस्टालेशन',
       },
       basePrice: 199,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431904/switch-repair_h38eku.png',
     },
     {
       nameTranslations: {
-        en: 'Mcb repair/instalation',
+        en: 'Mcb repair/installation',
         hi: 'एमसीबी मरम्मत/इंस्टालेशन',
       },
       descriptionTranslations: {
@@ -523,6 +559,7 @@ async function main() {
         hi: 'एमसीबी मरम्मत और इंस्टालेशन',
       },
       basePrice: 299,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690477/mcb_repair_hkieuz.png',
     },
     {
       nameTranslations: {
@@ -534,6 +571,7 @@ async function main() {
         hi: 'ओवन मरम्मत और रखरखाव',
       },
       basePrice: 449,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690655/oven_repair_db0zgb.png',
     },
     {
       nameTranslations: {
@@ -545,6 +583,7 @@ async function main() {
         hi: 'इस्त्री मरम्मत और रखरखाव',
       },
       basePrice: 199,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690739/Iron_repair_pqhf8k.png',
     },
     {
       nameTranslations: {
@@ -556,6 +595,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर अन्य इलेक्ट्रीशियन सेवाएं',
       },
       basePrice: 349,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691206/Other_electrical_oe6fds.png',
     },
   ];
 
@@ -567,6 +607,7 @@ async function main() {
         nameTranslations: service.nameTranslations,
         descriptionTranslations: service.descriptionTranslations,
         basePrice: service.basePrice,
+        imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
       },
     });
@@ -585,7 +626,7 @@ async function main() {
       },
       slug: 'general-home-services',
       iconUrl:
-        'https://res.cloudinary.com/dchtlnkhn/image/upload/q_auto/f_auto/v1779723232/labour_lrajer.png',
+        'https://res.cloudinary.com/dcmoseix9/image/upload/v1786700246/GeneralHomeService_hv6apo.png',
       order: 3,
     },
   });
@@ -607,6 +648,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर बागवानी सेवाएं',
       },
       basePrice: 399,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691541/gardening_voitqg.png',
     },
     {
       nameTranslations: {
@@ -618,6 +660,7 @@ async function main() {
         hi: 'पूर्ण कार धोने की सेवा',
       },
       basePrice: 499,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691769/car_wash_htmjxd.png',
     },
     {
       nameTranslations: {
@@ -629,6 +672,7 @@ async function main() {
         hi: 'दोपहिया वाहन धोने की सेवा',
       },
       basePrice: 199,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691825/two_wheeler_wash_marazh.png',
     },
     {
       nameTranslations: {
@@ -640,6 +684,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर सामान्य घरेलू सहायता',
       },
       basePrice: 299,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691873/Home_assistance_rutn95.png',
     },
     {
       nameTranslations: {
@@ -651,6 +696,7 @@ async function main() {
         hi: 'पानी की टंकी सफाई और रखरखाव',
       },
       basePrice: 799,
+       imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692040/water_tank_cleaning_ir8u0g.png'
     },
   ];
 
@@ -661,6 +707,7 @@ async function main() {
         nameTranslations: service.nameTranslations,
         descriptionTranslations: service.descriptionTranslations,
         basePrice: service.basePrice,
+        imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
       },
     });
@@ -679,7 +726,7 @@ async function main() {
       },
       slug: 'home-repair-and-renovations',
       iconUrl:
-        'https://res.cloudinary.com/dchtlnkhn/image/upload/q_auto/f_auto/v1779723272/painting_xqchmr.png',
+        'https://res.cloudinary.com/dcmoseix9/image/upload/v1786699156/home_repair_tifimy.png',
       order: 4,
     },
   });
@@ -701,6 +748,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर पेंटिंग सेवाएं',
       },
       basePrice: 449,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431905/painting_mef64a.png',
     },
     {
       nameTranslations: {
@@ -712,6 +760,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर बढ़ई सेवाएं',
       },
       basePrice: 399,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692559/Carpenter_pudiv6.png',
     },
     {
       nameTranslations: {
@@ -723,6 +772,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर राजमिस्त्री सेवाएं',
       },
       basePrice: 449,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431900/minor-renovation_hwc98l.png',
     },
     {
       nameTranslations: {
@@ -734,6 +784,7 @@ async function main() {
         hi: 'पूर्ण कीट नियंत्रण और फ्यूमीगेशन सेवाएं',
       },
       basePrice: 899,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692511/pest_control_fcpk6p.png',
     },
     {
       nameTranslations: {
@@ -745,6 +796,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर सामान्य श्रमिक सेवाएं',
       },
       basePrice: 299,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431895/labour_ykt5a8.png',
     },
   ];
 
@@ -755,6 +807,7 @@ async function main() {
         nameTranslations: service.nameTranslations,
         descriptionTranslations: service.descriptionTranslations,
         basePrice: service.basePrice,
+        imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
       },
     });
@@ -773,7 +826,7 @@ async function main() {
       },
       slug: 'babysitting-and-elder-care',
       iconUrl:
-        'https://res.cloudinary.com/dchtlnkhn/image/upload/q_auto/f_auto/v1779722804/cleaning-img_e0asab.png',
+        'https://res.cloudinary.com/dcmoseix9/image/upload/v1786699597/BabySitting_sqcqmr.png',
       order: 5,
     },
   });
@@ -795,6 +848,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर बेबीसिटिंग सेवाएं',
       },
       basePrice: 349,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692801/baby_sitting_ltl9x6.png',
     },
     {
       nameTranslations: {
@@ -806,6 +860,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर बुजुर्गों की देखभाल सेवाएं',
       },
       basePrice: 399,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692784/elders_care_xl5elp.png',
     },
     {
       nameTranslations: {
@@ -817,6 +872,7 @@ async function main() {
         hi: 'प्रमाणित नर्स द्वारा पेशेवर रोगी देखभाल',
       },
       basePrice: 599,
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692913/patient_care_mazaf1.png',
     },
   ];
 
@@ -827,6 +883,7 @@ async function main() {
         nameTranslations: service.nameTranslations,
         descriptionTranslations: service.descriptionTranslations,
         basePrice: service.basePrice,
+        imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
       },
     });
