@@ -175,7 +175,8 @@ async function main() {
       descriptionTranslations: { en: 'Complete bedroom cleaning service', hi: 'पूर्ण बेडरूम सफाई सेवा' },
       basePrice: 699,
       estimatedTime: '60 mins',
-      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431900/female-home-cleaner_cxyy6w.png'
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431900/female-home-cleaner_cxyy6w.png',
+      isTrending: true
     },
     {
       nameTranslations: { en: 'Fan cleaning', hi: 'पंखा सफाई' },
@@ -224,6 +225,7 @@ async function main() {
         estimatedTime: service.estimatedTime,
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
+        isTrending: service.isTrending || false,
       },
     });
     console.log(`  └── ✅ Created service: ${service.nameTranslations.en}`);
@@ -297,7 +299,8 @@ async function main() {
         hi: 'नल मरम्मत और प्रतिस्थापन सेवाएं',
       },
       basePrice: 199,
-      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431904/tap-repair_cmbhfy.png'
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431904/tap-repair_cmbhfy.png',
+      isTrending: true
     },
     {
       nameTranslations: {
@@ -383,6 +386,7 @@ async function main() {
         basePrice: service.basePrice,
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
+        isTrending: service.isTrending || false,
       },
     });
     console.log(`    └── ✅ Created service: ${service.nameTranslations.en}`);
@@ -428,6 +432,7 @@ async function main() {
       },
       basePrice: 299,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431890/fan-installation_innz8k.png',
+      isTrending: true
     },
     {
       nameTranslations: {
@@ -598,7 +603,6 @@ async function main() {
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691206/Other_electrical_oe6fds.png',
     },
   ];
-
   for (const service of electricalServices) {
     await (prisma as any).service.create({
       data: {
@@ -609,6 +613,7 @@ async function main() {
         basePrice: service.basePrice,
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
+        isTrending: service.isTrending || false,
       },
     });
     console.log(`    └── ✅ Created service: ${service.nameTranslations.en}`);
@@ -649,6 +654,7 @@ async function main() {
       },
       basePrice: 399,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691541/gardening_voitqg.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -661,6 +667,7 @@ async function main() {
       },
       basePrice: 499,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691769/car_wash_htmjxd.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -673,6 +680,7 @@ async function main() {
       },
       basePrice: 199,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691825/two_wheeler_wash_marazh.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -685,6 +693,7 @@ async function main() {
       },
       basePrice: 299,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691873/Home_assistance_rutn95.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -696,7 +705,8 @@ async function main() {
         hi: 'पानी की टंकी सफाई और रखरखाव',
       },
       basePrice: 799,
-       imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692040/water_tank_cleaning_ir8u0g.png'
+       imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692040/water_tank_cleaning_ir8u0g.png',
+      isTrending: false
     },
   ];
 
@@ -709,6 +719,7 @@ async function main() {
         basePrice: service.basePrice,
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
+        isTrending: service.isTrending || false,
       },
     });
     console.log(`  └── ✅ Created service: ${service.nameTranslations.en}`);
@@ -749,6 +760,7 @@ async function main() {
       },
       basePrice: 449,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431905/painting_mef64a.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -761,6 +773,7 @@ async function main() {
       },
       basePrice: 399,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692559/Carpenter_pudiv6.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -773,6 +786,7 @@ async function main() {
       },
       basePrice: 449,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431900/minor-renovation_hwc98l.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -785,6 +799,7 @@ async function main() {
       },
       basePrice: 899,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692511/pest_control_fcpk6p.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -797,6 +812,7 @@ async function main() {
       },
       basePrice: 299,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431895/labour_ykt5a8.png',
+      isTrending: false
     },
   ];
 
@@ -809,6 +825,7 @@ async function main() {
         basePrice: service.basePrice,
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
+        isTrending: service.isTrending || false,
       },
     });
     console.log(`  └── ✅ Created service: ${service.nameTranslations.en}`);
@@ -849,6 +866,7 @@ async function main() {
       },
       basePrice: 349,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692801/baby_sitting_ltl9x6.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -861,6 +879,7 @@ async function main() {
       },
       basePrice: 399,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692784/elders_care_xl5elp.png',
+      isTrending: false
     },
     {
       nameTranslations: {
@@ -873,6 +892,7 @@ async function main() {
       },
       basePrice: 599,
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692913/patient_care_mazaf1.png',
+      isTrending: false
     },
   ];
 
@@ -885,6 +905,7 @@ async function main() {
         basePrice: service.basePrice,
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
+        isTrending: service.isTrending || false,
       },
     });
     console.log(`  └── ✅ Created service: ${service.nameTranslations.en}`);

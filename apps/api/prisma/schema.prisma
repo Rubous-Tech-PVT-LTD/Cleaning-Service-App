@@ -151,6 +151,7 @@ model Service {
   updatedAt               DateTime     @updatedAt
   subcategoryId           String?
   estimatedTime           String?
+  isTrending              Boolean      @default(false)
   bookings                Booking[]
   category                Category     @relation(fields: [categoryId], references: [id])
   subcategory             Subcategory? @relation(fields: [subcategoryId], references: [id])
@@ -158,6 +159,7 @@ model Service {
   @@index([categoryId])
   @@index([subcategoryId])
   @@index([categoryId, subcategoryId])
+  @@index([isTrending])
   @@map("services")
 }
 

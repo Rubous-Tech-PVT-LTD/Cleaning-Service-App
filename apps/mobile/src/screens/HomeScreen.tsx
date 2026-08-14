@@ -17,6 +17,7 @@ import { LoginRequiredModal } from '../components/LoginRequiredModal';
 import { getActiveLocation, ActiveLocation } from '../services/locationService';
 import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
+import api from '../api';
 
 const HomeScreen = ({ navigation, categories }: any) => {
   const { t, i18n } = useTranslation();
@@ -27,14 +28,17 @@ const HomeScreen = ({ navigation, categories }: any) => {
   const { top: safeTop, bottom: safeBottom } = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [savedAddress, setSavedAddress] = useState<ActiveLocation | null>(null);
+  const [trendingServices, setTrendingServices] = useState<any[]>([]);
 
   useEffect(() => {
     loadAddress();
+    fetchTrendingServices();
   }, [navigation]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadAddress();
+      fetchTrendingServices();
     });
     return unsubscribe;
   }, [navigation]);
@@ -53,6 +57,15 @@ const HomeScreen = ({ navigation, categories }: any) => {
   const loadAddress = async () => {
     const data = await getActiveLocation();
     if (data) setSavedAddress(data);
+  };
+
+  const fetchTrendingServices = async () => {
+    try {
+      const response = await api.get('/services/trending');
+      setTrendingServices(response.data);
+    } catch (error) {
+      console.error('Failed to fetch trending services:', error);
+    }
   };
 
   // Sticky header animation
@@ -377,9 +390,15 @@ const HomeScreen = ({ navigation, categories }: any) => {
          <View style={{ paddingBottom: 60 }}>
             <View style={{ paddingHorizontal: 24, marginBottom: 16 }}><Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>Trending Now</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-              <TrendingCard title="Full Deep Cleaning" price="₹2,499" image={require('../assets/Cleaning-Kit-Image.png')} />
-              <TrendingCard title="Bathroom Fitting" price="₹599" image={require('../assets/plumbing_studio.png')} />
-              <TrendingCard title="Fan Installation" price="₹199" image={require('../assets/electrical_studio.png')} />
+              {trendingServices.map((service: any) => (
+                <TrendingCard
+                  key={service.id}
+                  title={i18n.language === 'hi' ? service.nameTranslations?.hi : service.nameTranslations?.en}
+                  price={`₹${service.basePrice}`}
+                  image={service.imageUrl ? { uri: service.imageUrl } : require('../assets/Cleaning-Kit-Image.png')}
+                  onPress={() => navigation.navigate('ServiceDetail', { serviceId: service.id })}
+                />
+              ))}
             </ScrollView>
           </View>
 
@@ -414,12 +433,12 @@ const HomeScreen = ({ navigation, categories }: any) => {
 
 const OfferCard = ({ title, subtitle, code, label }: any) => (
   <TouchableOpacity style={{ width: 300, height: 160, borderRadius: 32, marginRight: 20, overflow: 'hidden' }}>
-    <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={{ flex: 1, padding: 24 }} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+    <LinearGradient colors={[Theme.primary, Theme.primary]} style={{ flex: 1, padding: 24 }} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
       <Text style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>{label}</Text>
       <Text style={{ color: 'white', fontWeight: '900', fontSize: 28, marginTop: 4 }}>{title}</Text>
       <Text style={{ color: 'white', fontSize: 14, marginTop: 8, opacity: 0.9 }}>{subtitle}</Text>
       <View style={{ position: 'absolute', bottom: 16, left: 24, backgroundColor: 'white', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10 }}>
-        <Text style={{ color: '#7C3AED', fontWeight: 'bold', fontSize: 12 }}>USE: {code}</Text>
+        <Text style={{ color: Theme.primary, fontWeight: 'bold', fontSize: 12 }}>USE: {code}</Text>
       </View>
     </LinearGradient>
   </TouchableOpacity>
@@ -467,10 +486,10 @@ const NavTab = ({ icon, label, active, onPress }: any) => (
     <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', marginTop: 4, color: active ? Theme.primary : Theme.textSecondary }}>{label}</Text>
   </TouchableOpacity>
 );
-const TrendingCard = ({ title, price, image }: any) => (
-  <TouchableOpacity style={{ width: 160, marginRight: 16 }}>
+const TrendingCard = ({ title, price, image, onPress }: any) => (
+  <TouchableOpacity style={{ width: 160, marginRight: 16 }} onPress={onPress}>
     <View style={{ width: 160, height: 160, borderRadius: 32, backgroundColor: 'white', padding: 20, elevation: 5, marginBottom: 12, justifyContent: 'center', alignItems: 'center' }}>
-      <Image source={image} style={{ width: '80%', height: '80%' }} resizeMode="contain" />
+      <Image source={typeof image === 'string' ? { uri: image } : image} style={{ width: '80%', height: '80%' }} resizeMode="contain" />
     </View>
     <Text style={{ fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, fontSize: 14 }}>{title}</Text>
     <Text style={{ color: Theme.primary, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>{price}</Text>
