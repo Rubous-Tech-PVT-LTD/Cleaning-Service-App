@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ✅ Direct local IP — no tunnel needed (same WiFi)
-export const BASE_URL = 'http://192.168.0.200:3000/v1';
-export const SOCKET_URL = 'http://192.168.0.200:3000';
+export const BASE_URL = 'http://10.130.94.42:3000/v1';
+export const SOCKET_URL = 'http://10.130.94.42:3000';
 
 /**
  * XHR-based request - avoids the Hermes Event.NONE crash that fetch() triggers

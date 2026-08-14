@@ -30,13 +30,19 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({});
+      let location = await Location.getLastKnownPositionAsync({});
+      if (!location) {
+        location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+      }
       const activeLocation = await buildActiveLocationFromCoords(
         location.coords,
         'Current Location',
       );
       await goHomeWithLocation(activeLocation);
-    } catch {
+    } catch (error) {
+      console.error('Location Error:', error);
       Alert.alert('Error', 'Failed to get your location.');
     } finally {
       setLoading(false);
@@ -171,7 +177,7 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
             <Text style={{ fontSize: 14, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>
               SAVED ADDRESSES
             </Text>
-            {addresses.map((item) => (
+            {addresses.map((item: any) => (
               <TouchableOpacity
                 key={item.id}
                 onPress={() => handleSelectSavedAddress(item)}
