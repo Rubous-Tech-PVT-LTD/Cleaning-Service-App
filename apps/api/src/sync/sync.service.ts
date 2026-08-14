@@ -578,11 +578,15 @@ export class SyncService {
                   },
                 },
 
-                service: {
-                  connect: {
-                    id: serviceId,
-                  },
-                },
+                ...(serviceId
+                  ? {
+                      service: {
+                        connect: {
+                          id: serviceId,
+                        },
+                      },
+                    }
+                  : {}),
 
                 ...(bookingAddress?.id
                   ? {

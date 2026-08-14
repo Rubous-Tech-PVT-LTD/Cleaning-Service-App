@@ -7,9 +7,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import api from '../api';
 import { Theme } from '../theme';
+import { useAuth } from '../contexts/AuthContext';
 
 export const LoginScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
+  const { enterGuestMode } = useAuth();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSplashing, setIsSplashing] = useState(true);
@@ -45,6 +47,16 @@ export const LoginScreen = ({ navigation }: any) => {
       setLoading(false);
       console.error('OTP Error:', error.response?.data || error.message);
       Alert.alert('Error', error.response?.data?.message || error.message || 'Service unavailable.');
+    }
+  };
+
+  const handleSkipLogin = async () => {
+    try {
+      await enterGuestMode();
+      navigation.navigate('Home');
+    } catch (error: any) {
+      console.error('Skip Login Error:', error);
+      Alert.alert('Error', 'Failed to enter guest mode');
     }
   };
 
@@ -136,6 +148,15 @@ export const LoginScreen = ({ navigation }: any) => {
             </View>
             <TouchableOpacity onPress={handleRequestOtp} disabled={loading || phone.length < 10} style={{ marginTop: 32, backgroundColor: Theme.primary, paddingVertical: 18, borderRadius: 16, alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 }}>
               {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Login securely</Text>}
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={handleSkipLogin} 
+              style={{ marginTop: 16, paddingVertical: 12, alignItems: 'center' }}
+            >
+              <Text style={{ color: Theme.textSecondary, fontWeight: '600', fontSize: 14 }}>
+                Skip for now
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

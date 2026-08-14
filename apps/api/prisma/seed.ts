@@ -24,8 +24,26 @@ async function main() {
   console.log('🌱 Starting database seed...');
 
   // ---------------------------------------------------------
-  // CLEAR EXISTING CATEGORY DATA
+  // CLEAR EXISTING DATA IN CORRECT ORDER (respecting foreign keys)
   // ---------------------------------------------------------
+
+  console.log('🧹 Clearing existing messages...');
+  await (prisma as any).message.deleteMany();
+
+  console.log('🧹 Clearing existing chats...');
+  await (prisma as any).chat.deleteMany();
+
+  console.log('🧹 Clearing existing reviews...');
+  await (prisma as any).review.deleteMany();
+
+  console.log('🧹 Clearing existing bookings...');
+  await prisma.booking.deleteMany();
+
+  console.log('🧹 Clearing existing cart items...');
+  await (prisma as any).cartItem.deleteMany();
+
+  console.log('🧹 Clearing existing carts...');
+  await prisma.cart.deleteMany();
 
   console.log('🧹 Clearing existing services...');
   await prisma.service.deleteMany();
@@ -35,6 +53,42 @@ async function main() {
 
   console.log('🧹 Clearing existing categories...');
   await prisma.category.deleteMany();
+
+  // ---------------------------------------------------------
+  // HOURLY SERVICE (Special service for hourly bookings)
+  // ---------------------------------------------------------
+
+  const hourlyServiceCategory = await prisma.category.create({
+    data: {
+      nameTranslations: {
+        en: 'Hourly Services',
+        hi: 'प्रति घंटा सेवाएं',
+      },
+      slug: 'hourly-services',
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/3532/3532696.png',
+      order: 100,
+    },
+  });
+
+  const hourlyService = await prisma.service.create({
+    data: {
+      id: 'hourly-service', // Fixed ID for cart system
+      categoryId: hourlyServiceCategory.id,
+      nameTranslations: {
+        en: 'Hourly Service',
+        hi: 'प्रति घंटा सेवा',
+      },
+      descriptionTranslations: {
+        en: 'Professional hourly-based services for your home needs',
+        hi: 'आपकी घरेलू जरूरतों के लिए पेशेवर प्रति घंटा सेवाएं',
+      },
+      basePrice: 0, // Price determined by duration selection
+      imageUrl: 'https://cdn-icons-png.flaticon.com/512/3532/3532696.png',
+      status: 'ACTIVE',
+    },
+  });
+
+  console.log('✅ Created Hourly Service with ID:', hourlyService.id);
 
   // ---------------------------------------------------------
   // 1. DAILY HOME HELP
@@ -61,158 +115,88 @@ async function main() {
 
   const services = [
     {
-      nameTranslations: {
-        en: 'Bathroom',
-        hi: 'बाथरूम',
-      },
-      descriptionTranslations: {
-        en: 'Professional bathroom cleaning service',
-        hi: 'पेशेवर बाथरूम सफाई सेवा',
-      },
+      nameTranslations: { en: 'Bathroom', hi: 'बाथरूम' },
+      descriptionTranslations: { en: 'Professional bathroom cleaning service', hi: 'पेशेवर बाथरूम सफाई सेवा' },
       basePrice: 299,
+      estimatedTime: '40 mins'
     },
     {
-      nameTranslations: {
-        en: 'Kitchen cleaning',
-        hi: 'रसोईघर सफाई',
-      },
-      descriptionTranslations: {
-        en: 'Complete kitchen cleaning and sanitization',
-        hi: 'पूर्ण रसोईघर सफाई और सेनिटाइजेशन',
-      },
+      nameTranslations: { en: 'Kitchen cleaning', hi: 'रसोईघर सफाई' },
+      descriptionTranslations: { en: 'Complete kitchen cleaning and sanitization', hi: 'पूर्ण रसोईघर सफाई और सेनिटाइजेशन' },
       basePrice: 399,
+      estimatedTime: '30 mins'
     },
     {
-      nameTranslations: {
-        en: 'Cooking',
-        hi: 'खाना बनाना',
-      },
-      descriptionTranslations: {
-        en: 'Home cooking service',
-        hi: 'घरेलू खाना बनाने की सेवा',
-      },
+      nameTranslations: { en: 'Cooking', hi: 'खाना बनाना' },
+      descriptionTranslations: { en: 'Home cooking service', hi: 'घरेलू खाना बनाने की सेवा' },
       basePrice: 499,
+      estimatedTime: '60 mins'
     },
     {
-      nameTranslations: {
-        en: 'Dishes',
-        hi: 'बर्तन',
-      },
-      descriptionTranslations: {
-        en: 'Dishwashing service',
-        hi: 'बर्तन धोने की सेवा',
-      },
+      nameTranslations: { en: 'Dishes', hi: 'बर्तन' },
+      descriptionTranslations: { en: 'Dishwashing service', hi: 'बर्तन धोने की सेवा' },
       basePrice: 199,
+      estimatedTime: '20 mins'
     },
     {
-      nameTranslations: {
-        en: 'Mopping and sweeping',
-        hi: 'पोंछा और झाड़ू',
-      },
-      descriptionTranslations: {
-        en: 'Floor mopping and sweeping',
-        hi: 'फर्श पोंछा और झाड़ू',
-      },
+      nameTranslations: { en: 'Mopping and sweeping', hi: 'पोंछा और झाड़ू' },
+      descriptionTranslations: { en: 'Floor mopping and sweeping', hi: 'फर्श पोंछा और झाड़ू' },
       basePrice: 249,
+      estimatedTime: '30 mins'
     },
     {
-      nameTranslations: {
-        en: 'Dusting and wiping',
-        hi: 'धूल और पोंछा',
-      },
-      descriptionTranslations: {
-        en: 'Dusting and surface wiping',
-        hi: 'धूल और सतह पोंछा',
-      },
+      nameTranslations: { en: 'Dusting and wiping', hi: 'धूल और पोंछा' },
+      descriptionTranslations: { en: 'Dusting and surface wiping', hi: 'धूल और सतह पोंछा' },
       basePrice: 199,
+      estimatedTime: '30 mins'
     },
     {
-      nameTranslations: {
-        en: 'Laundry',
-        hi: 'कपड़े धोना',
-      },
-      descriptionTranslations: {
-        en: 'Clothes washing service',
-        hi: 'कपड़े धोने की सेवा',
-      },
+      nameTranslations: { en: 'Laundry', hi: 'कपड़े धोना' },
+      descriptionTranslations: { en: 'Clothes washing service', hi: 'कपड़े धोने की सेवा' },
       basePrice: 599,
+      estimatedTime: '45 mins'
     },
     {
-      nameTranslations: {
-        en: 'Ironing',
-        hi: 'इस्त्री',
-      },
-      descriptionTranslations: {
-        en: 'Clothes ironing service',
-        hi: 'कपड़े इस्त्री की सेवा',
-      },
+      nameTranslations: { en: 'Ironing', hi: 'इस्त्री' },
+      descriptionTranslations: { en: 'Clothes ironing service', hi: 'कपड़े इस्त्री की सेवा' },
       basePrice: 399,
+      estimatedTime: '30 mins'
     },
     {
-      nameTranslations: {
-        en: 'Complete bedroom cleaning',
-        hi: 'पूर्ण बेडरूम सफाई',
-      },
-      descriptionTranslations: {
-        en: 'Complete bedroom cleaning service',
-        hi: 'पूर्ण बेडरूम सफाई सेवा',
-      },
+      nameTranslations: { en: 'Complete bedroom cleaning', hi: 'पूर्ण बेडरूम सफाई' },
+      descriptionTranslations: { en: 'Complete bedroom cleaning service', hi: 'पूर्ण बेडरूम सफाई सेवा' },
       basePrice: 699,
+      estimatedTime: '60 mins'
     },
     {
-      nameTranslations: {
-        en: 'Fan cleaning',
-        hi: 'पंखा सफाई',
-      },
-      descriptionTranslations: {
-        en: 'Ceiling fan cleaning',
-        hi: 'पंखा सफाई',
-      },
+      nameTranslations: { en: 'Fan cleaning', hi: 'पंखा सफाई' },
+      descriptionTranslations: { en: 'Ceiling fan cleaning', hi: 'पंखा सफाई' },
       basePrice: 149,
+      estimatedTime: '20 mins'
     },
     {
-      nameTranslations: {
-        en: 'Fridge cleaning',
-        hi: 'फ्रिज सफाई',
-      },
-      descriptionTranslations: {
-        en: 'Refrigerator cleaning service',
-        hi: 'रेफ्रिजरेटर सफाई सेवा',
-      },
+      nameTranslations: { en: 'Fridge cleaning', hi: 'फ्रिज सफाई' },
+      descriptionTranslations: { en: 'Refrigerator cleaning service', hi: 'रेफ्रिजरेटर सफाई सेवा' },
       basePrice: 449,
+      estimatedTime: '30 mins'
     },
     {
-      nameTranslations: {
-        en: 'Terrace/ Verandah cleaning',
-        hi: 'छत/बरामदा सफाई',
-      },
-      descriptionTranslations: {
-        en: 'Terrace and verandah cleaning',
-        hi: 'छत और बरामदा सफाई',
-      },
+      nameTranslations: { en: 'Terrace/ Verandah cleaning', hi: 'छत/बरामदा सफाई' },
+      descriptionTranslations: { en: 'Terrace and verandah cleaning', hi: 'छत और बरामदा सफाई' },
       basePrice: 799,
+      estimatedTime: '45 mins'
     },
     {
-      nameTranslations: {
-        en: 'Sofa cleaning',
-        hi: 'सोफा सफाई',
-      },
-      descriptionTranslations: {
-        en: 'Sofa deep cleaning service',
-        hi: 'सोफा गहरी सफाई सेवा',
-      },
+      nameTranslations: { en: 'Sofa cleaning', hi: 'सोफा सफाई' },
+      descriptionTranslations: { en: 'Sofa deep cleaning service', hi: 'सोफा गहरी सफाई सेवा' },
       basePrice: 899,
+      estimatedTime: '60 mins'
     },
     {
-      nameTranslations: {
-        en: 'Carpet cleaning',
-        hi: 'कालीन सफाई',
-      },
-      descriptionTranslations: {
-        en: 'Carpet and rug cleaning',
-        hi: 'कालीन और गलीचा सफाई',
-      },
+      nameTranslations: { en: 'Carpet cleaning', hi: 'कालीन सफाई' },
+      descriptionTranslations: { en: 'Carpet and rug cleaning', hi: 'कालीन और गलीचा सफाई' },
       basePrice: 599,
+      estimatedTime: '45 mins'
     },
   ];
 
@@ -223,6 +207,7 @@ async function main() {
         nameTranslations: service.nameTranslations,
         descriptionTranslations: service.descriptionTranslations,
         basePrice: service.basePrice,
+        estimatedTime: service.estimatedTime,
         status: 'ACTIVE',
       },
     });
@@ -868,6 +853,52 @@ async function main() {
   console.log('\nSubcategories created: 2');
   console.log('Services created: 51');
   console.log('Categories created: 5');
+
+  // ---------------------------------------------------------
+  // SUPPORTED SERVICE CITIES
+  // ---------------------------------------------------------
+
+  console.log('🌍 Seeding supported cities...');
+  await prisma.supportedCity.deleteMany();
+
+  const supportedCities = [
+    {
+      name: 'Delhi NCR',
+      slug: 'delhi-ncr',
+      aliases: ['Delhi', 'New Delhi', 'Noida', 'Gurugram', 'Gurgaon', 'Ghaziabad', 'Faridabad'],
+      latitude: 28.6139,
+      longitude: 77.209,
+      radiusKm: 60,
+      isActive: true,
+      order: 1,
+    },
+    {
+      name: 'Mumbai',
+      slug: 'mumbai',
+      aliases: ['Bombay', 'Navi Mumbai', 'Thane'],
+      latitude: 19.076,
+      longitude: 72.8777,
+      radiusKm: 50,
+      isActive: true,
+      order: 2,
+    },
+    {
+      name: 'Bangalore',
+      slug: 'bangalore',
+      aliases: ['Bengaluru', 'Bangalore Urban'],
+      latitude: 12.9716,
+      longitude: 77.5946,
+      radiusKm: 45,
+      isActive: true,
+      order: 3,
+    },
+  ];
+
+  for (const city of supportedCities) {
+    await prisma.supportedCity.create({ data: city });
+    console.log(`✅ Supported city: ${city.name}`);
+  }
+
   console.log('========================================');
 }
 

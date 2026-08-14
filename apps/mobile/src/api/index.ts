@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://10.0.2.2:3000/v1';
-export const SOCKET_URL = 'http://10.0.2.2:3000';
+const BASE_URL = 'http://192.168.207.209:3000/v1';
+export const SOCKET_URL = 'http://192.168.207.209:3000';
 console.log('📡 [API] Using Fetch API Wrapper to bypass Axios Event.NONE bug');
 
 async function request(method: string, endpoint: string, data?: any) {
@@ -40,7 +40,7 @@ const api = {
   get: (endpoint: string) => request('GET', endpoint),
   post: (endpoint: string, data?: any) => request('POST', endpoint, data),
   put: (endpoint: string, data?: any) => request('PUT', endpoint, data),
-  delete: (endpoint: string) => request('DELETE', endpoint),
+  delete: (endpoint: string, data?: any) => request('DELETE', endpoint, data),
   // For backwards compatibility where `api.interceptors` is accessed, return a dummy object
   interceptors: { request: { use: () => {} } }
 };
