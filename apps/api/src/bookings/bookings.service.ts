@@ -20,6 +20,7 @@ export class BookingsService {
         clientId,
         serviceId: createBookingDto.serviceId,
         providerId: createBookingDto.providerId,
+        addressId: createBookingDto.addressId,
         scheduledAt: new Date(createBookingDto.scheduledAt),
         totalPrice: createBookingDto.totalPrice,
         offlineId: createBookingDto.offlineId,
@@ -28,6 +29,7 @@ export class BookingsService {
       include: {
         service: true,
         client: true,
+        address: true,
       },
     });
 
@@ -58,13 +60,13 @@ export class BookingsService {
   async findAll(userId: string, role: string) {
     if (role === 'ADMIN') {
       return this.prisma.booking.findMany({
-        include: { service: true, client: true, provider: true },
+        include: { service: true, client: true, provider: true, address: true },
       });
     }
 
     return this.prisma.booking.findMany({
       where: role === 'PROVIDER' ? { providerId: userId } : { clientId: userId },
-      include: { service: true, client: true, provider: true },
+      include: { service: true, client: true, provider: true, address: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -72,7 +74,7 @@ export class BookingsService {
   async findOne(id: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
-      include: { service: true, client: true, provider: true, review: true },
+      include: { service: true, client: true, provider: true, review: true, address: true },
     });
 
     if (!booking) throw new NotFoundException('Booking not found');
@@ -107,6 +109,7 @@ export class BookingsService {
       include: {
         service: true,
         client: true,
+        address: true,
       },
     });
 

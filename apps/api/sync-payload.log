@@ -1,0 +1,70 @@
+{
+  "categories": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "subcategories": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "services": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "bookings": {
+    "created": [
+      {
+        "id": "NTwXnCEY0Aiz1LdP",
+        "_status": "created",
+        "_changed": "",
+        "service_id": "956e9680-b984-4c63-935c-d0503d7187b9",
+        "client_id": "24af8d04-c6b2-4c4c-b595-fc186827bec9",
+        "provider_id": null,
+        "address_id": "e7f49dfa-901f-4a60-934f-2d46158739b1",
+        "status": "PENDING",
+        "scheduled_at": 1786941000000,
+        "total_price": 299,
+        "items": "[{\"serviceId\":\"956e9680-b984-4c63-935c-d0503d7187b9\",\"title\":\"Bathroom\",\"price\":299,\"quantity\":1}]",
+        "otp": null,
+        "created_at": 1786964516418,
+        "updated_at": 1786964516418
+      }
+    ],
+    "updated": [],
+    "deleted": []
+  },
+  "messages": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "chats": {
+    "created": [
+      {
+        "id": "DDU6DAePhdcmlnYs",
+        "_status": "created",
+        "_changed": "",
+        "booking_id": "NTwXnCEY0Aiz1LdP",
+        "client_id": "24af8d04-c6b2-4c4c-b595-fc186827bec9",
+        "provider_id": "system",
+        "created_at": 0,
+        "updated_at": 1786964516419
+      }
+    ],
+    "updated": [],
+    "deleted": []
+  },
+  "reviews": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "addresses": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  }
+}
