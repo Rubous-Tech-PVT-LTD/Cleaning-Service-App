@@ -390,9 +390,10 @@ const HomeScreen = ({ navigation, categories }: any) => {
          <View style={{ paddingBottom: 60 }}>
             <View style={{ paddingHorizontal: 24, marginBottom: 16 }}><Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>Trending Now</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-              {trendingServices.map((service: any) => (
+              {trendingServices.map((service: any, index: number) => (
                 <TrendingCard
                   key={service.id}
+                  index={index}
                   title={i18n.language === 'hi' ? service.nameTranslations?.hi : service.nameTranslations?.en}
                   price={`₹${service.basePrice}`}
                   image={service.imageUrl ? { uri: service.imageUrl } : require('../assets/Cleaning-Kit-Image.png')}
@@ -486,15 +487,40 @@ const NavTab = ({ icon, label, active, onPress }: any) => (
     <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', marginTop: 4, color: active ? Theme.primary : Theme.textSecondary }}>{label}</Text>
   </TouchableOpacity>
 );
-const TrendingCard = ({ title, price, image, onPress }: any) => (
-  <TouchableOpacity style={{ width: 160, marginRight: 16 }} onPress={onPress}>
-    <View style={{ width: 160, height: 160, borderRadius: 32, backgroundColor: 'white', padding: 20, elevation: 5, marginBottom: 12, justifyContent: 'center', alignItems: 'center' }}>
-      <Image source={typeof image === 'string' ? { uri: image } : image} style={{ width: '80%', height: '80%' }} resizeMode="contain" />
-    </View>
-    <Text style={{ fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, fontSize: 14 }}>{title}</Text>
-    <Text style={{ color: Theme.primary, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>{price}</Text>
-  </TouchableOpacity>
-);
+const TrendingCard = ({ title, price, image, onPress, index }: any) => {
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        delay: (index || 0) * 100,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 6,
+        tension: 40,
+        delay: (index || 0) * 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [index, fadeAnim, slideAnim]);
+
+  return (
+    <Animated.View style={{ transform: [{ translateX: slideAnim }], opacity: fadeAnim }}>
+      <TouchableOpacity style={{ width: 160, marginRight: 16 }} onPress={onPress}>
+        <View style={{ width: 160, height: 160, borderRadius: 32, backgroundColor: 'white', elevation: 5, marginBottom: 12, overflow: 'hidden' }}>
+          <Image source={typeof image === 'string' ? { uri: image } : image} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        </View>
+        <Text style={{ fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, fontSize: 14 }}>{title}</Text>
+        <Text style={{ color: Theme.primary, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>{price}</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 export const EnhancedHomeScreen = withObservables([], () => ({
   categories: database.collections.get('categories').query().observeWithColumns(['order']),
