@@ -138,12 +138,12 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
         (item: any) => item.bookingType === 'scheduled' && item.scheduledAt,
       );
 
-      const scheduledAt = scheduledItem?.scheduledAt 
+      const scheduledAt = scheduledItem?.scheduledAt
         ? new Date(scheduledItem.scheduledAt).getTime()
         : new Date().getTime();
 
       // Use saved address if activeLocation has savedAddressId, otherwise use userAddress
-      const bookingAddress = activeLocation.savedAddressId 
+      const bookingAddress = activeLocation.savedAddressId
         ? addresses.find((a: any) => a.id === activeLocation.savedAddressId) || userAddress
         : userAddress;
 
@@ -380,7 +380,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                   >
                     <Text style={{ fontSize: 10, fontWeight: '900', color: Theme.primary }}>
                       {/* {activeLocation.label?.toUpperCase() || 'HOME'} */}
-                     <MapPin />
+                      <MapPin />
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>
@@ -533,8 +533,8 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                 <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>Not serviceable at your location</Text>
               </View>
               <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 16, textAlign: 'center' }}>The location is out of our serviceable area</Text>
-              <TouchableOpacity 
-                onPress={() => navigation.navigate('SearchLocation')} 
+              <TouchableOpacity
+                onPress={() => navigation.navigate('SearchLocation')}
                 style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', width: '100%', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}
               >
                 <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>Change location</Text>

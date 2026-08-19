@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 11,
+  version: 12,
   tables: [
     tableSchema({
       name: 'categories',
@@ -100,6 +100,8 @@ export default appSchema({
         { name: 'state', type: 'string' },
         { name: 'pincode', type: 'string' },
         { name: 'is_default', type: 'boolean' },
+        { name: 'latitude', type: 'number', isOptional: true },
+        { name: 'longitude', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],

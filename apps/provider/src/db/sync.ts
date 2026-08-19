@@ -2,7 +2,7 @@ import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SYNC_URL = 'http://10.130.94.42:3000/v1/sync';
+const SYNC_URL = 'http://192.168.35.209:3000/v1/sync';
 
 // ─── Status priority: higher number = "more final" state ─────────────────────
 // Server wins if its status is more advanced than the local status.

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -55,6 +55,7 @@ export const TrackingScreen = () => {
   const route = useRoute();
   const navigation = useNavigation<any>();
   const { booking } = route.params as { booking: any };
+  const mapRef = useRef<MapView>(null);
 
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -62,19 +63,83 @@ export const TrackingScreen = () => {
   const [distance, setDistance] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [loadingRoute, setLoadingRoute] = useState<boolean>(false);
-  
-  // Get client coordinates from booking address (fallback to default if not available)
-  const clientDestination = {
-    latitude: booking.address?.latitude || 28.6139, // Default to Delhi if not available
-    longitude: booking.address?.longitude || 77.2090,
-  };
+  const [error, setError] = useState<string | null>(null);
+
+  // Validate booking address coordinates (memoized to prevent infinite loops)
+  const validation = useMemo(() => {
+    console.log('=== BOOKING ADDRESS VALIDATION ===');
+    console.log('Booking ID:', booking.id);
+    console.log('Booking address:', JSON.stringify(booking.address, null, 2));
+
+    if (!booking.address) {
+      console.error('Booking address is null or undefined');
+      setError('Booking address is missing');
+      return { valid: false };
+    }
+
+    const { latitude, longitude } = booking.address;
+
+    if (latitude === null || latitude === undefined || longitude === null || longitude === undefined) {
+      console.error('Booking address coordinates are missing');
+      setError('Service address coordinates are missing');
+      return { valid: false };
+    }
+
+    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+      console.error('Invalid coordinate types');
+      setError('Invalid coordinate types');
+      return { valid: false };
+    }
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      console.error('Coordinates are NaN');
+      setError('Invalid coordinates (NaN)');
+      return { valid: false };
+    }
+
+    // Validate coordinate ranges
+    if (latitude < -90 || latitude > 90) {
+      console.error('Invalid latitude range');
+      setError('Invalid latitude (must be between -90 and 90)');
+      return { valid: false };
+    }
+
+    if (longitude < -180 || longitude > 180) {
+      console.error('Invalid longitude range');
+      setError('Invalid longitude (must be between -180 and 180)');
+      return { valid: false };
+    }
+
+    console.log('✅ Valid coordinates:', { latitude, longitude });
+    console.log('=============================');
+
+    return { valid: true, coordinates: { latitude, longitude } };
+  }, [booking.address]);
+
+  // Get client destination from booking address (memoized to prevent infinite recalculation)
+  const clientDestination = useMemo(() => {
+    if (!validation.valid || !validation.coordinates) {
+      return null;
+    }
+    return validation.coordinates;
+  }, [validation]);
 
   useEffect(() => {
-    // 1. Initialize Socket
+    // Show error if coordinates are invalid
+    if (!clientDestination) {
+      Alert.alert(
+        'Navigation Error',
+        error || 'Service address coordinates are missing or invalid. Cannot start navigation.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+      return;
+    }
+
+    // Initialize Socket
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 
-    // 2. Request Permissions and Start Tracking
+    // Request Permissions and Start Tracking
     let locationSubscription: Location.LocationSubscription | null = null;
 
     const startTracking = async () => {
@@ -94,7 +159,7 @@ export const TrackingScreen = () => {
         },
         async (loc) => {
           setLocation(loc);
-          
+
           // Fetch route using OSRM
           setLoadingRoute(true);
           const routeData = await fetchRoute(
@@ -103,14 +168,14 @@ export const TrackingScreen = () => {
             clientDestination.latitude,
             clientDestination.longitude
           );
-          
+
           if (routeData) {
             setRouteCoordinates(routeData.coordinates);
             setDistance(routeData.distance);
             setDuration(routeData.duration);
           }
           setLoadingRoute(false);
-          
+
           // Emit location to backend
           if (newSocket && providerId && booking.clientId) {
             newSocket.emit('update_location', {
@@ -132,7 +197,32 @@ export const TrackingScreen = () => {
       }
       newSocket.disconnect();
     };
-  }, []);
+  }, [booking.id, clientDestination]); // Re-run only if booking or destination changes
+
+  // Recalculate route when provider location changes
+  useEffect(() => {
+    if (location && clientDestination) {
+      const recalculateRoute = async () => {
+        console.log('Recalculating route to booking destination:', clientDestination);
+        setLoadingRoute(true);
+        const routeData = await fetchRoute(
+          location.coords.latitude,
+          location.coords.longitude,
+          clientDestination.latitude,
+          clientDestination.longitude
+        );
+
+        if (routeData) {
+          setRouteCoordinates(routeData.coordinates);
+          setDistance(routeData.distance);
+          setDuration(routeData.duration);
+        }
+        setLoadingRoute(false);
+      };
+
+      recalculateRoute();
+    }
+  }, [location?.coords.latitude, location?.coords.longitude, clientDestination]);
 
   const markArrived = async () => {
     try {
@@ -146,6 +236,15 @@ export const TrackingScreen = () => {
 
   // Get map region that fits both points
   const getMapRegion = () => {
+    if (!clientDestination) {
+      return {
+        latitude: 0,
+        longitude: 0,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+
     if (!location) {
       return {
         latitude: clientDestination.latitude,
@@ -170,59 +269,77 @@ export const TrackingScreen = () => {
 
   return (
     <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        initialRegion={getMapRegion()}
-        region={location ? getMapRegion() : undefined}
-        showsUserLocation={true}
-        followsUserLocation={true}
-      >
-        <Marker 
-          coordinate={clientDestination} 
-          title="Client Location" 
-          description="Navigate here to complete the job"
-          pinColor={Theme.primary}
-        />
-        
-        {/* Draw road route polyline */}
-        {routeCoordinates.length > 0 && (
-          <Polyline
-            coordinates={routeCoordinates}
-            strokeColor={Theme.primary}
-            strokeWidth={4}
-            lineCap="round"
-            lineJoin="round"
-          />
-        )}
-      </MapView>
-
-      <View style={styles.bottomCard}>
-        <View style={styles.infoRow}>
-          <View style={styles.infoBadge}>
-            <Text style={styles.infoLabel}>📍 Distance</Text>
-            <Text style={styles.infoValue}>{formatDistance(distance)}</Text>
-          </View>
-          <View style={styles.infoBadge}>
-            <Text style={styles.infoLabel}>⏱️ Time</Text>
-            <Text style={styles.infoValue}>{formatDuration(duration)}</Text>
-          </View>
+      {!clientDestination ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Navigation Error</Text>
+          <Text style={styles.errorMessage}>
+            {error || 'Service address coordinates are missing or invalid.'}
+          </Text>
+          <TouchableOpacity style={styles.errorButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.errorButtonText}>Go Back</Text>
+          </TouchableOpacity>
         </View>
-        
-        <Text style={styles.title}>Navigating to Client</Text>
-        <Text style={styles.subtitle}>Job #{booking.id.slice(-6).toUpperCase()}</Text>
-        
-        {loadingRoute ? (
-          <Text style={styles.status}>🗺️ Calculating route...</Text>
-        ) : location ? (
-          <Text style={styles.status}>📍 Broadcasting your live location...</Text>
-        ) : (
-          <Text style={styles.status}>Locating you...</Text>
-        )}
+      ) : (
+        <>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            initialRegion={getMapRegion()}
+            showsUserLocation={true}
+            followsUserLocation={true}
+          >
+            <Marker
+              coordinate={clientDestination}
+              title="Client Location"
+              description="Navigate here to complete the job"
+              pinColor={Theme.primary}
+            />
 
-        <TouchableOpacity style={styles.completeButton} onPress={markArrived}>
-          <Text style={styles.buttonText}>I HAVE ARRIVED</Text>
-        </TouchableOpacity>
-      </View>
+            {/* Draw road route polyline */}
+            {routeCoordinates.length > 0 && (
+              <Polyline
+                coordinates={routeCoordinates}
+                strokeColor={Theme.primary}
+                strokeWidth={4}
+                lineCap="round"
+                lineJoin="round"
+              />
+            )}
+          </MapView>
+
+          <View style={styles.bottomCard}>
+            <View style={styles.infoRow}>
+              <View style={styles.infoBadge}>
+                <Text style={styles.infoLabel}>📍 Distance</Text>
+                <Text style={styles.infoValue}>{formatDistance(distance)}</Text>
+              </View>
+              <View style={styles.infoBadge}>
+                <Text style={styles.infoLabel}>⏱️ Time</Text>
+                <Text style={styles.infoValue}>{formatDuration(duration)}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.title}>Navigating to Client</Text>
+            <Text style={styles.subtitle}>Job #{booking.id.slice(-6).toUpperCase()}</Text>
+
+            <Text style={styles.debugInfo}>
+              📍 Destination: {booking.address?.city || 'Unknown City'} ({clientDestination.latitude.toFixed(4)}, {clientDestination.longitude.toFixed(4)})
+            </Text>
+
+            {loadingRoute ? (
+              <Text style={styles.status}>🗺️ Calculating route...</Text>
+            ) : location ? (
+              <Text style={styles.status}>📍 Broadcasting your live location...</Text>
+            ) : (
+              <Text style={styles.status}>Locating you...</Text>
+            )}
+
+            <TouchableOpacity style={styles.completeButton} onPress={markArrived}>
+              <Text style={styles.buttonText}>I HAVE ARRIVED</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
     </View>
   );
 };
@@ -230,6 +347,38 @@ export const TrackingScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: Theme.background,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: Theme.textPrimary,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: Theme.textSecondary,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  errorButton: {
+    backgroundColor: Theme.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+  },
+  errorButtonText: {
+    color: Theme.white,
+    fontWeight: '900',
+    fontSize: 16,
+  },
   bottomCard: {
     position: 'absolute',
     bottom: 0,
@@ -270,7 +419,8 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   title: { fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 4 },
-  subtitle: { fontSize: 14, fontWeight: '600', color: Theme.textSecondary, marginBottom: 16 },
+  subtitle: { fontSize: 14, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 },
+  debugInfo: { fontSize: 12, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12, fontStyle: 'italic' },
   status: { fontSize: 14, fontWeight: '700', color: Theme.primary, marginBottom: 20 },
   completeButton: {
     backgroundColor: Theme.success,

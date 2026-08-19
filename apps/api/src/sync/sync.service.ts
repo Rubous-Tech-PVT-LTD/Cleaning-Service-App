@@ -7,7 +7,7 @@ export class SyncService {
   constructor(
     private prisma: PrismaService,
     private trackingGateway: TrackingGateway,
-  ) {}
+  ) { }
 
   // ============================================================
   // PULL CHANGES
@@ -116,6 +116,11 @@ export class SyncService {
                 gt: lastPulledDate,
               },
             },
+            include: {
+              address: true,
+              service: true,
+              client: true,
+            },
           });
 
           const bookingAddressIds = bookings
@@ -172,6 +177,10 @@ export class SyncService {
               updatedAt: {
                 gt: lastPulledDate,
               },
+            },
+            include: {
+              address: true,
+              service: true,
             },
           });
 
@@ -294,6 +303,34 @@ export class SyncService {
 
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
+
+        // Include address details for navigation
+        address: r.address ? {
+          id: r.address.id,
+          address_line1: r.address.addressLine1,
+          address_line2: r.address.addressLine2,
+          city: r.address.city,
+          state: r.address.state,
+          pincode: r.address.pincode,
+          latitude: r.address.latitude,
+          longitude: r.address.longitude,
+          label: r.address.label,
+        } : null,
+
+        // Include service details for display
+        service: r.service ? {
+          id: r.service.id,
+          name_en: r.service.nameTranslations?.en || '',
+          name_hi: r.service.nameTranslations?.hi || '',
+          base_price: Number(r.service.basePrice),
+        } : null,
+
+        // Include client details for provider reference
+        client: r.client ? {
+          id: r.client.id,
+          full_name: r.client.fullName,
+          phone: r.client.phone,
+        } : null,
       });
 
       // Address mapper
@@ -312,6 +349,9 @@ export class SyncService {
         pincode: r.pincode,
 
         is_default: r.isDefault,
+
+        latitude: r.latitude,
+        longitude: r.longitude,
 
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
@@ -392,12 +432,9 @@ export class SyncService {
       };
 
       console.log(
-        `✅ [Sync] Pull successful for user ${
-          userId || 'guest'
-        } — ${categories.length} cats, ${
-          subcategories.length
-        } subcats, ${services.length} services, ${
-          bookings.length
+        `✅ [Sync] Pull successful for user ${userId || 'guest'
+        } — ${categories.length} cats, ${subcategories.length
+        } subcats, ${services.length} services, ${bookings.length
         } bookings`,
       );
 
@@ -479,6 +516,9 @@ export class SyncService {
               isDefault:
                 addr.is_default,
 
+              latitude: addr.latitude,
+              longitude: addr.longitude,
+
               version: {
                 increment: 1,
               },
@@ -504,8 +544,41 @@ export class SyncService {
 
               isDefault:
                 addr.is_default,
+
+              latitude: addr.latitude,
+              longitude: addr.longitude,
             },
           });
+        }
+
+        for (const addr of changes.addresses.updated || []) {
+          const addressId = addr.id || addr.addressId;
+          const existingAddress = await (this.prisma as any).address.findFirst({
+            where: {
+              OR: [
+                { id: addressId },
+                { offlineId: addressId },
+              ],
+            },
+          });
+
+          if (existingAddress) {
+            await (this.prisma as any).address.update({
+              where: { id: existingAddress.id },
+              data: {
+                label: addr.label,
+                addressLine1: addr.address_line1,
+                addressLine2: addr.address_line2,
+                city: addr.city,
+                state: addr.state,
+                pincode: addr.pincode,
+                isDefault: addr.is_default,
+                latitude: addr.latitude,
+                longitude: addr.longitude,
+                version: { increment: 1 },
+              },
+            });
+          }
         }
       }
 
@@ -541,17 +614,17 @@ export class SyncService {
           const bookingAddress =
             addressId
               ? await (this.prisma as any).address.findFirst({
-                  where: {
-                    OR: [
-                      {
-                        id: addressId,
-                      },
-                      {
-                        offlineId: addressId,
-                      },
-                    ],
-                  },
-                })
+                where: {
+                  OR: [
+                    {
+                      id: addressId,
+                    },
+                    {
+                      offlineId: addressId,
+                    },
+                  ],
+                },
+              })
               : null;
 
           const newBooking =
@@ -580,27 +653,27 @@ export class SyncService {
 
                 ...(serviceId
                   ? {
-                      service: {
-                        connect: {
-                          id: serviceId,
-                        },
+                    service: {
+                      connect: {
+                        id: serviceId,
                       },
-                    }
+                    },
+                  }
                   : {}),
 
                 ...(bookingAddress?.id
                   ? {
-                      address: {
-                        connect: {
-                          id: bookingAddress.id,
-                        },
+                    address: {
+                      connect: {
+                        id: bookingAddress.id,
                       },
-                    }
+                    },
+                  }
                   : {}),
 
                 scheduledAt: new Date(
                   booking.scheduled_at ||
-                    booking.scheduledAt,
+                  booking.scheduledAt,
                 ),
 
                 totalPrice:
@@ -675,12 +748,12 @@ export class SyncService {
 
           const localPriority =
             STATUS_PRIORITY[
-              localStatus
+            localStatus
             ] ?? 0;
 
           const serverPriority =
             STATUS_PRIORITY[
-              serverStatus
+            serverStatus
             ] ?? 0;
 
           // Default: server wins
@@ -719,7 +792,7 @@ export class SyncService {
           if (
             localScheduledAt &&
             localScheduledAt !==
-              serverBooking.scheduledAt.getTime()
+            serverBooking.scheduledAt.getTime()
           ) {
             resolvedScheduledAt =
               new Date(localScheduledAt);
@@ -932,7 +1005,7 @@ export class SyncService {
 
                 createdAt: new Date(
                   msg.created_at ||
-                    msg.createdAt,
+                  msg.createdAt,
                 ),
               },
             });

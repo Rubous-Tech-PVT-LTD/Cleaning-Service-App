@@ -2,7 +2,7 @@ import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SYNC_URL = 'http://10.48.79.42:3000/v1/sync';
+const SYNC_URL = 'http://192.168.35.209:3000/v1/sync';
 
 // ─── Status priority: higher number = "more final" state ─────────────────────
 // Server wins if its status is more advanced than the local status.
@@ -61,7 +61,7 @@ function conflictResolver(
 
   // ── Addresses: merge server data but keep local isDefault preference ──────
   if (table === 'addresses') {
-    return { ...remote, is_default: local.is_default };
+    return { ...remote, is_default: local.is_default, latitude: local.latitude, longitude: local.longitude };
   }
 
   // ── Default: server wins ──────────────────────────────────────────────────
@@ -202,6 +202,52 @@ export async function syncDatabase() {
                 record.basePrice = svc.base_price;
                 record.imageUrl = svc.image_url;
                 record.updatedAt = svc.updated_at;
+              });
+            }
+          }
+        });
+      }
+
+      // Handle addresses in sync
+      if (data.changes.addresses) {
+        const { database } = await import('./index');
+        const addressesCollection = database.collections.get('addresses');
+        
+        await database.write(async () => {
+          // Use upsert to handle existing records
+          for (const addr of data.changes.addresses.created || []) {
+            const existing = await addressesCollection.find(addr.id).catch(() => null);
+            
+            if (existing) {
+              // Update existing record
+              await existing.update((record: any) => {
+                record.userId = addr.user_id;
+                record.label = addr.label;
+                record.addressLine1 = addr.address_line1;
+                record.addressLine2 = addr.address_line2;
+                record.city = addr.city;
+                record.state = addr.state;
+                record.pincode = addr.pincode;
+                record.isDefault = addr.is_default;
+                record.latitude = addr.latitude;
+                record.longitude = addr.longitude;
+                record.updatedAt = addr.updated_at;
+              });
+            } else {
+              // Create new record
+              await addressesCollection.create((record: any) => {
+                record._raw.id = addr.id;
+                record.userId = addr.user_id;
+                record.label = addr.label;
+                record.addressLine1 = addr.address_line1;
+                record.addressLine2 = addr.address_line2;
+                record.city = addr.city;
+                record.state = addr.state;
+                record.pincode = addr.pincode;
+                record.isDefault = addr.is_default;
+                record.latitude = addr.latitude;
+                record.longitude = addr.longitude;
+                record.updatedAt = addr.updated_at;
               });
             }
           }

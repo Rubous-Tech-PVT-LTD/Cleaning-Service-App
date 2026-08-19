@@ -182,6 +182,8 @@ export const AddressPickerScreen = ({ navigation }: any) => {
           newAddress.state = addressObj?.region || '';
           newAddress.pincode = addressObj?.postalCode || '';
           newAddress.isDefault = isDefault;
+          newAddress.latitude = region.latitude;
+          newAddress.longitude = region.longitude;
         });
 
         savedAddressId = created.id;
