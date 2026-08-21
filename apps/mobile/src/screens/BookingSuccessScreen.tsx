@@ -16,7 +16,7 @@ import { Theme } from '../theme';
 const { width } = Dimensions.get('window');
 
 export const BookingSuccessScreen = ({ route, navigation }: any) => {
-  const { bookingId, totalPrice, date } = route.params;
+  const { bookingId, totalPrice, date, addressLabel, addressLine1, addressCity } = route.params;
 
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
@@ -111,7 +111,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
               </View>
               <View>
                 <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '700' }}>SERVICE LOCATION</Text>
-                <Text style={{ fontSize: 14, color: Theme.textPrimary, fontWeight: '800' }}>Home • Sector 62, Noida</Text>
+                <Text style={{ fontSize: 14, color: Theme.textPrimary, fontWeight: '800' }}>{addressLabel} • {addressLine1}, {addressCity}</Text>
               </View>
             </View>
           </View>

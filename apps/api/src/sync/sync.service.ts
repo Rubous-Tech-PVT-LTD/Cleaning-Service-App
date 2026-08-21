@@ -19,6 +19,11 @@ export class SyncService {
     role?: string,
   ) {
     try {
+      const syncBoundaryRow = await (this.prisma as any).$queryRaw`
+        SELECT NOW() AS sync_boundary
+      `;
+      const syncBoundaryDate: Date = syncBoundaryRow[0].sync_boundary;
+      const syncBoundary = syncBoundaryDate.getTime();
       const lastPulledDate = lastPulledAt
         ? new Date(lastPulledAt)
         : new Date(0);
@@ -26,11 +31,38 @@ export class SyncService {
       const toChangeset = (
         items: any[],
         mapper: (r: any) => any,
-      ) => ({
-        created: items.map(mapper),
-        updated: [],
-        deleted: [],
-      });
+      ) => {
+        if (!lastPulledAt || lastPulledDate.getTime() === 0) {
+          // Initial sync - all records are created
+          return {
+            created: items.map(mapper),
+            updated: [],
+            deleted: [],
+          };
+        }
+
+        // Subsequent syncs - classify based on createdAt vs lastPulledAt
+        const created: any[] = [];
+        const updated: any[] = [];
+
+        for (const item of items) {
+          const createdAt = item.createdAt ? item.createdAt.getTime() : 0;
+
+          if (createdAt > lastPulledAt) {
+            // Record was created after last pull
+            created.push(mapper(item));
+          } else {
+            // Record existed before but was updated after last pull
+            updated.push(mapper(item));
+          }
+        }
+
+        return {
+          created,
+          updated,
+          deleted: [],
+        };
+      };
 
       // ==========================================================
       // GLOBAL DATA
@@ -41,6 +73,7 @@ export class SyncService {
         where: {
           updatedAt: {
             gt: lastPulledDate,
+            lte: syncBoundaryDate,
           },
         },
         include: {
@@ -59,6 +92,7 @@ export class SyncService {
         where: {
           updatedAt: {
             gt: lastPulledDate,
+            lte: syncBoundaryDate,
           },
         },
       });
@@ -68,6 +102,7 @@ export class SyncService {
         where: {
           updatedAt: {
             gt: lastPulledDate,
+            lte: syncBoundaryDate,
           },
         },
       });
@@ -114,6 +149,7 @@ export class SyncService {
               ],
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
             include: {
@@ -141,15 +177,20 @@ export class SyncService {
               ],
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
           });
 
           chats = await (this.prisma as any).chat.findMany({
             where: {
-              providerId: userId,
+              OR: [
+                { providerId: userId },
+                { booking: { providerId: userId } },
+              ],
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
           });
@@ -157,11 +198,18 @@ export class SyncService {
           messages = await (this.prisma as any).message.findMany({
             where: {
               chat: {
-                providerId: userId,
+                OR: [
+                  { providerId: userId },
+                  { booking: { providerId: userId } },
+                ],
               },
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
+            },
+            include: {
+              chat: true,
             },
           });
         }
@@ -176,6 +224,7 @@ export class SyncService {
               clientId: userId,
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
             include: {
@@ -189,15 +238,20 @@ export class SyncService {
               userId,
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
           });
 
           chats = await (this.prisma as any).chat.findMany({
             where: {
-              clientId: userId,
+              OR: [
+                { clientId: userId },
+                { booking: { clientId: userId } },
+              ],
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
           });
@@ -205,11 +259,18 @@ export class SyncService {
           messages = await (this.prisma as any).message.findMany({
             where: {
               chat: {
-                clientId: userId,
+                OR: [
+                  { clientId: userId },
+                  { booking: { clientId: userId } },
+                ],
               },
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
+            },
+            include: {
+              chat: true,
             },
           });
         }
@@ -440,7 +501,7 @@ export class SyncService {
 
       return {
         changes,
-        timestamp: Date.now(),
+        timestamp: syncBoundary,
       };
     } catch (error) {
       console.error(
@@ -883,8 +944,11 @@ export class SyncService {
       // ==========================================================
 
       if (changes.chats) {
-        for (const chat of changes.chats
-          .created || []) {
+        const allChats = [
+          ...(changes.chats.created || []),
+          ...(changes.chats.updated || []),
+        ];
+        for (const chat of allChats) {
           const chatBookingId =
             chat.booking_id ||
             chat.bookingId;
@@ -907,39 +971,39 @@ export class SyncService {
             });
 
           if (booking) {
-            await (
-              this.prisma as any
-            ).chat.upsert({
+            const authoritativeProviderId =
+              booking.providerId ||
+              (chat.provider_id && chat.provider_id !== 'system' ? chat.provider_id : null) ||
+              (chat.providerId && chat.providerId !== 'system' ? chat.providerId : null) ||
+              'system';
+
+            const existingChat = await (this.prisma as any).chat.findFirst({
               where: {
-                offlineId:
-                  chat.offlineId ||
-                  chat.id,
-              },
-
-              update: {
-                version: {
-                  increment: 1,
-                },
-              },
-
-              create: {
-                offlineId:
-                  chat.offlineId ||
-                  chat.id,
-
-                bookingId:
-                  booking.id,
-
-                clientId:
-                  chat.client_id ||
-                  chat.clientId,
-
-                providerId:
-                  chat.provider_id ||
-                  chat.providerId ||
-                  'system',
+                OR: [
+                  { bookingId: booking.id },
+                  { offlineId: chat.offlineId || chat.id },
+                ],
               },
             });
+
+            if (existingChat) {
+              await (this.prisma as any).chat.update({
+                where: { id: existingChat.id },
+                data: {
+                  ...(booking.providerId ? { providerId: booking.providerId } : {}),
+                  version: { increment: 1 },
+                },
+              });
+            } else {
+              await (this.prisma as any).chat.create({
+                data: {
+                  offlineId: chat.offlineId || chat.id,
+                  bookingId: booking.id,
+                  clientId: chat.client_id || chat.clientId,
+                  providerId: authoritativeProviderId,
+                },
+              });
+            }
           }
         }
       }
@@ -949,8 +1013,11 @@ export class SyncService {
       // ==========================================================
 
       if (changes.messages) {
-        for (const msg of changes.messages
-          .created || []) {
+        const allMessages = [
+          ...(changes.messages.created || []),
+          ...(changes.messages.updated || []),
+        ];
+        for (const msg of allMessages) {
           const msgChatId =
             msg.chat_id ||
             msg.chatId;
@@ -983,6 +1050,7 @@ export class SyncService {
               },
 
               update: {
+                content: msg.content,
                 version: {
                   increment: 1,
                 },
@@ -1004,8 +1072,10 @@ export class SyncService {
                   msg.content,
 
                 createdAt: new Date(
-                  msg.created_at ||
-                  msg.createdAt,
+                  Math.min(
+                    msg.created_at || msg.createdAt,
+                    Date.now()
+                  )
                 ),
               },
             });

@@ -19,6 +19,7 @@ export default class Booking extends Model {
   @field('total_price') totalPrice!: number;
   @field('items') items?: string;
   @field('otp') otp?: string;
+  @field('offline_id') offlineId?: string;
   @date('created_at') createdAt!: number;
 
   @relation('services', 'service_id') service!: Relation<Service>;

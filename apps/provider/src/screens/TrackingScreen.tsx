@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -64,6 +64,7 @@ export const TrackingScreen = () => {
   const [duration, setDuration] = useState<number>(0);
   const [loadingRoute, setLoadingRoute] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [sosLoading, setSosLoading] = useState<boolean>(false);
 
   // Validate booking address coordinates (memoized to prevent infinite loops)
   const validation = useMemo(() => {
@@ -234,6 +235,64 @@ export const TrackingScreen = () => {
     }
   };
 
+  const handleTriggerSos = async () => {
+    if (sosLoading) return;
+
+    Alert.alert(
+      'Emergency SOS',
+      'Are you sure you want to trigger an emergency SOS?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, Trigger SOS',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setSosLoading(true);
+
+              let lat: number;
+              let lng: number;
+
+              if (location) {
+                lat = location.coords.latitude;
+                lng = location.coords.longitude;
+              } else {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                  Alert.alert('Permission Denied', 'Location permission is required to share your emergency location.');
+                  return;
+                }
+                const freshLoc = await Location.getCurrentPositionAsync({
+                  accuracy: Location.Accuracy.High,
+                });
+                lat = freshLoc.coords.latitude;
+                lng = freshLoc.coords.longitude;
+              }
+
+              const payload = {
+                bookingId: booking.id,
+                latitude: lat,
+                longitude: lng,
+              };
+
+              await api.post('/sos', payload);
+
+              Alert.alert(
+                'SOS Sent',
+                'Your emergency alert has been sent. Help is on the way.'
+              );
+            } catch (err: any) {
+              const msg = err?.response?.data?.message || err.message || 'Failed to send SOS. Please try again.';
+              Alert.alert('SOS Failed', msg);
+            } finally {
+              setSosLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Get map region that fits both points
   const getMapRegion = () => {
     if (!clientDestination) {
@@ -334,6 +393,21 @@ export const TrackingScreen = () => {
               <Text style={styles.status}>Locating you...</Text>
             )}
 
+            <TouchableOpacity
+              onPress={handleTriggerSos}
+              disabled={sosLoading}
+              style={[styles.sosButton, sosLoading && { opacity: 0.6 }]}
+            >
+              {sosLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <Text style={styles.sosEmoji}>🚨</Text>
+                  <Text style={styles.sosButtonText}>EMERGENCY SOS</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.completeButton} onPress={markArrived}>
               <Text style={styles.buttonText}>I HAVE ARRIVED</Text>
             </TouchableOpacity>
@@ -429,4 +503,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: Theme.white, fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
+  sosButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    flexDirection: 'row',
+    shadowColor: '#DC2626',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: '#FCA5A5',
+  },
+  sosEmoji: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  sosButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+  },
 });

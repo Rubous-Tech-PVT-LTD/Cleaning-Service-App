@@ -241,11 +241,6 @@ export class BookingsService {
   async updateStatus(id: string, updateStatusDto: UpdateBookingStatusDto, user?: any) {
     const updateData: any = { status: updateStatusDto.status };
 
-    // If a provider accepts the job, assign it to them
-    if (updateStatusDto.status === BookingStatus.ACCEPTED && user && user.role === 'PROVIDER') {
-      updateData.providerId = user.id;
-    }
-
     const currentBooking = await this.prisma.booking.findUnique({ where: { id } });
     if (!currentBooking) throw new NotFoundException('Booking not found');
 
@@ -259,14 +254,43 @@ export class BookingsService {
       }
     }
 
-    const booking = await this.prisma.booking.update({
-      where: { id },
-      data: updateData,
-      include: {
-        service: true,
-        client: true,
-        address: true,
-      },
+    // Execute booking status update & chat linking inside a Prisma transaction
+    const booking = await this.prisma.$transaction(async (tx: any) => {
+      if (updateStatusDto.status === BookingStatus.ACCEPTED && user && user.role === 'PROVIDER') {
+        updateData.providerId = user.id;
+
+        // Find Chat by bookingId; if exists update providerId, if not create Chat
+        const existingChat = await tx.chat.findFirst({
+          where: { bookingId: id },
+        });
+        if (existingChat) {
+          await tx.chat.update({
+            where: { id: existingChat.id },
+            data: {
+              providerId: user.id,
+              updatedAt: new Date(),
+            },
+          });
+        } else if (currentBooking.clientId) {
+          await tx.chat.create({
+            data: {
+              bookingId: id,
+              clientId: currentBooking.clientId,
+              providerId: user.id,
+            },
+          });
+        }
+      }
+
+      return tx.booking.update({
+        where: { id },
+        data: updateData,
+        include: {
+          service: true,
+          client: true,
+          address: true,
+        },
+      });
     });
 
     // 🔔 Send push notification to client

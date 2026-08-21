@@ -14,6 +14,7 @@ export default class Address extends Model {
   @field('is_default') isDefault: any;
   @field('latitude') latitude: any;
   @field('longitude') longitude: any;
+  @field('offline_id') offlineId?: any;
 
   @date('created_at') createdAt: any;
   @date('updated_at') updatedAt: any;

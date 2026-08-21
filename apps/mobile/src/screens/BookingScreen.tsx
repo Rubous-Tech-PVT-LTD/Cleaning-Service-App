@@ -131,7 +131,10 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
       navigation.navigate('BookingSuccess', { 
         bookingId: newBookingId, 
         totalPrice: totalPrice,
-        date: finalDate.getTime()
+        date: finalDate.getTime(),
+        addressLabel: bookingAddress.label,
+        addressLine1: bookingAddress.addressLine1,
+        addressCity: bookingAddress.city
       });
     } catch (error: any) {
       console.error('Booking Error:', error);

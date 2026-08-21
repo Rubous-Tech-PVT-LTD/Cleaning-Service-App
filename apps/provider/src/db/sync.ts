@@ -2,7 +2,7 @@ import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SYNC_URL = 'http://192.168.35.209:3000/v1/sync';
+const SYNC_URL = 'http://192.168.92.209:3000/v1/sync';
 
 // ─── Status priority: higher number = "more final" state ─────────────────────
 // Server wins if its status is more advanced than the local status.
@@ -104,6 +104,9 @@ export async function syncDatabase() {
       }
 
       const data = JSON.parse(response.text);
+
+      // WatermelonDB's native synchronize() will process the changesets
+      // No manual database.write() needed - let WatermelonDB handle it
       return { changes: data.changes, timestamp: data.timestamp };
     },
 

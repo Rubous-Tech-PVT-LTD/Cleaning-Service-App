@@ -20,6 +20,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { CartModule } from './cart/cart.module';
 import { CitiesModule } from './cities/cities.module';
+import { SosModule } from './sos/sos.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { CitiesModule } from './cities/cities.module';
     TrackingModule,
     CartModule,
     CitiesModule,
+    SosModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

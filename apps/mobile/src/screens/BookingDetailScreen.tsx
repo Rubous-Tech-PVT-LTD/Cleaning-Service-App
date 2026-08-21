@@ -1,17 +1,21 @@
 import React from 'react';
 import { switchMap } from 'rxjs/operators';
-import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, MapPin, Calendar, Clock, Phone, MessageCircle, ShieldCheck, CreditCard } from 'lucide-react-native';
 import withObservables from '@nozbe/with-observables';
 import MapView, { Marker } from 'react-native-maps';
 import { io } from 'socket.io-client';
+import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { database } from '../db';
 import { Theme } from '../theme';
-import { SOCKET_URL } from '../api';
+import api, { SOCKET_URL } from '../api';
 
 const BookingDetailScreenBase = ({ navigation, booking, service, address }: any) => {
+  const [providerLocation, setProviderLocation] = React.useState<{ latitude: number, longitude: number } | null>(null);
+  const [sosLoading, setSosLoading] = React.useState(false);
+
   if (!booking || !service) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -20,15 +24,13 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address }: any)
     );
   }
 
-  const [providerLocation, setProviderLocation] = React.useState<{ latitude: number, longitude: number } | null>(null);
-
   React.useEffect(() => {
     if (booking.status !== 'IN_PROGRESS' && booking.status !== 'ACCEPTED') return;
 
     const socket = io(SOCKET_URL);
 
     const initSocket = async () => {
-      const clientId = await AsyncStorage.getItem('user_id'); // Assuming mobile uses user_id
+      const clientId = await AsyncStorage.getItem('user_id');
       if (clientId) {
         socket.emit('register', { userId: clientId, role: 'CLIENT' });
       }
@@ -46,6 +48,55 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address }: any)
       socket.disconnect();
     };
   }, [booking.status]);
+
+  const handleTriggerSos = async () => {
+    if (sosLoading) return;
+
+    Alert.alert(
+      'Emergency SOS',
+      'Are you sure you want to trigger an emergency SOS?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, Trigger SOS',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setSosLoading(true);
+
+              const { status } = await Location.requestForegroundPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Location permission is required to share your emergency location.');
+                return;
+              }
+
+              const loc = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.High,
+              });
+
+              const payload = {
+                bookingId: booking.id,
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+              };
+
+              await api.post('/sos', payload);
+
+              Alert.alert(
+                'SOS Sent',
+                'Your emergency alert has been sent. Help is on the way.'
+              );
+            } catch (err: any) {
+              const msg = err?.response?.data?.message || err.message || 'Failed to send SOS. Please try again.';
+              Alert.alert('SOS Failed', msg);
+            } finally {
+              setSosLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const items = booking.items ? JSON.parse(booking.items) : [];
   const scheduledDate = new Date(booking.scheduledAt);
@@ -148,6 +199,8 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address }: any)
           </View>
         </View>
 
+     
+
         {/* Help Center Shortcut */}
         <TouchableOpacity 
           onPress={() => navigation.navigate('HelpCenter')}
@@ -160,7 +213,23 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address }: any)
           </View>
           <ChevronLeft size={20} color={Theme.textSecondary} style={{ transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
-
+   {/* SOS Emergency Button - only for active bookings */}
+        {(booking.status === 'ACCEPTED' || booking.status === 'IN_PROGRESS') && (
+          <TouchableOpacity
+            onPress={handleTriggerSos}
+            disabled={sosLoading}
+            style={[styles.sosButton, sosLoading && { opacity: 0.6 }]}
+          >
+            {sosLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <>
+                <Text style={styles.sosEmoji}>🚨</Text>
+                <Text style={styles.sosButtonText}>EMERGENCY SOS</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
         {/* Action Buttons */}
         {booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && (
           <View style={styles.actionContainer}>
@@ -338,6 +407,31 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '900',
+  },
+  sosButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 20,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    flexDirection: 'row',
+    shadowColor: '#DC2626',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+    borderWidth: 2,
+    borderColor: '#FCA5A5',
+  },
+  sosEmoji: {
+    fontSize: 22,
+    marginRight: 10,
+  },
+  sosButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 1.5,
   },
 });
 

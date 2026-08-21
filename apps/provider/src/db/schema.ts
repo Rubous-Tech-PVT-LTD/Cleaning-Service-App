@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 6,
+  version: 7,
   tables: [
     tableSchema({
       name: 'categories',
@@ -37,6 +37,7 @@ export default appSchema({
         { name: 'total_price', type: 'number' },
         { name: 'items', type: 'string', isOptional: true },
         { name: 'otp', type: 'string', isOptional: true },
+        { name: 'offline_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],
@@ -47,6 +48,7 @@ export default appSchema({
         { name: 'chat_id', type: 'string', isIndexed: true },
         { name: 'sender_id', type: 'string' },
         { name: 'content', type: 'string' },
+        { name: 'offline_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],
@@ -57,6 +59,7 @@ export default appSchema({
         { name: 'booking_id', type: 'string', isIndexed: true },
         { name: 'client_id', type: 'string' },
         { name: 'provider_id', type: 'string' },
+        { name: 'offline_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],
@@ -82,6 +85,7 @@ export default appSchema({
         { name: 'state', type: 'string' },
         { name: 'pincode', type: 'string' },
         { name: 'is_default', type: 'boolean' },
+        { name: 'offline_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],

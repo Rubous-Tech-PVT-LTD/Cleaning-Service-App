@@ -192,6 +192,9 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
         bookingId: newBookingId,
         totalPrice: getFinalAmount(),
         date: scheduledAt,
+        addressLabel: bookingAddress.label,
+        addressLine1: bookingAddress.addressLine1,
+        addressCity: bookingAddress.city
       });
     } catch (e) {
       console.error('Error confirming booking:', e);
