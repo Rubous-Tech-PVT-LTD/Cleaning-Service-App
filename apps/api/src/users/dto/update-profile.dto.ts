@@ -56,4 +56,9 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsNumber()
   longitude?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  professionId?: string;
 }

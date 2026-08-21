@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import * as Location from 'expo-location';
 import { Theme } from '../theme';
 import api from '../api';
 
@@ -11,6 +12,7 @@ export const JobsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [completionJobId, setCompletionJobId] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState('');
+  const [sosLoadingJobId, setSosLoadingJobId] = useState<string | null>(null);
 
   const fetchJobs = async () => {
     try {
@@ -67,6 +69,55 @@ export const JobsScreen = () => {
       updateStatus(completionJobId, 'COMPLETED', otpInput);
       setCompletionJobId(null);
     }
+  };
+
+  const handleTriggerSos = async (job: any) => {
+    if (sosLoadingJobId) return;
+
+    Alert.alert(
+      'Emergency SOS',
+      'Are you sure you want to trigger an emergency SOS?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, Trigger SOS',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setSosLoadingJobId(job.id);
+
+              const { status } = await Location.requestForegroundPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Location permission is required to share your emergency location.');
+                return;
+              }
+
+              const loc = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.High,
+              });
+
+              const payload = {
+                bookingId: job.id,
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+              };
+
+              await api.post('/sos', payload);
+
+              Alert.alert(
+                'SOS Sent',
+                'Your emergency alert has been sent. Help is on the way.'
+              );
+            } catch (err: any) {
+              const msg = err?.response?.data?.message || err.message || 'Failed to send SOS. Please try again.';
+              Alert.alert('SOS Failed', msg);
+            } finally {
+              setSosLoadingJobId(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -128,13 +179,28 @@ export const JobsScreen = () => {
                       <Text style={styles.buttonText}>MARK COMPLETED</Text>
                     </TouchableOpacity>
                   )}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.primaryButton, { backgroundColor: '#F4EDFF', flex: 0, paddingHorizontal: 16 }]}
-                    onPress={() => navigation.navigate('Chat', { bookingId: job.id, clientName: job.client?.fullName })}
+                    onPress={() => navigation.navigate('Chat', { bookingId: job.id, clientName: job.client?.fullName, clientId: job.clientId })}
                   >
                     <Text style={{ fontSize: 20 }}>💬</Text>
                   </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                  onPress={() => handleTriggerSos(job)}
+                  disabled={sosLoadingJobId === job.id}
+                  style={[styles.sosButton, sosLoadingJobId === job.id && { opacity: 0.6 }]}
+                >
+                  {sosLoadingJobId === job.id ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <>
+                      <Text style={styles.sosEmoji}>🚨</Text>
+                      <Text style={styles.sosButtonText}>EMERGENCY SOS</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               </View>
             );
           })
@@ -207,4 +273,29 @@ const styles = StyleSheet.create({
   otpInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: Theme.border, borderRadius: 12, padding: 16, fontSize: 24, letterSpacing: 8, textAlign: 'center', fontWeight: '900', color: Theme.primary, marginBottom: 24 },
   modalActions: { flexDirection: 'row', gap: 12 },
   modalButton: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center' },
+  sosButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    flexDirection: 'row',
+    shadowColor: '#DC2626',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: '#FCA5A5',
+  },
+  sosEmoji: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  sosButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
 });

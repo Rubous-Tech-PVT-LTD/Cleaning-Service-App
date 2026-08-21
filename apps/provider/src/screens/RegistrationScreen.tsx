@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
+import * as Location from 'expo-location';
 import api from '../api';
 import { Theme } from '../theme';
 
@@ -40,6 +41,8 @@ export const RegistrationScreen = ({ navigation }: any) => {
     addressLine1: '',
     country: 'India',
     professionId: '',
+    latitude: 0,
+    longitude: 0,
   });
 
   // Mock document upload state
@@ -60,7 +63,30 @@ export const RegistrationScreen = ({ navigation }: any) => {
         }
       })
       .catch(err => console.log('Failed to fetch services', err));
+
+    // Get current location for provider matching
+    getCurrentLocation();
   }, []);
+
+  const getCurrentLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Location permission denied');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      setForm(f => ({
+        ...f,
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      }));
+      console.log('Provider location captured:', location.coords);
+    } catch (error) {
+      console.log('Error getting location:', error);
+    }
+  };
 
   const handleDocumentUpload = (docType: keyof typeof docs, title: string) => {
     Alert.alert('Upload Document', `Simulating upload for ${title}...`, [
@@ -84,16 +110,28 @@ export const RegistrationScreen = ({ navigation }: any) => {
       return;
     }
 
+    // Ensure location is captured
+    if (form.latitude === 0 || form.longitude === 0) {
+      Alert.alert('Location Required', 'Please enable location services for provider matching');
+      await getCurrentLocation();
+      if (form.latitude === 0 || form.longitude === 0) {
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const phoneWithCode = `+91${form.phone}`;
-      
-      // 1. Register Profile
-      await api.post('/auth/register-provider', {
+      const payload = {
         ...form,
         phone: phoneWithCode,
         documents: docs // Save mock document status
-      });
+      };
+      
+      console.log('[Registration] Sending payload:', payload);
+      
+      // 1. Register Profile
+      await api.post('/auth/register-provider', payload);
 
       // 2. Automatically request OTP after successful registration
       const otpRes = await api.post('/auth/otp/request', { phone: phoneWithCode });
@@ -109,7 +147,24 @@ export const RegistrationScreen = ({ navigation }: any) => {
       }
 
     } catch (error: any) {
-      const msg = error?.response?.data?.message || error?.message || 'Registration failed';
+      console.log('[Registration Error]', error);
+      
+      // Handle different error response formats
+      let msg = 'Registration failed';
+      if (error?.response?.data) {
+        const data = error.response.data;
+        if (typeof data === 'string') {
+          msg = data;
+        } else if (Array.isArray(data)) {
+          msg = data.map((e: any) => e.message || e).join(', ');
+        } else if (data.message) {
+          msg = data.message;
+        } else if (data.error) {
+          msg = data.error;
+        }
+      } else if (error?.message) {
+        msg = error.message;
+      }
       
       if (msg.includes('NONE') || msg.includes('read-only')) {
         console.log('[Registration] Network disconnect bug, assuming success...');
@@ -169,6 +224,19 @@ export const RegistrationScreen = ({ navigation }: any) => {
               <View style={{ flex: 1 }}><InputField label="State *" placeholder="State" value={form.state} onChangeText={(t: string) => setForm({...form, state: t})} /></View>
             </View>
             <InputField label="Country" placeholder="India" value={form.country} onChangeText={(t: string) => setForm({...form, country: t})} />
+            
+            {/* Location Status */}
+            <View style={{ marginBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ 
+                width: 12, height: 12, borderRadius: 6, 
+                backgroundColor: form.latitude !== 0 && form.longitude !== 0 ? Theme.success : '#cbd5e1' 
+              }} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary }}>
+                {form.latitude !== 0 && form.longitude !== 0 
+                  ? '✓ Location captured for provider matching' 
+                  : 'Location required for provider matching'}
+              </Text>
+            </View>
 
             {/* Profession / Service Picker */}
             <View style={{ marginBottom: 24 }}>

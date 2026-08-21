@@ -8,6 +8,7 @@ import { RegistrationScreen } from '../screens/RegistrationScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { TabNavigator } from './TabNavigator';
 import { TrackingScreen } from '../screens/TrackingScreen';
+import { ManageServicesScreen } from '../screens/ManageServicesScreen';
 import { Theme } from '../theme';
 
 const Stack = createNativeStackNavigator();
@@ -41,6 +42,7 @@ export const ProviderNavigation = () => {
       <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} />
       <Stack.Screen name="Dashboard" component={TabNavigator} />
       <Stack.Screen name="Tracking" component={TrackingScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="ManageServices" component={ManageServicesScreen} />
     </Stack.Navigator>
   );
 };

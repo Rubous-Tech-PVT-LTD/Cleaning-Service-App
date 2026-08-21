@@ -24,6 +24,7 @@ model User {
   providerBookings Booking[] @relation("ProviderBookings")
   cart             Cart?
   profile          Profile?
+  raisedSosAlerts  Sos[]
 
   @@map("users")
 }
@@ -185,6 +186,7 @@ model Booking {
   chats       Chat[]
   payment     Payment?
   review      Review?
+  sosAlerts   Sos[]
 
   @@map("bookings")
 }
@@ -219,7 +221,7 @@ model Payment {
 
 model Chat {
   id         String    @id @default(uuid())
-  bookingId  String
+  bookingId  String    @unique
   clientId   String
   providerId String
   createdAt  DateTime  @default(now())
@@ -229,6 +231,9 @@ model Chat {
   booking    Booking   @relation(fields: [bookingId], references: [id])
   messages   Message[]
 
+  @@index([providerId])
+  @@index([clientId])
+  @@index([updatedAt])
   @@map("chats")
 }
 
@@ -244,6 +249,10 @@ model Message {
   version   Int      @default(1)
   chat      Chat     @relation(fields: [chatId], references: [id])
 
+  @@index([chatId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([updatedAt])
   @@map("messages")
 }
 
@@ -288,4 +297,35 @@ enum EscrowStatus {
   HELD
   RELEASED
   REFUNDED
+}
+
+enum SosStatus {
+  ACTIVE
+  RESOLVED
+  CANCELLED
+}
+
+enum SosRole {
+  CLIENT
+  PROVIDER
+}
+
+model Sos {
+  id              String    @id @default(uuid())
+  bookingId       String
+  raisedByUserId  String
+  raisedByRole    SosRole
+  latitude        Float
+  longitude       Float
+  status          SosStatus @default(ACTIVE)
+  createdAt       DateTime  @default(now())
+  resolvedAt      DateTime?
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  raisedByUser    User      @relation(fields: [raisedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([raisedByUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("sos")
 }

@@ -80,8 +80,8 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
           (address.addressLine2 ? ', ' + address.addressLine2 : ''),
         city: address.city,
         state: address.state,
-        lat: 0,
-        lng: 0,
+        lat: address.latitude || 0,
+        lng: address.longitude || 0,
         savedAddressId: address.id,
       });
       await goHomeWithLocation(activeLocation);

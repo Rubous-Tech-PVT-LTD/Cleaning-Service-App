@@ -69,7 +69,7 @@ export const ProfileScreen = () => {
             <Text style={styles.menuItemText}>Language Preference</Text>
             <Text style={styles.menuValueText}>{profile?.languagePref === 'hi' ? 'Hindi' : 'English'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ManageServices')}>
             <Text style={styles.menuItemText}>Manage Services</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}>

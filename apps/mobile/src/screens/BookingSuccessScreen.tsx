@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withDelay, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withDelay,
   withSequence,
   interpolate,
   Extrapolate
@@ -16,8 +16,8 @@ import { Theme } from '../theme';
 const { width } = Dimensions.get('window');
 
 export const BookingSuccessScreen = ({ route, navigation }: any) => {
-  const { bookingId, totalPrice, date } = route.params;
-  
+  const { bookingId, totalPrice, date, addressLabel, addressLine1, addressCity } = route.params;
+
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
   const cardY = useSharedValue(50);
@@ -46,7 +46,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-        
+
         {/* Animated Checkmark Circle */}
         <Animated.View style={[{
           width: 100,
@@ -111,7 +111,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
               </View>
               <View>
                 <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '700' }}>SERVICE LOCATION</Text>
-                <Text style={{ fontSize: 14, color: Theme.textPrimary, fontWeight: '800' }}>Home • Sector 62, Noida</Text>
+                <Text style={{ fontSize: 14, color: Theme.textPrimary, fontWeight: '800' }}>{addressLabel} • {addressLine1}, {addressCity}</Text>
               </View>
             </View>
           </View>
@@ -125,14 +125,14 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
         </Animated.View>
 
         <Animated.View style={[{ width: '100%', marginTop: 40 }, cardStyle]}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.navigate('MyBookings')}
-            style={{ 
-              backgroundColor: Theme.primary, 
-              flexDirection: 'row', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              paddingVertical: 18, 
+            style={{
+              backgroundColor: Theme.primary,
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingVertical: 18,
               borderRadius: 20,
               shadowColor: Theme.primary,
               shadowOffset: { width: 0, height: 6 },
@@ -145,7 +145,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
             <ChevronRight size={20} color="white" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.navigate('Home')}
             style={{ marginTop: 20, alignSelf: 'center' }}
           >

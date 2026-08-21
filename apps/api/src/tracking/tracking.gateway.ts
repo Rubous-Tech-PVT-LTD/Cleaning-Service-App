@@ -16,7 +16,7 @@ import { Server, Socket } from 'socket.io';
 })
 export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   // Track connected users (userId -> socketId)
   private userSockets = new Map<string, string>();
@@ -64,6 +64,13 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
     if (socketId) {
       this.server.to(socketId).emit(event, data);
     }
+  }
+
+  // Method to notify specific providers about available bookings
+  notifyProviders(providerIds: string[], event: string, data: any) {
+    providerIds.forEach(providerId => {
+      this.notifyUser(providerId, event, data);
+    });
   }
 
   // Location Tracking

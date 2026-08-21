@@ -13,31 +13,99 @@ import { io, Socket } from 'socket.io-client';
 import { SOCKET_URL } from '../api';
 
 const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
-  const { bookingId, clientName } = route.params;
+  const { bookingId, clientName, clientId } = route.params;
   const [text, setText] = useState('');
   const [myId, setMyId] = useState<string>('');
+  const [isSending, setIsSending] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const scrollViewRef = React.useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const ensureChat = async () => {
+      const providerId = await AsyncStorage.getItem('provider_id');
+      if (providerId) setMyId(providerId);
+
+      // Attempt to sync first to pull authoritative server chat
+      try {
+        await syncDatabase();
+      } catch (err) {
+        console.log('[Chat] Initial sync attempt during mount:', err);
+      }
+
+      if (bookingId) {
+        try {
+          const existingChats = await database.collections.get('chats').query(Q.where('booking_id', bookingId)).fetch();
+          if (existingChats.length === 0 && providerId) {
+            console.log('[Chat] Local/Server chat unavailable, creating local fallback for booking', bookingId);
+            await database.write(async () => {
+              await database.get('chats').create((c: any) => {
+                c.bookingId = bookingId;
+                c.clientId = clientId || 'client';
+                c.providerId = providerId;
+              });
+            });
+            await syncDatabase();
+          }
+        } catch (e) {
+          console.log('[Chat] Error checking or auto-creating chat:', e);
+        }
+      }
+    };
+    ensureChat();
+  }, [bookingId]);
 
   useEffect(() => {
     const loadUser = async () => {
       const providerId = await AsyncStorage.getItem('provider_id');
       if (providerId) setMyId(providerId);
-      
-      // Initialize socket for real-time ping
-      const newSocket = io(SOCKET_URL);
-      setSocket(newSocket);
-      
-      newSocket.on('connect', () => {
-        newSocket.emit('register', { userId: providerId, role: 'PROVIDER' });
-        // Join chat room
-        if (chat) {
-          newSocket.emit('joinChat', { chatId: chat.id });
-        }
+
+      const newSocket = io(SOCKET_URL, {
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
       });
-      
-      newSocket.on('sync_ping', () => {
+      setSocket(newSocket);
+
+      newSocket.on('connect', () => {
+        console.log('[Chat] Socket connected');
+        newSocket.emit('register', { userId: providerId, role: 'PROVIDER' });
+        newSocket.emit('joinChat', { chatId: chat?.id, bookingId });
+      });
+
+      newSocket.on('disconnect', (reason) => {
+        console.log('[Chat] Socket disconnected:', reason);
+      });
+
+      newSocket.on('reconnect', (attemptNumber) => {
+        console.log('[Chat] Socket reconnected after', attemptNumber, 'attempts');
+        newSocket.emit('register', { userId: providerId, role: 'PROVIDER' });
+        newSocket.emit('joinChat', { chatId: chat?.id, bookingId });
+        // Sync on reconnection to get any missed messages
+        syncDatabase().catch(err => console.log('sync error:', err));
+      });
+
+      newSocket.on('reconnect_attempt', (attemptNumber) => {
+        console.log('[Chat] Socket reconnection attempt:', attemptNumber);
+      });
+
+      newSocket.on('reconnect_failed', () => {
+        console.log('[Chat] Socket reconnection failed');
+      });
+
+      newSocket.on('newMessage', (data: any) => {
+        console.log('[Chat] Received newMessage via WebSocket:', data);
+        // Trigger sync to get the latest message from server
+        syncDatabase().catch(err => console.log('sync error:', err));
+      });
+
+      newSocket.on('sync_ping', (data: any) => {
+        if (data?.senderId && data.senderId === providerId) return;
         console.log('[Chat] Received sync_ping, syncing DB...');
-        syncDatabase();
+        syncDatabase().catch(err => console.log('sync error:', err));
+      });
+
+      newSocket.on('error', (data: any) => {
+        console.log('[Chat] Socket error:', data?.message || 'Unknown error');
       });
 
       return () => {
@@ -45,33 +113,85 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
       };
     };
     loadUser();
-  }, [chat?.id]);
+  }, [chat?.id, bookingId]);
+
+  // Deduplicate messages by id/content+timestamp to prevent duplicate rendering
+  const uniqueMessages = React.useMemo(() => {
+    const seen = new Map<string, any>(); // Use Map to track original message objects
+    return (messages || []).filter((m: any) => {
+      // Use a combination of content and timestamp as the primary key for deduplication
+      // This handles cases where the same message might have different IDs (local vs server)
+      const key = `${m.senderId}-${m.content}-${m.createdAt}`;
+      
+      if (seen.has(key)) {
+        // If we've seen this message before, prefer the one with a proper server ID
+        const existing = seen.get(key);
+        if (m.id && !existing.id) {
+          seen.set(key, m); // Replace with server version
+          return true;
+        }
+        return false; // Skip duplicate
+      }
+      
+      seen.set(key, m);
+      return true;
+    });
+  }, [messages]);
+
+  useEffect(() => {
+    if (uniqueMessages.length > 0) {
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+  }, [uniqueMessages.length]);
 
   const handleSend = async () => {
-    if (!text.trim() || !myId || !chat) return;
+    if (!text.trim() || !myId || isSending) return;
+    setIsSending(true);
 
-    const messageContent = text;
+    const messageContent = text.trim();
     setText('');
 
     try {
+      let targetChat = chat;
+      if (!targetChat && bookingId) {
+        try {
+          const existing = await database.collections.get('chats').query(Q.where('booking_id', bookingId)).fetch();
+          if (existing.length > 0) {
+            targetChat = existing[0];
+          } else {
+            await database.write(async () => {
+              targetChat = await database.get('chats').create((c: any) => {
+                c.bookingId = bookingId;
+                c.clientId = clientId || 'client';
+                c.providerId = myId;
+              });
+            });
+          }
+        } catch (e) {
+          console.log('Error locating chat object', e);
+        }
+      }
+
+      if (!targetChat) return;
+
       await database.write(async () => {
         await database.get('messages').create((m: any) => {
-          m.chatId = chat.id;
+          m.chatId = targetChat.id;
           m.senderId = myId;
           m.content = messageContent;
           m.createdAt = Date.now();
         });
       });
-      
-      // Instantly sync to push the message
+
       await syncDatabase();
-      
-      // Tell the server to ping the other person
+
       if (socket) {
-        socket.emit('send_sync_ping', { chatId: chat.id, senderId: myId });
+        socket.emit('send_sync_ping', { chatId: targetChat.id, bookingId, senderId: myId });
       }
     } catch (e) {
       console.log('Failed to send message', e);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -83,8 +203,12 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{clientName || 'Chat'}</Text>
       </View>
-      <ScrollView style={{ flex: 1, padding: 20 }}>
-        {messages.map((m: any, i: number) => (
+      <ScrollView
+        ref={scrollViewRef}
+        style={{ flex: 1, padding: 20 }}
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+      >
+        {uniqueMessages.map((m: any, i: number) => (
           <View key={m.id || i} style={[
             styles.messageBubble,
             {
@@ -100,7 +224,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
             </Text>
           </View>
         ))}
-        {messages.length === 0 && (
+        {uniqueMessages.length === 0 && (
           <Text style={{ textAlign: 'center', color: Theme.textSecondary, marginTop: 40 }}>Start the conversation!</Text>
         )}
       </ScrollView>
@@ -111,7 +235,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
           value={text}
           onChangeText={setText}
         />
-        <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
+        <TouchableOpacity onPress={handleSend} disabled={isSending} style={[styles.sendButton, isSending && { opacity: 0.6 }]}>
           <Text style={{ color: 'white', fontWeight: 'bold' }}>➤</Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
@@ -137,7 +261,10 @@ export const ChatScreen = withObservables(['route'], ({ route }: any) => {
     messages: chatQuery.pipe(
       switchMap(chats => {
         if (chats.length > 0) {
-          return database.collections.get('messages').query(Q.where('chat_id', chats[0].id)).observe();
+          return database.collections.get('messages').query(
+            Q.where('chat_id', chats[0].id),
+            Q.sortBy('created_at', Q.asc)
+          ).observe();
         }
         return of([]);
       })

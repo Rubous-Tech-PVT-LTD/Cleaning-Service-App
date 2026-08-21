@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Plus, X, AlertCircle } from 'lucide-react-native';
+import { ChevronLeft, Plus, X, AlertCircle, MapPin } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import withObservables from '@nozbe/with-observables';
 import { Q } from '@nozbe/watermelondb';
@@ -12,6 +12,7 @@ import { SlotSelector } from '../components/SlotSelector';
 import { NotificationService } from '../services/NotificationService';
 import { syncDatabase } from '../db/sync';
 import { useAuth } from '../contexts/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 import { LoginRequiredModal } from '../components/LoginRequiredModal';
 import { getActiveLocation, ActiveLocation } from '../services/locationService';
@@ -34,12 +35,22 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
 
   const [activeLocation, setActiveLocation] = useState<ActiveLocation | null>(null);
 
-  const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+  // Use saved address if activeLocation has savedAddressId, otherwise use default address
+  const defaultAddress = activeLocation?.savedAddressId
+    ? addresses.find((a: any) => a.id === activeLocation.savedAddressId) || addresses.find((a: any) => a.isDefault) || addresses[0]
+    : addresses.find((a: any) => a.isDefault) || addresses[0];
   const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   useEffect(() => {
     loadLocation();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadLocation();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const loadLocation = async () => {
     const location = await getActiveLocation();
@@ -82,11 +93,16 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
         return;
       }
 
+      // Use the address from active location if available, otherwise use default address
+      const bookingAddress = activeLocation?.savedAddressId
+        ? addresses.find((a: any) => a.id === activeLocation.savedAddressId) || defaultAddress
+        : defaultAddress;
+
       const newBookingId = await database.write(async () => {
         const nb = await database.get('bookings').create((booking: any) => {
           booking.serviceId = items[0].serviceId; // Primary service
           booking.clientId = userId;
-          booking.addressId = defaultAddress.id;
+          booking.addressId = bookingAddress.id;
           booking.status = 'PENDING';
           booking.scheduledAt = finalDate.getTime();
           booking.totalPrice = totalPrice;
@@ -115,7 +131,10 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
       navigation.navigate('BookingSuccess', { 
         bookingId: newBookingId, 
         totalPrice: totalPrice,
-        date: finalDate.getTime()
+        date: finalDate.getTime(),
+        addressLabel: bookingAddress.label,
+        addressLine1: bookingAddress.addressLine1,
+        addressCity: bookingAddress.city
       });
     } catch (error: any) {
       console.error('Booking Error:', error);
@@ -194,7 +213,21 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
               </TouchableOpacity>
             </View>
             
-            {defaultAddress ? (
+            {activeLocation ? (
+              <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 24, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOpacity: 0.02, elevation: 2 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#F4EDFF', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+                  <MapPin size={20} color={Theme.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }} numberOfLines={1}>
+                    {activeLocation.address}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: Theme.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                    {activeLocation.city}, {activeLocation.state}
+                  </Text>
+                </View>
+              </View>
+            ) : defaultAddress ? (
               <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 24, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOpacity: 0.02, elevation: 2 }}>
                 <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#F4EDFF', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
                   <Text style={{ fontSize: 10, fontWeight: '900', color: Theme.primary }}>{defaultAddress.label.toUpperCase()}</Text>

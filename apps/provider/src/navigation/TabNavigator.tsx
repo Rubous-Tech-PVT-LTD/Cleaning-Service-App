@@ -46,10 +46,13 @@ export const TabNavigator = () => {
           shadowColor: '#000',
           shadowOpacity: 0.1,
           shadowRadius: 10,
+          marginBottom:10
+          
         },
         tabBarLabelStyle: {
           fontWeight: '700',
           fontSize: 12,
+         
         },
       })}
     >

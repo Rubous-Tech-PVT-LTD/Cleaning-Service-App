@@ -12,6 +12,7 @@ export default class Address extends Model {
   @field('state') state: any;
   @field('pincode') pincode: any;
   @field('is_default') isDefault: any;
+  @field('offline_id') offlineId?: any;
 
   @date('created_at') createdAt: any;
   @date('updated_at') updatedAt: any;
