@@ -749,6 +749,11 @@ export class SyncService {
 
                 otp: generatedOtp,
               },
+              include: {
+                service: true,
+                client: true,
+                address: true,
+              },
             });
 
           // Broadcast pending booking to providers

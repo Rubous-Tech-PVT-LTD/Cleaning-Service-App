@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,6 +17,7 @@ import { Theme } from '../theme';
 const { width } = Dimensions.get('window');
 
 export const BookingSuccessScreen = ({ route, navigation }: any) => {
+  const { t } = useTranslation();
   const { bookingId, totalPrice, date, addressLabel, addressLine1, addressCity } = route.params;
 
   const scale = useSharedValue(0);
@@ -67,10 +69,10 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
 
         <Animated.View style={[{ alignItems: 'center' }, cardStyle]}>
           <Text style={{ fontSize: 28, fontWeight: '900', color: Theme.textPrimary, textAlign: 'center' }}>
-            Booking Confirmed!
+            {t('booking_success.title')}
           </Text>
           <Text style={{ fontSize: 16, color: Theme.textSecondary, textAlign: 'center', marginTop: 12, lineHeight: 24 }}>
-            We've received your request and assigned a professional for your service.
+            {t('booking_success.message')}
           </Text>
         </Animated.View>
 
@@ -88,7 +90,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
           elevation: 5
         }, cardStyle]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-            <Text style={{ color: Theme.textSecondary, fontWeight: '700' }}>Booking ID</Text>
+            <Text style={{ color: Theme.textSecondary, fontWeight: '700' }}>{t('booking_success.booking_id')}</Text>
             <Text style={{ color: Theme.textPrimary, fontWeight: '900' }}>#{bookingId?.slice(-6).toUpperCase()}</Text>
           </View>
 
@@ -100,7 +102,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
                 <Calendar size={18} color="#10B981" />
               </View>
               <View>
-                <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '700' }}>SCHEDULED FOR</Text>
+                <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '700' }}>{t('booking_success.scheduled_for')}</Text>
                 <Text style={{ fontSize: 14, color: Theme.textPrimary, fontWeight: '800' }}>{new Date(date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</Text>
               </View>
             </View>
@@ -110,7 +112,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
                 <MapPin size={18} color="#0EA5E9" />
               </View>
               <View>
-                <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '700' }}>SERVICE LOCATION</Text>
+                <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '700' }}>{t('booking_success.service_location')}</Text>
                 <Text style={{ fontSize: 14, color: Theme.textPrimary, fontWeight: '800' }}>{addressLabel} • {addressLine1}, {addressCity}</Text>
               </View>
             </View>
@@ -119,7 +121,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
           <View style={{ height: 1, backgroundColor: '#F1F5F9', marginVertical: 20 }} />
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary }}>Total Paid</Text>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary }}>{t('booking_success.total_paid')}</Text>
             <Text style={{ fontSize: 24, fontWeight: '900', color: Theme.primary }}>₹{totalPrice}</Text>
           </View>
         </Animated.View>
@@ -141,7 +143,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
               elevation: 8
             }}
           >
-            <Text style={{ color: 'white', fontWeight: '900', fontSize: 16 }}>VIEW ALL BOOKINGS</Text>
+            <Text style={{ color: 'white', fontWeight: '900', fontSize: 16 }}>{t('booking_success.view_all_bookings')}</Text>
             <ChevronRight size={20} color="white" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
 
@@ -149,7 +151,7 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
             onPress={() => navigation.navigate('Home')}
             style={{ marginTop: 20, alignSelf: 'center' }}
           >
-            <Text style={{ color: Theme.textSecondary, fontWeight: '800', fontSize: 14 }}>Back to Home</Text>
+            <Text style={{ color: Theme.textSecondary, fontWeight: '800', fontSize: 14 }}>{t('booking_success.back_to_home')}</Text>
           </TouchableOpacity>
         </Animated.View>
 

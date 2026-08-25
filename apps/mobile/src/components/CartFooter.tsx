@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '../theme';
+import { ShoppingCart } from 'lucide-react-native';
 
 interface CartFooterProps {
   itemCount: number;
@@ -13,6 +15,8 @@ export const CartFooter: React.FC<CartFooterProps> = ({
   onNavigateToCart,
   show = true,
 }) => {
+  const { t } = useTranslation();
+
   if (!show || itemCount === 0) return null;
 
   return (
@@ -51,10 +55,14 @@ export const CartFooter: React.FC<CartFooterProps> = ({
             alignItems: 'center',
           }}
         >
-          <Text style={{ fontSize: 10 }}>🔧</Text>
+          <ShoppingCart 
+        color="#000000" 
+        size={24} 
+        strokeWidth={2} 
+      />
         </View>
         <Text style={{ fontSize: 16, fontWeight: 'bold', color: Theme.textPrimary }}>
-          {itemCount} {itemCount === 1 ? 'service' : 'services'}
+          {itemCount} {itemCount === 1 ? t('cart.service') : t('cart.services')}
         </Text>
       </View>
       <TouchableOpacity
@@ -71,7 +79,7 @@ export const CartFooter: React.FC<CartFooterProps> = ({
         }}
         onPress={onNavigateToCart}
       >
-        <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>Go to cart</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>{t('cart.go_to_cart')}</Text>
       </TouchableOpacity>
     </View>
   );

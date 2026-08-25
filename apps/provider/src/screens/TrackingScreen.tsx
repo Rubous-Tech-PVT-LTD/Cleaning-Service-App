@@ -7,6 +7,7 @@ import { io, Socket } from 'socket.io-client';
 import { Theme } from '../theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { SOCKET_URL } from '../api';
+import { useTranslation } from 'react-i18next';
 
 // OSRM routing API - free, no API key required
 const fetchRoute = async (startLat: number, startLon: number, endLat: number, endLon: number) => {
@@ -52,6 +53,7 @@ const formatDuration = (minutes: number): string => {
 };
 
 export const TrackingScreen = () => {
+  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation<any>();
   const { booking } = route.params as { booking: any };
@@ -228,7 +230,7 @@ export const TrackingScreen = () => {
   const markArrived = async () => {
     try {
       await api.patch(`/bookings/${booking.id}/status`, { status: 'IN_PROGRESS' });
-      Alert.alert('Arrived!', 'You can now start the job from the Jobs tab.');
+      Alert.alert(t('provider.arrived_alert'), t('provider.arrived_message'));
       navigation.goBack();
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -239,12 +241,12 @@ export const TrackingScreen = () => {
     if (sosLoading) return;
 
     Alert.alert(
-      'Emergency SOS',
-      'Are you sure you want to trigger an emergency SOS?',
+      t('provider.sos_alert'),
+      t('provider.sos_confirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('provider.cancel'), style: 'cancel' },
         {
-          text: 'Yes, Trigger SOS',
+          text: t('provider.yes_trigger_sos'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -259,7 +261,7 @@ export const TrackingScreen = () => {
               } else {
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== 'granted') {
-                  Alert.alert('Permission Denied', 'Location permission is required to share your emergency location.');
+                  Alert.alert(t('provider.permission_denied'), t('provider.location_permission_required'));
                   return;
                 }
                 const freshLoc = await Location.getCurrentPositionAsync({
@@ -278,12 +280,12 @@ export const TrackingScreen = () => {
               await api.post('/sos', payload);
 
               Alert.alert(
-                'SOS Sent',
-                'Your emergency alert has been sent. Help is on the way.'
+                t('provider.sos_sent'),
+                t('provider.sos_sent_message')
               );
             } catch (err: any) {
               const msg = err?.response?.data?.message || err.message || 'Failed to send SOS. Please try again.';
-              Alert.alert('SOS Failed', msg);
+              Alert.alert(t('provider.sos_failed'), msg);
             } finally {
               setSosLoading(false);
             }
@@ -330,12 +332,12 @@ export const TrackingScreen = () => {
     <View style={styles.container}>
       {!clientDestination ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Navigation Error</Text>
+          <Text style={styles.errorTitle}>{t('provider.navigation_error')}</Text>
           <Text style={styles.errorMessage}>
-            {error || 'Service address coordinates are missing or invalid.'}
+            {error || t('provider.address_missing')}
           </Text>
           <TouchableOpacity style={styles.errorButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.errorButtonText}>Go Back</Text>
+            <Text style={styles.errorButtonText}>{t('provider.go_back')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -349,8 +351,8 @@ export const TrackingScreen = () => {
           >
             <Marker
               coordinate={clientDestination}
-              title="Client Location"
-              description="Navigate here to complete the job"
+              title={t('provider.client_location')}
+              description={t('provider.navigate_here')}
               pinColor={Theme.primary}
             />
 
@@ -369,28 +371,28 @@ export const TrackingScreen = () => {
           <View style={styles.bottomCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoBadge}>
-                <Text style={styles.infoLabel}>📍 Distance</Text>
+                <Text style={styles.infoLabel}>📍 {t('provider.distance')}</Text>
                 <Text style={styles.infoValue}>{formatDistance(distance)}</Text>
               </View>
               <View style={styles.infoBadge}>
-                <Text style={styles.infoLabel}>⏱️ Time</Text>
+                <Text style={styles.infoLabel}>⏱️ {t('provider.time')}</Text>
                 <Text style={styles.infoValue}>{formatDuration(duration)}</Text>
               </View>
             </View>
 
-            <Text style={styles.title}>Navigating to Client</Text>
+            <Text style={styles.title}>{t('provider.navigating_to_client')}</Text>
             <Text style={styles.subtitle}>Job #{booking.id.slice(-6).toUpperCase()}</Text>
 
             <Text style={styles.debugInfo}>
-              📍 Destination: {booking.address?.city || 'Unknown City'} ({clientDestination.latitude.toFixed(4)}, {clientDestination.longitude.toFixed(4)})
+              📍 {t('provider.destination')}: {booking.address?.city || 'Unknown City'} ({clientDestination.latitude.toFixed(4)}, {clientDestination.longitude.toFixed(4)})
             </Text>
 
             {loadingRoute ? (
-              <Text style={styles.status}>🗺️ Calculating route...</Text>
+              <Text style={styles.status}>🗺️ {t('provider.calculating_route')}</Text>
             ) : location ? (
-              <Text style={styles.status}>📍 Broadcasting your live location...</Text>
+              <Text style={styles.status}>📍 {t('provider.broadcasting_location')}</Text>
             ) : (
-              <Text style={styles.status}>Locating you...</Text>
+              <Text style={styles.status}>{t('provider.locating')}</Text>
             )}
 
             <TouchableOpacity
@@ -403,13 +405,13 @@ export const TrackingScreen = () => {
               ) : (
                 <>
                   <Text style={styles.sosEmoji}>🚨</Text>
-                  <Text style={styles.sosButtonText}>EMERGENCY SOS</Text>
+                  <Text style={styles.sosButtonText}>{t('provider.emergency_sos')}</Text>
                 </>
               )}
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.completeButton} onPress={markArrived}>
-              <Text style={styles.buttonText}>I HAVE ARRIVED</Text>
+              <Text style={styles.buttonText}>{t('provider.arrived')}</Text>
             </TouchableOpacity>
           </View>
         </>

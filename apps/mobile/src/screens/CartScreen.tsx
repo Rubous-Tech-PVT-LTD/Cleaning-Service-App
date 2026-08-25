@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Trash2, Phone, AlertCircle, MapIcon, MapPin } from 'lucide-react-native';
 import { Theme } from '../theme';
 import api from '../api';
@@ -19,6 +20,7 @@ import { syncDatabase } from '../db/sync';
 import { getActiveLocation, ActiveLocation } from '../services/locationService';
 
 const CartScreenBase = ({ navigation, addresses }: any) => {
+  const { t, i18n } = useTranslation();
   const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -81,7 +83,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
       setCart(res.data);
     } catch (e) {
       console.error('Error fetching cart:', e);
-      Alert.alert('Error', 'Failed to load cart');
+      Alert.alert(t('common.error'), t('cart.error_loading_cart'));
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
       await fetchCart();
     } catch (e) {
       console.error('Error removing item:', e);
-      Alert.alert('Error', 'Failed to remove item');
+      Alert.alert(t('common.error'), t('cart.error_removing_item'));
     } finally {
       setUpdating(false);
     }
@@ -121,12 +123,12 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
 
       const userId = await AsyncStorage.getItem('user_id');
       if (!userId) {
-        Alert.alert('Login Required', 'Please login to confirm booking');
+        Alert.alert(t('cart.login_required'), t('cart.login_required_message'));
         return;
       }
 
       if (!activeLocation) {
-        Alert.alert('Location Required', 'Please set your location to continue');
+        Alert.alert(t('cart.location_required'), t('cart.location_required_message'));
         return;
       }
 
@@ -148,7 +150,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
         : userAddress;
 
       if (!bookingAddress) {
-        Alert.alert('Address Required', 'Please add an address to continue');
+        Alert.alert(t('cart.address_required'), t('cart.address_required_message'));
         return;
       }
 
@@ -175,16 +177,22 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
       // Trigger sync immediately to push booking to server
       syncDatabase().catch(err => {
         console.error('Booking Sync Error:', err);
-        Alert.alert('Sync Error', err.message);
+        Alert.alert(t('cart.sync_error'), err.message);
       });
 
       // Clear cart after successful booking
       await api.delete('/cart/clear');
 
       // Send local notification
+      const itemTitle = typeof primaryItem.title === 'string' 
+        ? primaryItem.title 
+        : (primaryItem.title?.[i18n.language === 'hi' ? 'hi' : 'en'] || primaryItem.title?.en || String(primaryItem.title || ''));
+      
       NotificationService.sendLocalNotification(
-        'Booking Confirmed! 🎉',
-        `Your booking for ${primaryItem.title} has been received successfully.`
+        t('cart.booking_confirmed'),
+        i18n.language === 'hi' 
+          ? `आपकी बुकिंग ${itemTitle} सफलतापूर्वक प्राप्त हो गई है।`
+          : `Your booking for ${itemTitle} has been received successfully.`
       );
 
       // Navigate to success screen
@@ -198,7 +206,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
       });
     } catch (e) {
       console.error('Error confirming booking:', e);
-      Alert.alert('Error', 'Failed to confirm booking');
+      Alert.alert(t('common.error'), t('cart.error_confirming_booking'));
     } finally {
       setConfirming(false);
     }
@@ -236,7 +244,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
           <ArrowLeft size={24} color={Theme.textPrimary} />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.textPrimary, flex: 1 }}>
-          Review Booking
+          {t('cart.title')}
         </Text>
       </View>
 
@@ -248,7 +256,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
         {items.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 100 }}>
             <Text style={{ fontSize: 18, color: Theme.textSecondary, marginBottom: 20 }}>
-              Your cart is empty
+              {t('cart.empty')}
             </Text>
             <TouchableOpacity
               style={{
@@ -260,7 +268,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
               onPress={() => navigation.goBack()}
             >
               <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
-                Continue Shopping
+                {t('cart.continue_shopping')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -282,9 +290,14 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                   marginBottom: 8,
                 }}
               >
-                Review Booking
+                {t('cart.review_booking')}
               </Text>
-              {items.map((item: any, index: number) => (
+              {items.map((item: any, index: number) => {
+                const title = typeof item.title === 'string' 
+                  ? item.title 
+                  : (item.title?.[i18n.language === 'hi' ? 'hi' : 'en'] || item.title?.en || String(item.title || ''));
+                
+                return (
                 <View
                   key={index}
                   style={{
@@ -306,16 +319,24 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                         marginBottom: 4,
                       }}
                     >
-                      {item.title}
+                      {title}
                     </Text>
                     {item.duration && (
                       <Text style={{ fontSize: 14, color: Theme.textSecondary, marginBottom: 4 }}>
-                        {item.duration.label}
+                        {typeof item.duration.label === 'string' 
+                          ? item.duration.label 
+                          : (item.duration.label?.[i18n.language === 'hi' ? 'hi' : 'en'] || item.duration.label?.en || String(item.duration.label || ''))}
                       </Text>
                     )}
                     {item.bookingType === 'scheduled' && item.schedule ? (
                       <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 4 }}>
-                        {item.schedule.dayLabel}, {item.schedule.dateLabel} · {item.schedule.time}
+                        {typeof item.schedule.dayLabel === 'string' 
+                          ? item.schedule.dayLabel 
+                          : (item.schedule.dayLabel?.[i18n.language === 'hi' ? 'hi' : 'en'] || item.schedule.dayLabel?.en || String(item.schedule.dayLabel || ''))}, 
+                        {typeof item.schedule.dateLabel === 'string' 
+                          ? item.schedule.dateLabel 
+                          : (item.schedule.dateLabel?.[i18n.language === 'hi' ? 'hi' : 'en'] || item.schedule.dateLabel?.en || String(item.schedule.dateLabel || ''))} · 
+                        {item.schedule.time}
                       </Text>
                     ) : (
                       <Text
@@ -326,7 +347,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                           fontWeight: '600',
                         }}
                       >
-                        Instant
+                        {t('cart.instant')}
                       </Text>
                     )}
                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.primary }}>
@@ -341,7 +362,8 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                     <Trash2 size={20} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
-              ))}
+                );
+              })}
             </View>
 
             <View
@@ -361,10 +383,10 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                 }}
               >
                 <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.textPrimary }}>
-                  Booking Details
+                  {t('cart.booking_details')}
                 </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('AddressPicker')}>
-                  <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#10B981' }}>Change</Text>
+                  <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#10B981' }}>{t('cart.change')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -409,7 +431,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                     marginBottom: 12,
                   }}
                 >
-                  <Text style={{ color: Theme.primary, fontWeight: '800' }}>Add Address</Text>
+                  <Text style={{ color: Theme.primary, fontWeight: '800' }}>{t('cart.add_address')}</Text>
                 </TouchableOpacity>
               )}
 
@@ -429,7 +451,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 12, color: Theme.textSecondary, marginBottom: 2 }}>
-                    Phone Number
+                    {t('cart.phone_number')}
                   </Text>
                   <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
                     {userPhone}
@@ -454,7 +476,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                   marginBottom: 8,
                 }}
               >
-                Bill Details
+                {t('cart.bill_details')}
               </Text>
               <View
                 style={{
@@ -463,7 +485,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                   marginBottom: 8,
                 }}
               >
-                <Text style={{ fontSize: 14, color: Theme.textSecondary }}>Item Total</Text>
+                <Text style={{ fontSize: 14, color: Theme.textSecondary }}>{t('cart.item_total')}</Text>
                 <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
                   ₹{subtotal}
                 </Text>
@@ -475,7 +497,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                   marginBottom: 8,
                 }}
               >
-                <Text style={{ fontSize: 14, color: Theme.textSecondary }}>GST (18%)</Text>
+                <Text style={{ fontSize: 14, color: Theme.textSecondary }}>{t('cart.gst')}</Text>
                 <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
                   ₹{gst}
                 </Text>
@@ -487,7 +509,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                   marginBottom: 8,
                 }}
               >
-                <Text style={{ fontSize: 14, color: Theme.textSecondary }}>Service Fee (5%)</Text>
+                <Text style={{ fontSize: 14, color: Theme.textSecondary }}>{t('cart.service_fee')}</Text>
                 <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
                   ₹{serviceFee}
                 </Text>
@@ -503,7 +525,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                 }}
               >
                 <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.textPrimary }}>
-                  To Pay
+                  {t('cart.to_pay')}
                 </Text>
                 <Text style={{ fontSize: 20, fontWeight: 'bold', color: Theme.primary }}>
                   ₹{finalAmount}
@@ -533,14 +555,14 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
             <View style={{ alignItems: 'center' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <AlertCircle size={24} color={Theme.error} style={{ marginRight: 8 }} />
-                <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>Not serviceable at your location</Text>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>{t('cart.not_serviceable')}</Text>
               </View>
-              <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 16, textAlign: 'center' }}>The location is out of our serviceable area</Text>
+              <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 16, textAlign: 'center' }}>{t('cart.location_out_of_service')}</Text>
               <TouchableOpacity
                 onPress={() => navigation.navigate('SearchLocation')}
                 style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', width: '100%', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}
               >
-                <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>Change location</Text>
+                <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>{t('cart.change_location')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -558,7 +580,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
-                  Confirm Booking • ₹{finalAmount}
+                  {t('cart.confirm_booking')} • ₹{finalAmount}
                 </Text>
               )}
             </TouchableOpacity>

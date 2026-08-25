@@ -62,7 +62,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
               onPress={() => navigation.navigate('Cancellation', { bookingId: booking.id })}
               style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, justifyContent: 'center', marginRight: 8 }}
             >
-              <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.textPrimary }}>MANAGE</Text>
+              <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.textPrimary }}>{t('manage_booking.manage')}</Text>
             </TouchableOpacity>
           )}
           {booking.status === 'COMPLETED' && (

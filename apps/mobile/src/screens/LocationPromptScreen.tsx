@@ -7,9 +7,11 @@ import {
   buildActiveLocationFromCoords,
   setActiveLocation,
 } from '../services/locationService';
+import { useTranslation } from 'react-i18next';
 
 export const LocationPromptScreen = ({ navigation }: any) => {
   const { width } = Dimensions.get('window');
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const handleUseCurrentLocation = async () => {
@@ -17,20 +19,20 @@ export const LocationPromptScreen = ({ navigation }: any) => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Please allow location access to use this feature.');
+        Alert.alert(t('address.permission_denied', 'Permission Denied'), t('address.permission_msg', 'Please allow location access to use this feature.'));
         return;
       }
 
       const location = await Location.getCurrentPositionAsync({});
       const activeLocation = await buildActiveLocationFromCoords(
         location.coords,
-        'Current Location',
+        t('address.current_location_label', 'Current Location'),
       );
       await setActiveLocation(activeLocation);
       navigation.navigate('Home');
     } catch (error) {
       console.error('Error getting location:', error);
-      Alert.alert('Error', 'Failed to get your location. Please try again or enter manually.');
+      Alert.alert(t('common.error', 'Error'), t('address.location_error', 'Failed to get your location. Please try again or enter manually.'));
     } finally {
       setLoading(false);
     }
@@ -45,10 +47,10 @@ export const LocationPromptScreen = ({ navigation }: any) => {
       <View style={{ flex: 1, padding: 24, justifyContent: 'space-between' }}>
         <View style={{ marginTop: 20 }}>
           <Text style={{ fontSize: 28, fontFamily: 'Poppins_700Bold', color: '#111', marginBottom: 12 }}>
-            What's your location?
+            {t('address.whats_your_location', "What's your location?")}
           </Text>
           <Text style={{ fontSize: 15, fontFamily: 'Poppins_400Regular', color: '#888', lineHeight: 22 }}>
-            We need your location to show you our serviceable hubs.
+            {t('address.location_reason', 'We need your location to show you our serviceable hubs.')}
           </Text>
         </View>
 
@@ -72,7 +74,7 @@ export const LocationPromptScreen = ({ navigation }: any) => {
               <>
                 <Navigation size={20} color="white" />
                 <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Poppins_600SemiBold', marginLeft: 8 }}>
-                  Use current location
+                  {t('address.use_current_location', 'Use current location')}
                 </Text>
               </>
             )}
@@ -84,7 +86,7 @@ export const LocationPromptScreen = ({ navigation }: any) => {
             style={{ paddingVertical: 16, justifyContent: 'center', alignItems: 'center' }}
           >
             <Text style={{ color: '#10B981', fontSize: 16, fontFamily: 'Poppins_600SemiBold' }}>
-              Enter location manually
+              {t('address.enter_manually', 'Enter location manually')}
             </Text>
           </TouchableOpacity>
         </View>

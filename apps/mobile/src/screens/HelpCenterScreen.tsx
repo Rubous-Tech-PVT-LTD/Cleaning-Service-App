@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, LayoutAnimation, Platform, UIManager, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronDown, ChevronUp, MessageCircle, Phone, Mail, ExternalLink } from 'lucide-react-native';
 import { Theme } from '../theme';
 
@@ -36,26 +37,28 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
 };
 
 export const HelpCenterScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
+
   const faqs = [
     {
-      question: "How do I book a service?",
-      answer: "Simply choose a category from the home screen, select the service you need, choose a date and time slot, and confirm your booking. You'll receive a notification once it's confirmed!"
+      question: t('help_center.faq1_q'),
+      answer: t('help_center.faq1_a')
     },
     {
-      question: "Can I cancel my booking?",
-      answer: "Yes, you can cancel your booking up to 2 hours before the scheduled time. Go to 'My Bookings', select the booking, and tap 'Cancel'."
+      question: t('help_center.faq2_q'),
+      answer: t('help_center.faq2_a')
     },
     {
-      question: "How do I pay for the service?",
-      answer: "Currently, we support Cash on Delivery. We are working on adding online payment options via UPI, Credit/Debit cards, and Wallets very soon!"
+      question: t('help_center.faq3_q'),
+      answer: t('help_center.faq3_a')
     },
     {
-      question: "What if I'm not satisfied with the service?",
-      answer: "Your satisfaction is our priority. If you're unhappy with the service, please contact our support team within 24 hours, and we'll resolve it for you."
+      question: t('help_center.faq4_q'),
+      answer: t('help_center.faq4_a')
     },
     {
-      question: "Is there a warranty on the work?",
-      answer: "Most services come with a 7-day service warranty. Please check the service details page for specific warranty information."
+      question: t('help_center.faq5_q'),
+      answer: t('help_center.faq5_a')
     }
   ];
 
@@ -73,27 +76,27 @@ export const HelpCenterScreen = ({ navigation }: any) => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ChevronLeft size={28} color={Theme.textPrimary} />
         </TouchableOpacity>
-        <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginLeft: 16 }}>Help Center</Text>
+        <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginLeft: 16 }}>{t('help_center.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 24 }} showsVerticalScrollIndicator={false}>
         {/* Support Options */}
-        <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>Contact Us</Text>
+        <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('help_center.contact_us')}</Text>
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 32 }}>
-          <ContactCard 
-            icon={<MessageCircle size={24} color="#10B981" />} 
-            label="WhatsApp" 
+          <ContactCard
+            icon={<MessageCircle size={24} color="#10B981" />}
+            label={t('help_center.whatsapp')}
             onPress={() => handleContact('whatsapp')}
           />
-          <ContactCard 
-            icon={<Phone size={24} color="#3B82F6" />} 
-            label="Call Us" 
+          <ContactCard
+            icon={<Phone size={24} color="#3B82F6" />}
+            label={t('help_center.call_us')}
             onPress={() => handleContact('call')}
           />
         </View>
 
         {/* FAQ Section */}
-        <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>Common Questions</Text>
+        <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('help_center.common_questions')}</Text>
         {faqs.map((faq, index) => (
           <FAQItem key={index} {...faq} />
         ))}
@@ -101,15 +104,15 @@ export const HelpCenterScreen = ({ navigation }: any) => {
         {/* Extra Help */}
         <View style={{ marginTop: 20, padding: 24, backgroundColor: Theme.primary, borderRadius: 24, alignItems: 'center' }}>
           <Mail size={32} color="white" style={{ marginBottom: 12 }} />
-          <Text style={{ fontSize: 18, fontWeight: '800', color: 'white', textAlign: 'center' }}>Still need help?</Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: 'white', textAlign: 'center' }}>{t('help_center.still_need_help')}</Text>
           <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: 4, marginBottom: 20 }}>
-            Send us an email and we'll get back to you within 24 hours.
+            {t('help_center.still_need_help_desc')}
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => handleContact('email')}
             style={{ backgroundColor: 'white', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 }}
           >
-            <Text style={{ color: Theme.primary, fontWeight: '800' }}>Email Support</Text>
+            <Text style={{ color: Theme.primary, fontWeight: '800' }}>{t('help_center.email_support')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

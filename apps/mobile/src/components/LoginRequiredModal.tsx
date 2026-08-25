@@ -29,24 +29,24 @@ export const LoginRequiredModal: React.FC<LoginRequiredModalProps> = ({
             <Text style={styles.icon}>🔐</Text>
           </View>
           
-          <Text style={styles.title}>Login Required</Text>
+          <Text style={styles.title}>{t('login_modal.title', 'Login Required')}</Text>
           
           <Text style={styles.message}>
-            Please login to continue with this action.
+            {t('login_modal.message', 'Please login to continue with this action.')}
           </Text>
           
           <TouchableOpacity
             style={styles.loginButton}
             onPress={onLogin}
           >
-            <Text style={styles.loginButtonText}>Login</Text>
+            <Text style={styles.loginButtonText}>{t('login_modal.login', 'Login')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={onClose}
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('common.cancel', 'Cancel')}</Text>
           </TouchableOpacity>
         </View>
       </View>

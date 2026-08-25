@@ -7,8 +7,11 @@ import { ArrowLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../api';
 import { Theme } from '../theme';
+import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
 
 export const ManageServicesScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [services, setServices] = useState<any[]>([]);
@@ -71,35 +74,71 @@ export const ManageServicesScreen = ({ navigation }: any) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ArrowLeft size={24} color={Theme.textPrimary}/>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Manage Services</Text>
+        <Text style={styles.headerTitle}>{t('provider.manage_services_title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.sectionTitle}>Your Profession / Service</Text>
+        <Text style={styles.sectionTitle}>{t('provider.your_profession')}</Text>
         <Text style={styles.sectionSubtitle}>
-          Select the primary service you offer. This helps us match you with the right clients.
+          {t('provider.select_profession')}
         </Text>
 
         <View style={styles.servicesContainer}>
-          {services.map((service) => (
-            <TouchableOpacity
-              key={service.id}
-              onPress={() => setProfessionId(service.id)}
-              style={[
-                styles.serviceCard,
-                professionId === service.id && styles.serviceCardSelected
-              ]}
-            >
-              <Text style={[
-                styles.serviceText,
-                professionId === service.id && styles.serviceTextSelected
-              ]}>
-                {service.nameTranslations?.en || 'Service'}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {services.map((service) => {
+            // Handle service name with language support
+            let serviceName = 'Service';
+            const isHindi = i18n.language === 'hi';
+            
+            // Try sync API format first (snake_case)
+            if (isHindi && service.name_hi) {
+              serviceName = service.name_hi;
+            } else if (service.name_en) {
+              serviceName = service.name_en;
+            }
+            // Try regular API format (camelCase with JSON object)
+            else if (typeof service.nameTranslations === 'object' && service.nameTranslations.hi && isHindi) {
+              serviceName = service.nameTranslations.hi;
+            } else if (typeof service.nameTranslations === 'object' && service.nameTranslations.en) {
+              serviceName = service.nameTranslations.en;
+            }
+            // Try if nameTranslations is a stringified JSON
+            else if (typeof service.nameTranslations === 'string') {
+              try {
+                const parsed = JSON.parse(service.nameTranslations);
+                if (isHindi && parsed.hi) {
+                  serviceName = parsed.hi;
+                } else {
+                  serviceName = parsed.en || service.nameTranslations;
+                }
+              } catch {
+                serviceName = service.nameTranslations;
+              }
+            }
+            // Fallback to name field
+            else if (service.name) {
+              serviceName = service.name;
+            }
+            
+            return (
+              <TouchableOpacity
+                key={service.id}
+                onPress={() => setProfessionId(service.id)}
+                style={[
+                  styles.serviceCard,
+                  professionId === service.id && styles.serviceCardSelected
+                ]}
+              >
+                <Text style={[
+                  styles.serviceText,
+                  professionId === service.id && styles.serviceTextSelected
+                ]}>
+                  {serviceName}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
           {services.length === 0 && (
-            <Text style={styles.emptyText}>No services available</Text>
+            <Text style={styles.emptyText}>{t('provider.no_services_available')}</Text>
           )}
         </View>
 
@@ -111,7 +150,7 @@ export const ManageServicesScreen = ({ navigation }: any) => {
           {saving ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.saveBtnText}>SAVE CHANGES</Text>
+            <Text style={styles.saveBtnText}>{t('provider.save_changes')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

@@ -1,6 +1,8 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { JobsScreen } from '../screens/JobsScreen';
 import { ReviewsScreen } from '../screens/ReviewsScreen';
@@ -9,6 +11,20 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { Theme } from '../theme';
 
 const Tab = createBottomTabNavigator();
+
+const TabBarLabel = ({ routeName }: { routeName: string }) => {
+  const { t } = useTranslation();
+  
+  let label: string;
+  if (routeName === 'Home') label = t('provider.nav_home');
+  else if (routeName === 'Jobs') label = t('provider.nav_jobs');
+  else if (routeName === 'Reviews') label = t('provider.nav_reviews');
+  else if (routeName === 'Wallet') label = t('provider.nav_wallet');
+  else if (routeName === 'Profile') label = t('provider.nav_profile');
+  else label = routeName;
+  
+  return <Text style={{ fontWeight: '700', fontSize: 12 }}>{label}</Text>;
+};
 
 export const TabNavigator = () => {
   return (
@@ -41,19 +57,16 @@ export const TabNavigator = () => {
           backgroundColor: Theme.white,
           borderTopWidth: 1,
           borderTopColor: Theme.border,
-          paddingTop: 8,
+          paddingTop: 5,
           elevation: 10,
           shadowColor: '#000',
           shadowOpacity: 0.1,
           shadowRadius: 10,
-          marginBottom:10
           
+          height: 80,
+paddingBottom: 15,
         },
-        tabBarLabelStyle: {
-          fontWeight: '700',
-          fontSize: 12,
-         
-        },
+        tabBarLabel: () => <TabBarLabel routeName={route.name} />,
       })}
     >
       <Tab.Screen name="Home" component={DashboardScreen} />

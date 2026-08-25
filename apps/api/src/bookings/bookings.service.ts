@@ -221,7 +221,9 @@ export class BookingsService {
     }
 
     return this.prisma.booking.findMany({
-      where: role === 'PROVIDER' ? { providerId: userId } : { clientId: userId },
+      where: role === 'PROVIDER' 
+        ? { OR: [{ providerId: userId }, { status: 'PENDING' }] } 
+        : { clientId: userId },
       include: { service: true, client: true, provider: true, address: true },
       orderBy: { createdAt: 'desc' },
     });

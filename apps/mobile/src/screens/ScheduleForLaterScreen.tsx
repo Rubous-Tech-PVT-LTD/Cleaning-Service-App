@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ChevronUp, ChevronDown } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Theme } from '../theme';
@@ -33,6 +34,7 @@ type ScheduleDate = {
 };
 
 export const ScheduleForLaterScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
   const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
@@ -217,12 +219,12 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8, marginRight: 8 }}>
           <ArrowLeft size={24} color={Theme.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Schedule for later</Text>
+        <Text style={styles.headerTitle}>{t('schedule.title')}</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Duration</Text>
+          <Text style={styles.sectionTitle}>{t('schedule.select_duration')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
             {DURATIONS.map((dur) => (
               <TouchableOpacity
@@ -242,7 +244,7 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select date</Text>
+          <Text style={styles.sectionTitle}>{t('schedule.select_date')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
             {dates.map((date) => (
               <TouchableOpacity
@@ -259,7 +261,7 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select time</Text>
+          <Text style={styles.sectionTitle}>{t('schedule.select_time')}</Text>
           <View style={styles.grid}>
             {displayedSlots.map((time) => (
               <TouchableOpacity
@@ -279,7 +281,7 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
               onPress={() => setShowAllSlots(!showAllSlots)}
             >
               <Text style={styles.toggleText}>
-                {showAllSlots ? 'Hide slots' : 'View all slots'}
+                {showAllSlots ? t('schedule.hide_slots') : t('schedule.view_all_slots')}
               </Text>
               {showAllSlots ? (
                 <ChevronUp size={16} color={Theme.primary} />

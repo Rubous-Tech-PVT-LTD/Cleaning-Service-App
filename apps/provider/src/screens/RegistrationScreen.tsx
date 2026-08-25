@@ -8,10 +8,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api';
 import { Theme } from '../theme';
+import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
+
+// ─── Globe Icon Component ──
+const GlobeIcon = ({ size = 16, color = 'white' }: { size?: number; color?: string }) => {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
+      <Path d="M2 12h20" />
+      <Path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </Svg>
+  );
+};
 
 const InputField = ({ label, placeholder, value, onChangeText, keyboardType = 'default' }: any) => (
   <View style={{ marginBottom: 16 }}>
@@ -29,7 +43,24 @@ const InputField = ({ label, placeholder, value, onChangeText, keyboardType = 'd
   </View>
 );
 
+const TranslatedInputField = ({ labelKey, placeholderKey, value, onChangeText, keyboardType = 'default', t }: any) => (
+  <View style={{ marginBottom: 16 }}>
+    <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>{t(labelKey)}</Text>
+    <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: Theme.border }}>
+      <TextInput
+        style={{ padding: 14, fontSize: 16, color: Theme.textPrimary, fontWeight: '500' }}
+        placeholder={t(placeholderKey)}
+        placeholderTextColor="#cbd5e1"
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+      />
+    </View>
+  </View>
+);
+
 export const RegistrationScreen = ({ navigation }: any) => {
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<any[]>([]);
   const [form, setForm] = useState({
@@ -68,6 +99,12 @@ export const RegistrationScreen = ({ navigation }: any) => {
     getCurrentLocation();
   }, []);
 
+  const toggleLanguage = async () => {
+    const nextLang = i18n.language === 'en' ? 'hi' : 'en';
+    await i18n.changeLanguage(nextLang);
+    await AsyncStorage.setItem('user-language', nextLang);
+  };
+
   const getCurrentLocation = async () => {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -89,10 +126,10 @@ export const RegistrationScreen = ({ navigation }: any) => {
   };
 
   const handleDocumentUpload = (docType: keyof typeof docs, title: string) => {
-    Alert.alert('Upload Document', `Simulating upload for ${title}...`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('registration.upload_document'), `${t('registration.upload_simulating')} ${title}...`, [
+      { text: t('registration.cancel'), style: 'cancel' },
       { 
-        text: 'Upload', 
+        text: t('registration.upload'), 
         onPress: () => setDocs(prev => ({ ...prev, [docType]: true })) 
       }
     ]);
@@ -101,18 +138,18 @@ export const RegistrationScreen = ({ navigation }: any) => {
   const handleRegister = async () => {
     // Basic validation
     if (!form.fullName || !form.phone || !form.city || !form.addressLine1) {
-      Alert.alert('Missing Fields', 'Please fill all required fields');
+      Alert.alert(t('registration.missing_fields'), t('registration.fill_required_fields'));
       return;
     }
     
     if (form.phone.length < 10) {
-      Alert.alert('Invalid Phone', 'Please enter a valid 10-digit phone number');
+      Alert.alert(t('registration.invalid_phone'), t('registration.valid_phone_number'));
       return;
     }
 
     // Ensure location is captured
     if (form.latitude === 0 || form.longitude === 0) {
-      Alert.alert('Location Required', 'Please enable location services for provider matching');
+      Alert.alert(t('registration.location_required_title'), t('registration.enable_location'));
       await getCurrentLocation();
       if (form.latitude === 0 || form.longitude === 0) {
         return;
@@ -137,12 +174,12 @@ export const RegistrationScreen = ({ navigation }: any) => {
       const otpRes = await api.post('/auth/otp/request', { phone: phoneWithCode });
       
       if (otpRes.data?.devCode) {
-        Alert.alert('Registration Successful', `Redirecting to verification...\n\nDEV OTP: ${otpRes.data.devCode}`, [
+        Alert.alert(t('registration.registration_successful'), `${t('registration.redirecting_verification')}\n\n${t('registration.dev_otp')} ${otpRes.data.devCode}`, [
           { text: 'OK', onPress: () => navigation.navigate('OtpVerify', { phone: phoneWithCode }) }
         ]);
       } else {
-        Alert.alert('Registration Successful', 'An OTP has been sent to your phone number.', [
-          { text: 'Verify OTP', onPress: () => navigation.navigate('OtpVerify', { phone: phoneWithCode }) }
+        Alert.alert(t('registration.registration_successful'), t('registration.otp_sent'), [
+          { text: t('registration.verify_otp'), onPress: () => navigation.navigate('OtpVerify', { phone: phoneWithCode }) }
         ]);
       }
 
@@ -150,7 +187,7 @@ export const RegistrationScreen = ({ navigation }: any) => {
       console.log('[Registration Error]', error);
       
       // Handle different error response formats
-      let msg = 'Registration failed';
+      let msg = t('registration.registration_failed');
       if (error?.response?.data) {
         const data = error.response.data;
         if (typeof data === 'string') {
@@ -172,7 +209,7 @@ export const RegistrationScreen = ({ navigation }: any) => {
         return;
       }
       
-      Alert.alert('Registration Error', msg);
+      Alert.alert(t('registration.registration_error'), msg);
     } finally {
       setLoading(false);
     }
@@ -185,29 +222,42 @@ export const RegistrationScreen = ({ navigation }: any) => {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           
-          {/* Header */}
-          <View style={{ padding: 24, paddingTop: 40 }}>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')} style={{ marginBottom: 16 }}>
-              <Text style={{ color: Theme.primary, fontWeight: '700', fontSize: 16 }}>Already a Partner? Login →</Text>
+          {/* Language Toggle Button */}
+          <View style={{ paddingHorizontal: 24, paddingVertical: 20, alignItems: 'flex-end', zIndex: 20 }}>
+            <TouchableOpacity 
+              onPress={toggleLanguage} 
+              style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}
+            >
+              <GlobeIcon size={16} color="white" />
+              <Text style={{ marginLeft: 8, fontWeight: 'bold', color: 'white' }}>
+                {i18n.language === 'hi' ? 'English' : 'हिंदी'}
+              </Text>
             </TouchableOpacity>
-            <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary, letterSpacing: -1 }}>Partner Setup</Text>
+          </View>
+
+          {/* Header */}
+          <View style={{ padding: 24, paddingTop: 8 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')} style={{ marginBottom: 16 }}>
+              <Text style={{ color: Theme.primary, fontWeight: '700', fontSize: 16 }}>{t('registration.already_partner_login')}</Text>
+            </TouchableOpacity>
+            <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary, letterSpacing: -1 }}>{t('registration.partner_setup')}</Text>
             <Text style={{ fontSize: 15, color: Theme.textSecondary, marginTop: 8, lineHeight: 22 }}>
-              Join Houcee and start receiving booking requests in your area.
+              {t('registration.partner_setup_description')}
             </Text>
           </View>
 
           {/* Form */}
           <View style={{ paddingHorizontal: 24 }}>
-            <InputField label="Full Name *" placeholder="John Doe" value={form.fullName} onChangeText={(t: string) => setForm({...form, fullName: t})} />
-            <InputField label="Email Address (Optional)" placeholder="john@example.com" keyboardType="email-address" value={form.email} onChangeText={(t: string) => setForm({...form, email: t})} />
+            <TranslatedInputField labelKey="registration.full_name" placeholderKey="registration.full_name_placeholder" value={form.fullName} onChangeText={(t: string) => setForm({...form, fullName: t})} t={t} />
+            <TranslatedInputField labelKey="registration.email_address_optional" placeholderKey="registration.email_placeholder" keyboardType="email-address" value={form.email} onChangeText={(t: string) => setForm({...form, email: t})} t={t} />
             
             <View style={{ marginBottom: 16 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>Phone Number *</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>{t('registration.phone_number')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: Theme.border }}>
                 <Text style={{ padding: 14, fontSize: 16, fontWeight: '700', color: Theme.textPrimary, borderRightWidth: 1, borderColor: Theme.border }}>+91</Text>
                 <TextInput
                   style={{ flex: 1, padding: 14, fontSize: 16, color: Theme.textPrimary, fontWeight: '700', letterSpacing: 1 }}
-                  placeholder="00000 00000"
+                  placeholder={t('registration.phone_placeholder')}
                   placeholderTextColor="#cbd5e1"
                   keyboardType="phone-pad"
                   maxLength={10}
@@ -218,12 +268,12 @@ export const RegistrationScreen = ({ navigation }: any) => {
             </View>
 
             {/* Address Row */}
-            <InputField label="Address *" placeholder="123 Main St" value={form.addressLine1} onChangeText={(t: string) => setForm({...form, addressLine1: t})} />
+            <TranslatedInputField labelKey="registration.address" placeholderKey="registration.address_placeholder" value={form.addressLine1} onChangeText={(t: string) => setForm({...form, addressLine1: t})} t={t} />
             <View style={{ flexDirection: 'row', gap: 12 }}>
-              <View style={{ flex: 1 }}><InputField label="City *" placeholder="City" value={form.city} onChangeText={(t: string) => setForm({...form, city: t})} /></View>
-              <View style={{ flex: 1 }}><InputField label="State *" placeholder="State" value={form.state} onChangeText={(t: string) => setForm({...form, state: t})} /></View>
+              <View style={{ flex: 1 }}><TranslatedInputField labelKey="registration.city" placeholderKey="registration.city_placeholder" value={form.city} onChangeText={(t: string) => setForm({...form, city: t})} t={t} /></View>
+              <View style={{ flex: 1 }}><TranslatedInputField labelKey="registration.state" placeholderKey="registration.state_placeholder" value={form.state} onChangeText={(t: string) => setForm({...form, state: t})} t={t} /></View>
             </View>
-            <InputField label="Country" placeholder="India" value={form.country} onChangeText={(t: string) => setForm({...form, country: t})} />
+            <TranslatedInputField labelKey="registration.country" placeholderKey="registration.country_placeholder" value={form.country} onChangeText={(t: string) => setForm({...form, country: t})} t={t} />
             
             {/* Location Status */}
             <View style={{ marginBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -233,49 +283,85 @@ export const RegistrationScreen = ({ navigation }: any) => {
               }} />
               <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary }}>
                 {form.latitude !== 0 && form.longitude !== 0 
-                  ? '✓ Location captured for provider matching' 
-                  : 'Location required for provider matching'}
+                  ? t('registration.location_captured') 
+                  : t('registration.location_required')}
               </Text>
             </View>
 
             {/* Profession / Service Picker */}
             <View style={{ marginBottom: 24 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>Your Profession *</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>{t('registration.your_profession')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
-                {services.map((service) => (
-                  <TouchableOpacity
-                    key={service.id}
-                    onPress={() => setForm({...form, professionId: service.id})}
-                    style={{
-                      paddingHorizontal: 16, paddingVertical: 12,
-                      borderRadius: 12, marginRight: 8,
-                      backgroundColor: form.professionId === service.id ? Theme.primary : '#F1F5F9',
-                      borderWidth: 1, borderColor: form.professionId === service.id ? Theme.primaryDark : Theme.border
-                    }}
-                  >
-                    <Text style={{
-                      color: form.professionId === service.id ? '#FFF' : Theme.textPrimary,
-                      fontWeight: '600'
-                    }}>
-                      {service.nameTranslations?.en || 'Service'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {services.map((service) => {
+                  // Handle service name with language support
+                  let serviceName = 'Service';
+                  const isHindi = i18n.language === 'hi';
+                  
+                  // Try sync API format first (snake_case)
+                  if (isHindi && service.name_hi) {
+                    serviceName = service.name_hi;
+                  } else if (service.name_en) {
+                    serviceName = service.name_en;
+                  }
+                  // Try regular API format (camelCase with JSON object)
+                  else if (typeof service.nameTranslations === 'object' && service.nameTranslations.hi && isHindi) {
+                    serviceName = service.nameTranslations.hi;
+                  } else if (typeof service.nameTranslations === 'object' && service.nameTranslations.en) {
+                    serviceName = service.nameTranslations.en;
+                  }
+                  // Try if nameTranslations is a stringified JSON
+                  else if (typeof service.nameTranslations === 'string') {
+                    try {
+                      const parsed = JSON.parse(service.nameTranslations);
+                      if (isHindi && parsed.hi) {
+                        serviceName = parsed.hi;
+                      } else {
+                        serviceName = parsed.en || service.nameTranslations;
+                      }
+                    } catch {
+                      serviceName = service.nameTranslations;
+                    }
+                  }
+                  // Fallback to name field
+                  else if (service.name) {
+                    serviceName = service.name;
+                  }
+                  
+                  return (
+                    <TouchableOpacity
+                      key={service.id}
+                      onPress={() => setForm({...form, professionId: service.id})}
+                      style={{
+                        paddingHorizontal: 16, paddingVertical: 12,
+                        borderRadius: 12, marginRight: 8,
+                        backgroundColor: form.professionId === service.id ? Theme.primary : '#F1F5F9',
+                        borderWidth: 1, borderColor: form.professionId === service.id ? Theme.primaryDark : Theme.border
+                      }}
+                    >
+                      <Text style={{
+                        color: form.professionId === service.id ? '#FFF' : Theme.textPrimary,
+                        fontWeight: '600'
+                      }}>
+                        {serviceName}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
-              {services.length === 0 && <Text style={{ fontSize: 12, color: Theme.textSecondary }}>Loading available professions...</Text>}
+              {services.length === 0 && <Text style={{ fontSize: 12, color: Theme.textSecondary }}>{t('registration.loading_professions')}</Text>}
             </View>
 
             {/* Document Uploads */}
             <View style={{ marginBottom: 32 }}>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary, marginBottom: 4 }}>Verification Documents</Text>
-              <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 16 }}>Optional for testing</Text>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary, marginBottom: 4 }}>{t('provider.verification_documents')}</Text>
+              <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 16 }}>{t('provider.optional_for_testing')}</Text>
               
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
                 {[
-                  { id: 'pan', label: 'PAN Card' },
-                  { id: 'aadhar', label: 'Aadhar Card' },
-                  { id: 'election', label: 'Election ID' },
-                  { id: 'school', label: 'School ID' },
+                  { id: 'pan', label: t('registration.pan_card') },
+                  { id: 'aadhar', label: t('registration.aadhar_card') },
+                  { id: 'election', label: t('registration.election_id') },
+                  { id: 'school', label: t('registration.school_id') },
                 ].map(doc => (
                   <TouchableOpacity 
                     key={doc.id}
@@ -305,7 +391,7 @@ export const RegistrationScreen = ({ navigation }: any) => {
                 shadowOpacity: 0.2, shadowRadius: 8,
               }}
             >
-              {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>REGISTER & VERIFY</Text>}
+              {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('registration.register_verify')}</Text>}
             </TouchableOpacity>
 
           </View>

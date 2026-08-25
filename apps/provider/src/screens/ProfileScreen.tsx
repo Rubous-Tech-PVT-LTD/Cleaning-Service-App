@@ -3,11 +3,14 @@ import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIn
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '../theme';
 import api from '../api';
+import i18n from '../i18n';
 
 export const ProfileScreen = () => {
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,10 +30,10 @@ export const ProfileScreen = () => {
   };
 
   const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.logout', 'Logout'), t('profile.logout_confirm', 'Are you sure you want to logout?'), [
+      { text: t('common.cancel', 'Cancel'), style: 'cancel' },
       {
-        text: 'Logout',
+        text: t('profile.logout', 'Logout'),
         style: 'destructive',
         onPress: async () => {
           await AsyncStorage.removeItem('provider_token');
@@ -40,6 +43,14 @@ export const ProfileScreen = () => {
         },
       },
     ]);
+  };
+
+  const toggleLanguage = async () => {
+    const nextLang = i18n.language === 'en' ? 'hi' : 'en';
+    await i18n.changeLanguage(nextLang);
+    await AsyncStorage.setItem('user-language', nextLang);
+    // Force re-render
+    setProfile({ ...profile });
   };
 
   if (loading) {
@@ -64,21 +75,21 @@ export const ProfileScreen = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuItemText}>Language Preference</Text>
-            <Text style={styles.menuValueText}>{profile?.languagePref === 'hi' ? 'Hindi' : 'English'}</Text>
+          <Text style={styles.sectionTitle}>{t('profile.support_settings')}</Text>
+          <TouchableOpacity style={styles.menuItem} onPress={toggleLanguage}>
+            <Text style={styles.menuItemText}>{t('profile.language')}</Text>
+            <Text style={styles.menuValueText}>{i18n.language === 'hi' ? 'Hindi' : 'English'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ManageServices')}>
-            <Text style={styles.menuItemText}>Manage Services</Text>
+            <Text style={styles.menuItemText}>{t('profile.manage_services')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuItemText}>Bank Details</Text>
+            <Text style={styles.menuItemText}>{t('profile.bank_details')}</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutBtnText}>Logout</Text>
+          <Text style={styles.logoutBtnText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

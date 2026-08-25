@@ -52,10 +52,12 @@ export class ServicesService {
     const mappedEstimations = servicesWithEstimations.map((svc: any, idx: number) => {
       // Create a fallback icon string based on name length or something simple if needed, 
       // but the UI uses an emoji placeholder right now so we just pass the names.
-      const name = svc.nameTranslations?.en || 'Service';
       return {
         id: svc.id,
-        title: name,
+        title: {
+          en: svc.nameTranslations?.en || 'Service',
+          hi: svc.nameTranslations?.hi || svc.nameTranslations?.en || 'सेवा'
+        },
         time: svc.estimatedTime,
         icon: 'clean' 
       };
@@ -63,35 +65,50 @@ export class ServicesService {
 
     return {
       durations: [
-        { id: '0.5', label: '0.5 hr', price: 25, oldPrice: 125, saveAmount: 100 },
-        { id: '1', label: '1 hr', price: 49, oldPrice: 250, saveAmount: 201 },
-        { id: '1.5', label: '1.5 hrs', price: 74, oldPrice: 375, saveAmount: 301 },
-        { id: '2', label: '2 hrs', price: 98, oldPrice: 500, saveAmount: 402 },
+        { id: '0.5', label: { en: '0.5 hr', hi: '0.5 घंटे' }, price: 25, oldPrice: 125, saveAmount: 100 },
+        { id: '1', label: { en: '1 hr', hi: '1 घंटा' }, price: 49, oldPrice: 250, saveAmount: 201 },
+        { id: '1.5', label: { en: '1.5 hrs', hi: '1.5 घंटे' }, price: 74, oldPrice: 375, saveAmount: 301 },
+        { id: '2', label: { en: '2 hrs', hi: '2 घंटे' }, price: 98, oldPrice: 500, saveAmount: 402 },
       ],
       estimations: mappedEstimations,
       whyCustomersLove: [
-        'Book only the help you need',
-        'No recurring commitment required',
-        'Multiple household tasks covered',
-        'Flexible duration options',
-        'Trained & verified professionals',
-        'Convenient scheduling'
+        { en: 'Book only the help you need', hi: 'केवल आवश्यक सहायता बुक करें' },
+        { en: 'No recurring commitment required', hi: 'कोई आवर्ती प्रतिबद्धता आवश्यक नहीं' },
+        { en: 'Multiple household tasks covered', hi: 'कई घरेलू कार्य शामिल' },
+        { en: 'Flexible duration options', hi: 'लचीले अवधि विकल्प' },
+        { en: 'Trained & verified professionals', hi: 'प्रशिक्षित और सत्यापित पेशेवर' },
+        { en: 'Convenient scheduling', hi: 'सुविधाजनक शेड्यूलिंग' }
       ],
       doesNotInclude: [
-        'Dry wiping of walls',
-        'Complete wardrobe cleaning and organization',
-        'Kitchen cabinet cleaning (interior and exterior)',
-        'Shower cubicle deep cleaning',
-        'Bathtub scrubbing and cleaning',
-        'Any other services like Deep Steam Cleaning, Car Washing or Plant Care.',
-        'Chandelier cleaning and fragile glass work are excluded from this service.'
+        { en: 'Dry wiping of walls', hi: 'दीवारों की सूखी सफाई' },
+        { en: 'Complete wardrobe cleaning and organization', hi: 'अलमारी की पूरी सफाई और व्यवस्था' },
+        { en: 'Kitchen cabinet cleaning (interior and exterior)', hi: 'रसोई कैबिनेट की सफाई (अंदर और बाहर)' },
+        { en: 'Shower cubicle deep cleaning', hi: 'शॉवर क्यूबिकल की डीप क्लीनिंग' },
+        { en: 'Bathtub scrubbing and cleaning', hi: 'बाथटब की स्क्रबिंग और सफाई' },
+        { en: 'Any other services like Deep Steam Cleaning, Car Washing or Plant Care.', hi: 'डीप स्टीम क्लीनिंग, कार वाशिंग या प्लांट केयर जैसी कोई अन्य सेवाएँ।' },
+        { en: 'Chandelier cleaning and fragile glass work are excluded from this service.', hi: 'झूमर की सफाई और नाजुक कांच का काम इस सेवा से बाहर हैं।' }
       ],
       faqs: [
-        { question: "What if the cleaning isn't completed within the selected time?", answer: 'You can extend the time by paying the additional amount directly via the app.' },
-        { question: 'How can I trust your service?', answer: 'All our professionals are background verified and highly trained.' },
-        { question: 'Do I need to provide all the cleaning equipment?', answer: 'No, our professionals bring their own basic cleaning kit and chemicals.' },
-        { question: 'How are the prices calculated?', answer: 'Prices are based on the duration you select for the hourly service.' },
-        { question: 'How do I contact support?', answer: 'You can contact support via the Help Center in the profile section.' }
+        { 
+          question: { en: "What if the cleaning isn't completed within the selected time?", hi: "यदि चयनित समय के भीतर सफाई पूरी नहीं होती है तो क्या होगा?" }, 
+          answer: { en: 'You can extend the time by paying the additional amount directly via the app.', hi: 'आप ऐप के माध्यम से सीधे अतिरिक्त राशि का भुगतान करके समय बढ़ा सकते हैं।' } 
+        },
+        { 
+          question: { en: 'How can I trust your service?', hi: 'मैं आपकी सेवा पर कैसे भरोसा कर सकता हूँ?' }, 
+          answer: { en: 'All our professionals are background verified and highly trained.', hi: 'हमारे सभी पेशेवर पृष्ठभूमि सत्यापित और उच्च प्रशिक्षित हैं।' } 
+        },
+        { 
+          question: { en: 'Do I need to provide all the cleaning equipment?', hi: 'क्या मुझे सफाई के सभी उपकरण प्रदान करने होंगे?' }, 
+          answer: { en: 'No, our professionals bring their own basic cleaning kit and chemicals.', hi: 'नहीं, हमारे पेशेवर अपनी बुनियादी सफाई किट और रसायन साथ लाते हैं।' } 
+        },
+        { 
+          question: { en: 'How are the prices calculated?', hi: 'कीमतों की गणना कैसे की जाती है?' }, 
+          answer: { en: 'Prices are based on the duration you select for the hourly service.', hi: 'कीमतें उस अवधि पर आधारित होती हैं जिसे आप प्रति घंटा सेवा के लिए चुनते हैं।' } 
+        },
+        { 
+          question: { en: 'How do I contact support?', hi: 'मैं सहायता से कैसे संपर्क करूँ?' }, 
+          answer: { en: 'You can contact support via the Help Center in the profile section.', hi: 'आप प्रोफ़ाइल अनुभाग में सहायता केंद्र के माध्यम से सहायता से संपर्क कर सकते हैं।' } 
+        }
       ]
     };
   }

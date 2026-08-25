@@ -5,8 +5,11 @@ import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { Theme } from '../theme';
 import api from '../api';
+import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
 
 export const JobsScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,12 +78,12 @@ export const JobsScreen = () => {
     if (sosLoadingJobId) return;
 
     Alert.alert(
-      'Emergency SOS',
-      'Are you sure you want to trigger an emergency SOS?',
+      t('provider.sos_alert'),
+      t('provider.sos_confirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('provider.cancel'), style: 'cancel' },
         {
-          text: 'Yes, Trigger SOS',
+          text: t('provider.yes_trigger_sos'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -88,7 +91,7 @@ export const JobsScreen = () => {
 
               const { status } = await Location.requestForegroundPermissionsAsync();
               if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'Location permission is required to share your emergency location.');
+                Alert.alert(t('provider.permission_denied'), t('provider.location_permission_required'));
                 return;
               }
 
@@ -105,12 +108,12 @@ export const JobsScreen = () => {
               await api.post('/sos', payload);
 
               Alert.alert(
-                'SOS Sent',
-                'Your emergency alert has been sent. Help is on the way.'
+                t('provider.sos_sent'),
+                t('provider.sos_sent_message')
               );
             } catch (err: any) {
               const msg = err?.response?.data?.message || err.message || 'Failed to send SOS. Please try again.';
-              Alert.alert('SOS Failed', msg);
+              Alert.alert(t('provider.sos_failed'), msg);
             } finally {
               setSosLoadingJobId(null);
             }
@@ -123,8 +126,8 @@ export const JobsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Jobs</Text>
-        <Text style={styles.headerSubtitle}>Active and upcoming tasks</Text>
+        <Text style={styles.headerTitle}>{t('provider.my_jobs')}</Text>
+        <Text style={styles.headerSubtitle}>{t('provider.active_upcoming_tasks')}</Text>
       </View>
 
       <ScrollView 
@@ -133,14 +136,61 @@ export const JobsScreen = () => {
       >
         {jobs.length === 0 && !loading ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No active jobs.</Text>
-            <Text style={styles.emptyStateSub}>Accept new requests from the Home tab.</Text>
+            <Text style={styles.emptyStateText}>{t('provider.no_active_jobs')}</Text>
+            <Text style={styles.emptyStateSub}>{t('provider.accept_new_requests')}</Text>
           </View>
         ) : (
           jobs.map(job => {
-            const bookingDate = job.scheduledAt ? new Date(job.scheduledAt).toLocaleDateString() : 'Today';
-            const bookingTime = job.scheduledAt ? new Date(job.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            const serviceName = job.service?.nameTranslations?.en || 'Service Request';
+            const bookingDate = job.scheduledAt ? new Date(job.scheduledAt).toLocaleDateString() : 
+                               job.scheduled_at ? new Date(job.scheduled_at).toLocaleDateString() : 'Today';
+            const bookingTime = job.scheduledAt ? new Date(job.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
+                                job.scheduled_at ? new Date(job.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            
+            // Handle service name from different possible data structures
+            let serviceName = 'Service Request';
+            
+            // Check language preference for Hindi
+            const isHindi = i18n.language === 'hi';
+            
+            // First try to get from service object with language support
+            if (job.service) {
+              // Try sync API format first (snake_case)
+              if (isHindi && job.service.name_hi) {
+                serviceName = job.service.name_hi;
+              } else if (job.service.name_en) {
+                serviceName = job.service.name_en;
+              }
+              // Try regular API format (camelCase with JSON object)
+              else if (typeof job.service.nameTranslations === 'object' && job.service.nameTranslations.hi && isHindi) {
+                serviceName = job.service.nameTranslations.hi;
+              } else if (typeof job.service.nameTranslations === 'object' && job.service.nameTranslations.en) {
+                serviceName = job.service.nameTranslations.en;
+              }
+              // Try if nameTranslations is a stringified JSON
+              else if (typeof job.service.nameTranslations === 'string') {
+                try {
+                  const parsed = JSON.parse(job.service.nameTranslations);
+                  if (isHindi && parsed.hi) {
+                    serviceName = parsed.hi;
+                  } else {
+                    serviceName = parsed.en || job.service.nameTranslations;
+                  }
+                } catch {
+                  serviceName = job.service.nameTranslations;
+                }
+              }
+              // Fallback to name field
+              else if (job.service.name) {
+                serviceName = job.service.name;
+              }
+            }
+            // Then try to get from items array (this is what the API currently returns)
+            else if (job.items && Array.isArray(job.items) && job.items.length > 0) {
+              const firstItem = job.items[0];
+              if (firstItem.title) {
+                serviceName = firstItem.title;
+              }
+            }
 
             return (
               <View key={job.id} style={styles.jobCard}>
@@ -160,7 +210,7 @@ export const JobsScreen = () => {
                   <Text style={styles.clientName}>👤 {job.client.fullName}</Text>
                 )}
                 
-                <Text style={styles.price}>💰 Total: ₹{job.totalPrice}</Text>
+                <Text style={styles.price}>💰 {t('provider.total')}: ₹{job.totalPrice}</Text>
                 
                 <View style={styles.actionRow}>
                   {job.status === 'ACCEPTED' && (
@@ -168,7 +218,7 @@ export const JobsScreen = () => {
                       style={[styles.primaryButton, { backgroundColor: Theme.info }]}
                       onPress={() => navigation.navigate('Tracking', { booking: job })}
                     >
-                      <Text style={styles.buttonText}>NAVIGATE</Text>
+                      <Text style={styles.buttonText}>{t('provider.navigate')}</Text>
                     </TouchableOpacity>
                   )}
                   {job.status === 'IN_PROGRESS' && (
@@ -176,7 +226,7 @@ export const JobsScreen = () => {
                       style={[styles.primaryButton, styles.completeButton]}
                       onPress={() => promptForCompletion(job.id)}
                     >
-                      <Text style={styles.buttonText}>MARK COMPLETED</Text>
+                      <Text style={styles.buttonText}>{t('provider.mark_completed')}</Text>
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
@@ -197,7 +247,7 @@ export const JobsScreen = () => {
                   ) : (
                     <>
                       <Text style={styles.sosEmoji}>🚨</Text>
-                      <Text style={styles.sosButtonText}>EMERGENCY SOS</Text>
+                      <Text style={styles.sosButtonText}>{t('provider.emergency_sos')}</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -211,8 +261,8 @@ export const JobsScreen = () => {
       <Modal visible={!!completionJobId} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Enter Client PIN</Text>
-            <Text style={styles.modalSubtitle}>Please ask the client for the 4-digit PIN displayed on their app.</Text>
+            <Text style={styles.modalTitle}>{t('provider.enter_client_pin')}</Text>
+            <Text style={styles.modalSubtitle}>{t('provider.ask_client_pin')}</Text>
             
             <TextInput
               style={styles.otpInput}
@@ -226,10 +276,10 @@ export const JobsScreen = () => {
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#F1F5F9' }]} onPress={() => setCompletionJobId(null)}>
-                <Text style={{ color: Theme.textSecondary, fontWeight: '700' }}>Cancel</Text>
+                <Text style={{ color: Theme.textSecondary, fontWeight: '700' }}>{t('provider.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalButton, { backgroundColor: Theme.success }]} onPress={handleConfirmCompletion}>
-                <Text style={{ color: 'white', fontWeight: '700' }}>Verify</Text>
+                <Text style={{ color: 'white', fontWeight: '700' }}>{t('provider.verify')}</Text>
               </TouchableOpacity>
             </View>
           </View>
