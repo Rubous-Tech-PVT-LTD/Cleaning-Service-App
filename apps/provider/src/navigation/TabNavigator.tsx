@@ -62,9 +62,9 @@ export const TabNavigator = () => {
           shadowColor: '#000',
           shadowOpacity: 0.1,
           shadowRadius: 10,
-          
-          height: 80,
-paddingBottom: 15,
+          height: 100,
+         
+paddingBottom: 60,
         },
         tabBarLabel: () => <TabBarLabel routeName={route.name} />,
       })}

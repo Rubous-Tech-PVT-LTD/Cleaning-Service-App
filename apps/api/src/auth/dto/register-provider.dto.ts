@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsNumber, IsArray } from 'class-validator';
 
 export class RegisterProviderDto {
   @ApiProperty({ description: 'Full name of the provider' })
@@ -51,6 +51,12 @@ export class RegisterProviderDto {
   @IsNotEmpty()
   @IsString()
   professionId!: string;
+
+  @ApiPropertyOptional({ description: 'Array of profession/service IDs for multiple selections' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  professionIds?: string[];
 
   @ApiPropertyOptional({ description: 'Uploaded documents JSON' })
   @IsOptional()

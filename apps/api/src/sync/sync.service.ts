@@ -137,6 +137,20 @@ export class SyncService {
         // ========================================================
 
         if (isProvider) {
+          // Fetch user to get their professions
+          const providerUser = await (this.prisma as any).user.findUnique({
+            where: { id: userId },
+            include: { profile: true }
+          });
+          
+          const professionIds: string[] = [];
+          if (providerUser?.profile?.professionId) {
+            professionIds.push(providerUser.profile.professionId);
+          }
+          if (providerUser?.profile?.professionIds && Array.isArray(providerUser.profile.professionIds)) {
+            professionIds.push(...(providerUser.profile.professionIds as string[]));
+          }
+
           bookings = await (this.prisma as any).booking.findMany({
             where: {
               OR: [
@@ -145,6 +159,7 @@ export class SyncService {
                 },
                 {
                   status: 'PENDING',
+                  serviceId: { in: professionIds }
                 },
               ],
               updatedAt: {
@@ -756,14 +771,30 @@ export class SyncService {
               },
             });
 
-          // Broadcast pending booking to providers
+          // Broadcast pending booking to matching providers
           if (
             newBooking.status ===
             'PENDING'
           ) {
-            this.trackingGateway.broadcastNewBooking(
-              newBooking,
-            );
+            const matchingProviders = await (this.prisma as any).user.findMany({
+              where: {
+                role: 'PROVIDER',
+                profile: {
+                  OR: [
+                    { professionIds: { array_contains: newBooking.serviceId } },
+                    { professionId: newBooking.serviceId }
+                  ],
+                },
+              },
+            });
+            const matchingProviderIds = matchingProviders.map((p: any) => p.id);
+            if (matchingProviderIds.length > 0) {
+              this.trackingGateway.notifyProviders(
+                matchingProviderIds,
+                'new_booking',
+                newBooking,
+              );
+            }
           }
         }
 

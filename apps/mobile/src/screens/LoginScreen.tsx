@@ -104,7 +104,7 @@ export const LoginScreen = ({ navigation }: any) => {
               </View>
               <View style={{ justifyContent: 'center' }}>
                 <Text style={{ fontSize: 42, fontWeight: '900', color: '#FFFFFF', letterSpacing: -1, lineHeight: 42 }}>houcee</Text>
-                <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.9)', fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}>{t('login.one_tap_away', 'one tap away')}</Text>
+                <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.9)', fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}> one tap away</Text>
               </View>
             </View>
             <ActivityIndicator size="large" color="#FFFFFF" />

@@ -48,6 +48,10 @@ export class BookingsService {
           isVerified: true,
           latitude: { not: null },
           longitude: { not: null },
+          OR: [
+            { professionIds: { array_contains: serviceId } },
+            { professionId: serviceId }
+          ]
         },
       },
       include: {
@@ -199,9 +203,26 @@ export class BookingsService {
 
       console.log(`[Booking Service] Notified provider ${booking.providerId} about new booking`);
     } else {
-      // Broadcast to all providers if no assignment
-      this.trackingGateway.broadcastNewBooking(booking);
-      console.log(`[Booking Service] Broadcast booking to all providers (no suitable provider found)`);
+      // Broadcast to matching providers if no assignment
+      const matchingProviders = await this.prisma.user.findMany({
+        where: {
+          role: UserRole.PROVIDER,
+          profile: {
+            OR: [
+              { professionIds: { array_contains: createBookingDto.serviceId } },
+              { professionId: createBookingDto.serviceId }
+            ],
+          },
+        },
+      });
+      const matchingProviderIds = matchingProviders.map(p => p.id);
+      
+      if (matchingProviderIds.length > 0) {
+        this.trackingGateway.notifyProviders(matchingProviderIds, 'new_booking', booking);
+        console.log(`[Booking Service] Broadcast booking to ${matchingProviderIds.length} matching providers`);
+      } else {
+        console.log(`[Booking Service] No matching providers found to broadcast to`);
+      }
     }
 
     return booking;
@@ -220,10 +241,37 @@ export class BookingsService {
       });
     }
 
+    if (role === 'PROVIDER') {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
+      });
+      
+      const professionIds: string[] = [];
+      if (user?.profile?.professionId) {
+        professionIds.push(user.profile.professionId);
+      }
+      if (user?.profile?.professionIds && Array.isArray(user.profile.professionIds)) {
+        professionIds.push(...(user.profile.professionIds as string[]));
+      }
+
+      return this.prisma.booking.findMany({
+        where: {
+          OR: [
+            { providerId: userId },
+            { 
+              status: 'PENDING',
+              serviceId: { in: professionIds }
+            }
+          ]
+        },
+        include: { service: true, client: true, provider: true, address: true },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
     return this.prisma.booking.findMany({
-      where: role === 'PROVIDER' 
-        ? { OR: [{ providerId: userId }, { status: 'PENDING' }] } 
-        : { clientId: userId },
+      where: { clientId: userId },
       include: { service: true, client: true, provider: true, address: true },
       orderBy: { createdAt: 'desc' },
     });

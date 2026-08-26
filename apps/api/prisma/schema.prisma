@@ -102,10 +102,11 @@ model Profile {
   availability Json?
   version      Int      @default(1)
   lastModified DateTime @updatedAt
-  country      String?
-  documents    Json?
-  professionId String?
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country         String?
+  documents       Json?
+  professionId    String?
+  professionIds   Json?    @default("[]")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
 }

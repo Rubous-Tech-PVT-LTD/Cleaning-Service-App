@@ -45,7 +45,7 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, data: any) {
-    const { fullName, languagePref, avatar, ...profileData } = data;
+    const { fullName, languagePref, avatar, professionIds, ...profileData } = data;
 
     // Upload avatar to Cloudinary if provided
     let avatarUrl = undefined;
@@ -63,13 +63,25 @@ export class UsersService {
     if (fullName !== undefined) userUpdate.fullName = fullName;
     if (languagePref !== undefined) userUpdate.languagePref = languagePref;
 
+    // Handle professionIds as JSON array
+    const profileUpdateData: any = { ...profileData };
+    if (professionIds !== undefined) {
+      profileUpdateData.professionIds = professionIds;
+      // For backward compatibility, also set the first professionId as the primary professionId
+      if (professionIds.length > 0) {
+        profileUpdateData.professionId = professionIds[0];
+      } else {
+        profileUpdateData.professionId = null;
+      }
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
       data: {
         ...userUpdate,
         profile: {
           update: {
-            ...profileData,
+            ...profileUpdateData,
             ...(avatarUrl && { avatarUrl })
           }
         }

@@ -7,7 +7,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
-import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api';
 import { Theme } from '../theme';
@@ -72,8 +71,7 @@ export const RegistrationScreen = ({ navigation }: any) => {
     addressLine1: '',
     country: 'India',
     professionId: '',
-    latitude: 0,
-    longitude: 0,
+    professionIds: [] as string[],
   });
 
   // Mock document upload state
@@ -90,39 +88,16 @@ export const RegistrationScreen = ({ navigation }: any) => {
       .then(res => {
         setServices(res.data);
         if (res.data.length > 0) {
-          setForm(f => ({ ...f, professionId: res.data[0].id }));
+          setForm(f => ({ ...f, professionId: res.data[0].id, professionIds: [res.data[0].id] }));
         }
       })
       .catch(err => console.log('Failed to fetch services', err));
-
-    // Get current location for provider matching
-    getCurrentLocation();
   }, []);
 
   const toggleLanguage = async () => {
     const nextLang = i18n.language === 'en' ? 'hi' : 'en';
     await i18n.changeLanguage(nextLang);
     await AsyncStorage.setItem('user-language', nextLang);
-  };
-
-  const getCurrentLocation = async () => {
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        console.log('Location permission denied');
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      setForm(f => ({
-        ...f,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      }));
-      console.log('Provider location captured:', location.coords);
-    } catch (error) {
-      console.log('Error getting location:', error);
-    }
   };
 
   const handleDocumentUpload = (docType: keyof typeof docs, title: string) => {
@@ -133,6 +108,72 @@ export const RegistrationScreen = ({ navigation }: any) => {
         onPress: () => setDocs(prev => ({ ...prev, [docType]: true })) 
       }
     ]);
+  };
+
+  const handleServiceToggle = (serviceId: string, serviceName: string) => {
+    const isKitchen = serviceName.toLowerCase().includes('kitchen') || 
+                      serviceName.includes('रसोईघर') || 
+                      serviceName.includes('रसोई');
+    const isBathroom = serviceName.toLowerCase().includes('bathroom') || 
+                       serviceName.includes('बाथरूम');
+    
+    setForm(prev => {
+      const isSelected = prev.professionIds.includes(serviceId);
+      
+      if (isSelected) {
+        // Deselect the service
+        const newProfessionIds = prev.professionIds.filter(id => id !== serviceId);
+        const newProfessionId = newProfessionIds.length > 0 ? newProfessionIds[0] : '';
+        return { ...prev, professionIds: newProfessionIds, professionId: newProfessionId };
+      } else {
+        // Check for conflicts before selecting
+        if (isKitchen) {
+          // Check if any bathroom service is already selected
+          const bathroomServices = services.filter(s => {
+            const enName = s.nameTranslations?.en?.toLowerCase() || '';
+            const hiName = s.nameTranslations?.hi || '';
+            return enName.includes('bathroom') || hiName.includes('बाथरूम');
+          });
+          const bathroomIds = bathroomServices.map(s => s.id);
+          const hasBathroomSelected = prev.professionIds.some(id => bathroomIds.includes(id));
+          
+          if (hasBathroomSelected) {
+            Alert.alert(
+              t('provider.kitchen_bathroom_conflict'),
+              t('provider.kitchen_conflict'),
+              [{ text: t('common.ok') }]
+            );
+            return prev; // Don't add kitchen service
+          }
+          const newProfessionIds = [...prev.professionIds, serviceId];
+          return { ...prev, professionIds: newProfessionIds, professionId: serviceId };
+        } else if (isBathroom) {
+          // Check if any kitchen service is already selected
+          const kitchenServices = services.filter(s => {
+            const enName = s.nameTranslations?.en?.toLowerCase() || '';
+            const hiName = s.nameTranslations?.hi || '';
+            return enName.includes('kitchen') || hiName.includes('रसोईघर') || hiName.includes('रसोई');
+          });
+          const kitchenIds = kitchenServices.map(s => s.id);
+          const hasKitchenSelected = prev.professionIds.some(id => kitchenIds.includes(id));
+          
+          if (hasKitchenSelected) {
+            Alert.alert(
+              t('provider.kitchen_bathroom_conflict'),
+              t('provider.bathroom_conflict'),
+              [{ text: t('common.ok') }]
+            );
+            return prev; // Don't add bathroom service
+          }
+          const newProfessionIds = [...prev.professionIds, serviceId];
+          return { ...prev, professionIds: newProfessionIds, professionId: serviceId };
+        } else {
+          // For other services, just add to selection
+          const newProfessionIds = [...prev.professionIds, serviceId];
+          return { ...prev, professionIds: newProfessionIds, professionId: serviceId };
+        }
+      }
+    });
   };
 
   const handleRegister = async () => {
@@ -147,22 +188,14 @@ export const RegistrationScreen = ({ navigation }: any) => {
       return;
     }
 
-    // Ensure location is captured
-    if (form.latitude === 0 || form.longitude === 0) {
-      Alert.alert(t('registration.location_required_title'), t('registration.enable_location'));
-      await getCurrentLocation();
-      if (form.latitude === 0 || form.longitude === 0) {
-        return;
-      }
-    }
-
     setLoading(true);
     try {
       const phoneWithCode = `+91${form.phone}`;
       const payload = {
         ...form,
         phone: phoneWithCode,
-        documents: docs // Save mock document status
+        documents: docs, // Save mock document status
+        professionIds: form.professionIds.length > 0 ? form.professionIds : [form.professionId]
       };
       
       console.log('[Registration] Sending payload:', payload);
@@ -275,22 +308,12 @@ export const RegistrationScreen = ({ navigation }: any) => {
             </View>
             <TranslatedInputField labelKey="registration.country" placeholderKey="registration.country_placeholder" value={form.country} onChangeText={(t: string) => setForm({...form, country: t})} t={t} />
             
-            {/* Location Status */}
-            <View style={{ marginBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ 
-                width: 12, height: 12, borderRadius: 6, 
-                backgroundColor: form.latitude !== 0 && form.longitude !== 0 ? Theme.success : '#cbd5e1' 
-              }} />
-              <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary }}>
-                {form.latitude !== 0 && form.longitude !== 0 
-                  ? t('registration.location_captured') 
-                  : t('registration.location_required')}
-              </Text>
-            </View>
-
             {/* Profession / Service Picker */}
             <View style={{ marginBottom: 24 }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>{t('registration.your_profession')}</Text>
+              <Text style={{ fontSize: 11, color: Theme.textSecondary, marginBottom: 12 }}>
+                {t('registration.select_services_note')}
+              </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
                 {services.map((service) => {
                   // Handle service name with language support
@@ -327,23 +350,31 @@ export const RegistrationScreen = ({ navigation }: any) => {
                     serviceName = service.name;
                   }
                   
+                  const isSelected = form.professionIds.includes(service.id);
+                  
                   return (
                     <TouchableOpacity
                       key={service.id}
-                      onPress={() => setForm({...form, professionId: service.id})}
+                      onPress={() => handleServiceToggle(service.id, serviceName)}
                       style={{
                         paddingHorizontal: 16, paddingVertical: 12,
                         borderRadius: 12, marginRight: 8,
-                        backgroundColor: form.professionId === service.id ? Theme.primary : '#F1F5F9',
-                        borderWidth: 1, borderColor: form.professionId === service.id ? Theme.primaryDark : Theme.border
+                        backgroundColor: isSelected ? Theme.primary : '#F1F5F9',
+                        borderWidth: 1, borderColor: isSelected ? Theme.primaryDark : Theme.border,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6
                       }}
                     >
                       <Text style={{
-                        color: form.professionId === service.id ? '#FFF' : Theme.textPrimary,
+                        color: isSelected ? '#FFF' : Theme.textPrimary,
                         fontWeight: '600'
                       }}>
                         {serviceName}
                       </Text>
+                      {isSelected && (
+                        <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                      )}
                     </TouchableOpacity>
                   );
                 })}

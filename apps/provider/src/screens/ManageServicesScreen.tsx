@@ -15,7 +15,7 @@ export const ManageServicesScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [services, setServices] = useState<any[]>([]);
-  const [professionId, setProfessionId] = useState<string>('');
+  const [selectedProfessionIds, setSelectedProfessionIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -28,8 +28,11 @@ export const ManageServicesScreen = ({ navigation }: any) => {
         api.get('/auth/profile')
       ]);
       setServices(servicesRes.data);
-      if (profileRes.data?.profile?.professionId) {
-        setProfessionId(profileRes.data.profile.professionId);
+      if (profileRes.data?.profile?.professionIds) {
+        setSelectedProfessionIds(profileRes.data.profile.professionIds);
+      } else if (profileRes.data?.profile?.professionId) {
+        // For backward compatibility, load single professionId into array
+        setSelectedProfessionIds([profileRes.data.profile.professionId]);
       }
     } catch (err) {
       console.log('Failed to fetch data', err);
@@ -40,14 +43,14 @@ export const ManageServicesScreen = ({ navigation }: any) => {
   };
 
   const handleSave = async () => {
-    if (!professionId) {
-      Alert.alert('Error', 'Please select a profession');
+    if (selectedProfessionIds.length === 0) {
+      Alert.alert('Error', 'Please select at least one service');
       return;
     }
     
     setSaving(true);
     try {
-      await api.patch('/users/profile', { professionId });
+      await api.patch('/users/profile', { professionIds: selectedProfessionIds });
       Alert.alert('Success', 'Service preferences updated successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
@@ -57,6 +60,67 @@ export const ManageServicesScreen = ({ navigation }: any) => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleServiceToggle = (serviceId: string, serviceName: string) => {
+    const isKitchen = serviceName.toLowerCase().includes('kitchen') || 
+                      serviceName.includes('रसोईघर') || 
+                      serviceName.includes('रसोई');
+    const isBathroom = serviceName.toLowerCase().includes('bathroom') || 
+                       serviceName.includes('बाथरूम');
+    
+    setSelectedProfessionIds(prev => {
+      const isSelected = prev.includes(serviceId);
+      
+      if (isSelected) {
+        // Deselect the service
+        return prev.filter(id => id !== serviceId);
+      } else {
+        // Check for conflicts before selecting
+        if (isKitchen) {
+          // Check if any bathroom service is already selected
+          const bathroomServices = services.filter(s => {
+            const enName = s.nameTranslations?.en?.toLowerCase() || '';
+            const hiName = s.nameTranslations?.hi || '';
+            return enName.includes('bathroom') || hiName.includes('बाथरूम');
+          });
+          const bathroomIds = bathroomServices.map(s => s.id);
+          const hasBathroomSelected = prev.some(id => bathroomIds.includes(id));
+          
+          if (hasBathroomSelected) {
+            Alert.alert(
+              t('provider.kitchen_bathroom_conflict'),
+              t('provider.kitchen_conflict'),
+              [{ text: t('common.ok') }]
+            );
+            return prev; // Don't add kitchen service
+          }
+          return [...prev, serviceId];
+        } else if (isBathroom) {
+          // Check if any kitchen service is already selected
+          const kitchenServices = services.filter(s => {
+            const enName = s.nameTranslations?.en?.toLowerCase() || '';
+            const hiName = s.nameTranslations?.hi || '';
+            return enName.includes('kitchen') || hiName.includes('रसोईघर') || hiName.includes('रसोई');
+          });
+          const kitchenIds = kitchenServices.map(s => s.id);
+          const hasKitchenSelected = prev.some(id => kitchenIds.includes(id));
+          
+          if (hasKitchenSelected) {
+            Alert.alert(
+              t('provider.kitchen_bathroom_conflict'),
+              t('provider.bathroom_conflict'),
+              [{ text: t('common.ok') }]
+            );
+            return prev; // Don't add bathroom service
+          }
+          return [...prev, serviceId];
+        } else {
+          // For other services, just add to selection
+          return [...prev, serviceId];
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -80,7 +144,7 @@ export const ManageServicesScreen = ({ navigation }: any) => {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.sectionTitle}>{t('provider.your_profession')}</Text>
         <Text style={styles.sectionSubtitle}>
-          {t('provider.select_profession')}
+          {t('provider.select_services_note')}
         </Text>
 
         <View style={styles.servicesContainer}>
@@ -119,21 +183,31 @@ export const ManageServicesScreen = ({ navigation }: any) => {
               serviceName = service.name;
             }
             
+            const isSelected = selectedProfessionIds.includes(service.id);
+            
             return (
               <TouchableOpacity
                 key={service.id}
-                onPress={() => setProfessionId(service.id)}
+                onPress={() => handleServiceToggle(service.id, serviceName)}
                 style={[
                   styles.serviceCard,
-                  professionId === service.id && styles.serviceCardSelected
+                  isSelected && styles.serviceCardSelected
                 ]}
               >
-                <Text style={[
-                  styles.serviceText,
-                  professionId === service.id && styles.serviceTextSelected
-                ]}>
-                  {serviceName}
-                </Text>
+                <View style={styles.serviceCardContent}>
+                  <Text style={[
+                    styles.serviceText,
+                    isSelected && styles.serviceTextSelected
+                  ]}>
+                    {serviceName}
+                  </Text>
+                  <View style={[
+                    styles.checkbox,
+                    isSelected && styles.checkboxSelected
+                  ]}>
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -222,13 +296,38 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.primary,
     borderColor: Theme.primaryDark,
   },
+  serviceCardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   serviceText: {
     fontSize: 16,
     fontWeight: '600',
     color: Theme.textPrimary,
+    flex: 1,
   },
   serviceTextSelected: {
     color: '#FFF',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Theme.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  checkboxSelected: {
+    backgroundColor: '#FFF',
+    borderColor: '#FFF',
+  },
+  checkmark: {
+    color: Theme.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   emptyText: {
     fontSize: 14,

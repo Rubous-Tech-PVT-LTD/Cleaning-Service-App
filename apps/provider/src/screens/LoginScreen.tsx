@@ -176,7 +176,7 @@ export const LoginScreen = ({ navigation }: any) => {
               </View>
               <View style={{ justifyContent: 'center' }}>
                 <Text style={{ fontSize: 42, fontWeight: '900', color: '#FFFFFF', letterSpacing: -1, lineHeight: 42 }}>houcee</Text>
-                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '700', letterSpacing: 1, marginTop: 2 }}>{t('login.partner_app')}</Text>
+                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '700', letterSpacing: 1, marginTop: 2 }}>partner app</Text>
               </View>
             </View>
             <ActivityIndicator size="large" color="#FFFFFF" />
@@ -205,7 +205,7 @@ export const LoginScreen = ({ navigation }: any) => {
           <HouceeLogo size={80} white />
           <View style={{ marginLeft: 16, justifyContent: 'center' }}>
             <Text style={{ fontSize: 42, fontWeight: '900', color: '#1E1B4B', letterSpacing: -1, lineHeight: 42 }}>houcee</Text>
-            <Text style={{ fontSize: 14, color: Theme.primary, fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}>{t('login.partner_app')}</Text>
+            <Text style={{ fontSize: 14, color: Theme.primary, fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}>partner app</Text>
           </View>
         </View>
 
@@ -259,7 +259,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
         <View style={{ paddingBottom: 40, alignItems: 'center' }}>
           <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '500', letterSpacing: 0.5 }}>
-            {t('login.product_by')} <Text style={{ fontWeight: '800', color: Theme.primary }}>Rubous Tech Pvt. Ltd</Text>
+            product by <Text style={{ fontWeight: '800', color: Theme.primary }}>Rubous Tech Pvt. Ltd</Text>
           </Text>
         </View>
       </Animated.View>

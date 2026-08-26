@@ -20,7 +20,7 @@ export const OtpVerifyScreen = ({ route, navigation }: any) => {
       if (response.data.accessToken) {
         await AsyncStorage.setItem('provider_token', response.data.accessToken);
         await AsyncStorage.setItem('provider_id', response.data.user.id);
-        navigation.reset({ index: 0, routes: [{ name: 'Dashboard' }] });
+        navigation.reset({ index: 0, routes: [{ name: 'LocationPrompt' }] });
       } else {
         Alert.alert('Error', t('otp.no_access_token'));
         setLoading(false);
