@@ -154,6 +154,8 @@ model Service {
   subcategoryId           String?
   estimatedTime           String?
   isTrending              Boolean      @default(false)
+  includedItems           Json?        @default("[]")
+  notIncludedItems        Json?        @default("[]")
   bookings                Booking[]
   category                Category     @relation(fields: [categoryId], references: [id])
   subcategory             Subcategory? @relation(fields: [subcategoryId], references: [id])

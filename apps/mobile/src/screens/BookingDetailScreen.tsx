@@ -13,10 +13,23 @@ import { database } from '../db';
 import { Theme } from '../theme';
 import api, { SOCKET_URL } from '../api';
 
-const BookingDetailScreenBase = ({ navigation, booking, service, address }: any) => {
+const BookingDetailScreenBase = ({ navigation, booking, service, address, services }: any) => {
   const { t, i18n } = useTranslation();
   const [providerLocation, setProviderLocation] = React.useState<{ latitude: number, longitude: number } | null>(null);
   const [sosLoading, setSosLoading] = React.useState(false);
+
+  // Helper function to get translated service name by ID
+  const getServiceTitle = (item: any) => {
+    // Always try to translate based on service ID when available
+    if (item.serviceId) {
+      const itemService = services ? services.find((s: any) => s.id === item.serviceId) : null;
+      if (itemService) {
+        return i18n.language === 'hi' ? itemService.nameHi : itemService.nameEn;
+      }
+    }
+    // Fallback to stored title only if service ID is not available or service not found
+    return item.title || 'Service';
+  };
 
   if (!booking || !service) {
     return (
@@ -197,7 +210,7 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address }: any)
           <Text style={styles.sectionTitle}>{t('booking_detail.order_summary')}</Text>
           {items.map((item: any, idx: number) => (
             <View key={idx} style={styles.itemRow}>
-              <Text style={styles.itemName}>{item.title} x {item.quantity || 1}</Text>
+              <Text style={styles.itemName}>{getServiceTitle(item)} x {item.quantity || 1}</Text>
               <Text style={styles.itemPrice}>₹{item.price * (item.quantity || 1)}</Text>
             </View>
           ))}
@@ -455,6 +468,7 @@ export const BookingDetailScreen = withObservables(['route'], ({ route }: any) =
     address: booking.pipe(
       // @ts-ignore
       switchMap(b => b.address.observe())
-    )
+    ),
+    services: database.collections.get('services').query().observe(),
   };
 })(BookingDetailScreenBase);

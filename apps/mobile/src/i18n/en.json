@@ -9,6 +9,9 @@
     "location": "LOCATION",
     "my_bookings": "My Bookings",
     "proceed_to_booking": "Proceed to Booking",
+    "add_to_cart": "Add to Cart",
+    "book": "Book",
+    "go_to_cart": "Go to Cart",
     "confirm_booking": "Confirm Booking",
     "confirm_book": "Confirm & Book",
     "processing": "Processing...",
@@ -32,7 +35,8 @@
     "anonymous": "Anonymous",
     "cancel": "Cancel",
     "edit": "EDIT",
-    "error": "Error"
+    "error": "Error",
+    "success": "Success"
   },
   "search": {
     "placeholder": "Search for services...",
@@ -146,18 +150,9 @@
     "num_labourers": "Number of Labourers",
     "bulk_desc": "Bulk hiring includes a flat 10% discount on total wages. Tools and materials are not included.",
     "standard_desc": "Professional service delivered right to your doorstep. We ensure 100% safety and high-quality standards with our verified experts.",
-    "included_items": [
-      "Professional Equipment",
-      "Verified Partner",
-      "Post-service Cleanup",
-      "Service Warranty"
-    ],
-    "not_included_items": [
-      "Material Costs",
-      "Extra Spare Parts",
-      "Deep Stains removal",
-      "Furniture Moving"
-    ],
+    "coming_soon_desc": "This service is coming soon to your area. Get notified when it becomes available!",
+    "included_items": [],
+    "not_included_items": [],
     "steps": [
       { "title": "1. Choose your service", "desc": "Select from our range of verified services and choose a slot." },
       { "title": "2. Expert matches with you", "desc": "We assign the best-rated professional near your location." },
@@ -252,6 +247,8 @@
     "booking_confirmed": "Booking Confirmed",
     "empty": "Your cart is empty",
     "continue_shopping": "Continue Shopping",
+    "missed_something": "Missed something?",
+    "add_more_services": "Add more services.",
     "review_booking": "Review Booking",
     "instant": "Instant Service",
     "booking_details": "Booking Details",

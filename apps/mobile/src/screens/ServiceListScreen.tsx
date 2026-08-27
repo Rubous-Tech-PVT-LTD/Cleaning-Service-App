@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Star, Image as ImageIcon, Home } from 'lucide-react-native';
+import { ChevronLeft, Star, Image as ImageIcon, Home, Bell, MessageCircle } from 'lucide-react-native';
 import withObservables from '@nozbe/with-observables';
 import { Q } from '@nozbe/watermelondb';
 import { database } from '../db';
@@ -24,6 +24,25 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
     }
     return list;
   }, [services, activeSort]);
+
+  // Check if service belongs to plumber or electrical subcategory
+  const isComingSoonService = (service: any) => {
+    const subcategoryName = (service.subcategoryNameEn || '').toLowerCase();
+    return subcategoryName.includes('plumbing') || subcategoryName.includes('plumber') || 
+           subcategoryName.includes('electrical') || subcategoryName.includes('electrician');
+  };
+
+  const handleNotifyMe = (service: any) => {
+    // Handle notify me action
+    console.log('Notify me for:', service.nameEn);
+    // You can implement notification logic here
+  };
+
+  const handleWhatsApp = (service: any) => {
+    const message = `Hi, I'm interested in ${service.nameEn} service. Please let me know when it's available.`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    Linking.openURL(whatsappUrl);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
@@ -77,7 +96,9 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
                 {t('common.noServicesDescription')}
               </Text>
             </View>
-          ) : sortedServices.map((service: any) => (
+          ) : sortedServices.map((service: any) => {
+            const isComingSoon = isComingSoonService(service);
+            return (
             <TouchableOpacity
               key={service.id}
               onPress={() => navigation.navigate('ServiceDetail', { serviceId: service.id })}
@@ -95,10 +116,18 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
                   <Star size={12} color="#f59e0b" fill="#f59e0b" />
                   <Text style={{ fontSize: 11, fontWeight: '800', color: Theme.textPrimary, marginLeft: 4 }}>4.9</Text>
                 </View>
-                {/* Save Badge */}
-                <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: Theme.primary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                   <Text style={{ color: 'white', fontSize: 10, fontWeight: '900' }}>30% OFF</Text>
-                </View>
+                {/* Save Badge - Only show for non-coming-soon services */}
+                {!isComingSoon && (
+                  <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: Theme.primary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                     <Text style={{ color: 'white', fontSize: 10, fontWeight: '900' }}>30% OFF</Text>
+                  </View>
+                )}
+                {/* Coming Soon Badge */}
+                {isComingSoon && (
+                  <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: Theme.accent, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                     <Text style={{ color: 'white', fontSize: 10, fontWeight: '900' }}>Coming Soon</Text>
+                  </View>
+                )}
               </View>
 
               <View style={{ padding: 16 }}>
@@ -106,13 +135,35 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
                   {i18n.language === 'hi' ? service.nameHi : service.nameEn}
                 </Text>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-                  <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.primary }}>₹{Number(service.basePrice).toFixed(0)}</Text>
-                  <Text style={{ fontSize: 12, color: Theme.textSecondary, textDecorationLine: 'line-through', marginLeft: 8 }}>₹{(Number(service.basePrice) * 1.4).toFixed(0)}</Text>
-                </View>
+                {isComingSoon ? (
+                  <View style={{ marginTop: 12 }}>
+                   
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                      <TouchableOpacity 
+                        onPress={() => handleNotifyMe(service)}
+                        style={{ flex: 1, backgroundColor: Theme.primary, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                      >
+                        <Bell size={14} color="white" />
+                        <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>Notify Me</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        onPress={() => handleWhatsApp(service)}
+                        style={{ width: 36, height: 36, backgroundColor: '#25D366', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <MessageCircle size={16} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.primary }}>₹{Number(service.basePrice).toFixed(0)}</Text>
+                    <Text style={{ fontSize: 12, color: Theme.textSecondary, textDecorationLine: 'line-through', marginLeft: 8 }}>₹{(Number(service.basePrice) * 1.4).toFixed(0)}</Text>
+                  </View>
+                )}
               </View>
             </TouchableOpacity>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
