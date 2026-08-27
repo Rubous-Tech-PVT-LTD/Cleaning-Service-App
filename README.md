@@ -20,10 +20,16 @@ npx prisma db seeed
 5. Start the Backend Server
 
 ```bash
-npm run start
+
+cd apps/api
+npm run start:dev
+
 ```
 
 6. Then Start the mobile application
+cd apps/mobile
+npm run android
+
 
 
 ## Edge Cases Handled

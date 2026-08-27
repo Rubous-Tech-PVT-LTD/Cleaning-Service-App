@@ -33,10 +33,18 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
       }
 
       let location = await Location.getLastKnownPositionAsync({});
+      
       if (!location) {
-        location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+        try {
+          location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+        } catch (err) {
+          console.warn('High accuracy failed, falling back to Lowest accuracy (Emulator quirk)', err);
+          location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Lowest,
+          });
+        }
       }
       const activeLocation = await buildActiveLocationFromCoords(
         location.coords,

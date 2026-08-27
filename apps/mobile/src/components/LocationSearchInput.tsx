@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   TextInput,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
   Text,
   ActivityIndicator,
@@ -78,13 +78,13 @@ export const LocationSearchInput = ({
       </View>
 
       {results.length > 0 && (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => String(item.place_id)}
+        <ScrollView
           keyboardShouldPersistTaps="handled"
           style={styles.list}
-          renderItem={({ item }) => (
+        >
+          {results.map((item) => (
             <TouchableOpacity
+              key={String(item.place_id)}
               style={styles.resultItem}
               onPress={() => {
                 onSelect({
@@ -102,8 +102,8 @@ export const LocationSearchInput = ({
                 {item.display_name}
               </Text>
             </TouchableOpacity>
-          )}
-        />
+          ))}
+        </ScrollView>
       )}
     </View>
   );

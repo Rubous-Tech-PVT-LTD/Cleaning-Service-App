@@ -56,7 +56,7 @@ export const LocationPromptScreen = ({ navigation }: any) => {
 
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ width: width * 0.75, height: width * 0.75, backgroundColor: '#ECFDF5', borderRadius: width * 0.375, justifyContent: 'center', alignItems: 'center' }}>
-            <Building2 size={80} color="#34D399" opacity={0.6} />
+            <Building2 size={80} color="#10B981" opacity={0.6} />
             <MapPin size={48} color="#10B981" style={{ position: 'absolute', bottom: '25%', right: '25%' }} />
           </View>
         </View>

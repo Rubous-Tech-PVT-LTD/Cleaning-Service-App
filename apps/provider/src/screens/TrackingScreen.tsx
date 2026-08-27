@@ -8,6 +8,7 @@ import { Theme } from '../theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { SOCKET_URL } from '../api';
 import { useTranslation } from 'react-i18next';
+import { searchPlaces } from '../services/nominatim';
 
 // OSRM routing API - free, no API key required
 const fetchRoute = async (startLat: number, startLon: number, endLat: number, endLon: number) => {
@@ -67,76 +68,73 @@ export const TrackingScreen = () => {
   const [loadingRoute, setLoadingRoute] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [sosLoading, setSosLoading] = useState<boolean>(false);
-
-  // Validate booking address coordinates (memoized to prevent infinite loops)
-  const validation = useMemo(() => {
-    console.log('=== BOOKING ADDRESS VALIDATION ===');
-    console.log('Booking ID:', booking.id);
-    console.log('Booking address:', JSON.stringify(booking.address, null, 2));
-
-    if (!booking.address) {
-      console.error('Booking address is null or undefined');
-      setError('Booking address is missing');
-      return { valid: false };
-    }
-
-    const { latitude, longitude } = booking.address;
-
-    if (latitude === null || latitude === undefined || longitude === null || longitude === undefined) {
-      console.error('Booking address coordinates are missing');
-      setError('Service address coordinates are missing');
-      return { valid: false };
-    }
-
-    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      console.error('Invalid coordinate types');
-      setError('Invalid coordinate types');
-      return { valid: false };
-    }
-
-    if (isNaN(latitude) || isNaN(longitude)) {
-      console.error('Coordinates are NaN');
-      setError('Invalid coordinates (NaN)');
-      return { valid: false };
-    }
-
-    // Validate coordinate ranges
-    if (latitude < -90 || latitude > 90) {
-      console.error('Invalid latitude range');
-      setError('Invalid latitude (must be between -90 and 90)');
-      return { valid: false };
-    }
-
-    if (longitude < -180 || longitude > 180) {
-      console.error('Invalid longitude range');
-      setError('Invalid longitude (must be between -180 and 180)');
-      return { valid: false };
-    }
-
-    console.log('✅ Valid coordinates:', { latitude, longitude });
-    console.log('=============================');
-
-    return { valid: true, coordinates: { latitude, longitude } };
-  }, [booking.address]);
-
-  // Get client destination from booking address (memoized to prevent infinite recalculation)
-  const clientDestination = useMemo(() => {
-    if (!validation.valid || !validation.coordinates) {
-      return null;
-    }
-    return validation.coordinates;
-  }, [validation]);
+  const [clientDestination, setClientDestination] = useState<{latitude: number, longitude: number} | null>(null);
+  const [geocoding, setGeocoding] = useState<boolean>(false);
 
   useEffect(() => {
-    // Show error if coordinates are invalid
-    if (!clientDestination) {
+    const resolveDestination = async () => {
+      console.log('=== BOOKING ADDRESS VALIDATION ===');
+      if (!booking.address) {
+        setError('Booking address is missing');
+        return;
+      }
+
+      const { latitude, longitude, addressLine1, addressLine2, city, state, pincode } = booking.address;
+
+      if (latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined && !isNaN(latitude) && !isNaN(longitude)) {
+         setClientDestination({ latitude, longitude });
+         return;
+      }
+
+      console.log('Coordinates missing, attempting geocoding...');
+      setGeocoding(true);
+      try {
+        const fullQuery = `${addressLine1 || ''} ${addressLine2 || ''} ${city || ''} ${state || ''} ${pincode || ''}`.trim();
+        const streetQuery = `${addressLine2 || ''} ${city || ''} ${state || ''} ${pincode || ''}`.trim();
+        const cityQuery = `${city || ''} ${state || ''} ${pincode || ''}`.trim();
+
+        const queriesToTry = [fullQuery, streetQuery, cityQuery].filter(q => q.length > 5);
+
+        let found = false;
+        for (const query of queriesToTry) {
+          console.log('Geocoding attempt with query:', query);
+          const results = await searchPlaces(query, 1);
+          if (results && results.length > 0) {
+            console.log('Geocoding successful:', results[0].lat, results[0].lon);
+            setClientDestination({
+              latitude: parseFloat(results[0].lat),
+              longitude: parseFloat(results[0].lon)
+            });
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          setError('Service address could not be found on the map.');
+        }
+      } catch (err) {
+        console.error('Geocoding error:', err);
+        setError('Geocoding service is unavailable.');
+      }
+      setGeocoding(false);
+    };
+
+    resolveDestination();
+  }, [booking.address]);
+
+  useEffect(() => {
+    if (error) {
       Alert.alert(
         'Navigation Error',
-        error || 'Service address coordinates are missing or invalid. Cannot start navigation.',
+        error,
         [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
-      return;
     }
+  }, [error, navigation]);
+
+  useEffect(() => {
+    if (!clientDestination) return;
 
     // Initialize Socket
     const newSocket = io(SOCKET_URL);
@@ -330,7 +328,12 @@ export const TrackingScreen = () => {
 
   return (
     <View style={styles.container}>
-      {!clientDestination ? (
+      {geocoding ? (
+        <View style={styles.errorContainer}>
+          <ActivityIndicator size="large" color={Theme.primary} />
+          <Text style={[styles.errorMessage, { marginTop: 16 }]}>{t('provider.locating')}</Text>
+        </View>
+      ) : !clientDestination ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>{t('provider.navigation_error')}</Text>
           <Text style={styles.errorMessage}>

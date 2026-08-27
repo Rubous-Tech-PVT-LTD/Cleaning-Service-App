@@ -360,7 +360,7 @@ export class SyncService {
 
       // Booking mapper
       const mapBooking = (r: any) => ({
-        id: r.id,
+        id: r.offlineId || r.id,
 
         service_id: r.serviceId,
         client_id: r.clientId,
@@ -411,7 +411,7 @@ export class SyncService {
 
       // Address mapper
       const mapAddress = (r: any) => ({
-        id: r.id,
+        id: r.offlineId || r.id,
 
         user_id: r.userId,
 
@@ -435,7 +435,7 @@ export class SyncService {
 
       // Chat mapper
       const mapChat = (r: any) => ({
-        id: r.id,
+        id: r.offlineId || r.id,
 
         booking_id: r.bookingId,
 
@@ -448,7 +448,7 @@ export class SyncService {
 
       // Message mapper
       const mapMessage = (r: any) => ({
-        id: r.id,
+        id: r.offlineId || r.id,
 
         chat_id: r.chatId,
 
