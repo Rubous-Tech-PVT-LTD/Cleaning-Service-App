@@ -4,6 +4,8 @@ import { NavigationContainer, NavigationContainerRef } from '@react-navigation/n
 import { applyWorkarounds } from './src/utils/bootstrap';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { syncDatabase } from './src/db/sync';
+import { io } from 'socket.io-client';
+import { SOCKET_URL } from './src/api';
 import { NotificationService } from './src/services/NotificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -22,7 +24,7 @@ import { fetchSupportedCities } from './src/services/locationService';
 applyWorkarounds();
 
 const AppContent = () => {
-  const { isAuthenticated, isGuest, isLoading } = useAuth();
+  const { isAuthenticated, isGuest, isLoading, user } = useAuth();
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const [fontsLoaded] = useFonts({
@@ -81,6 +83,25 @@ const AppContent = () => {
       clearInterval(interval);
     };
   }, []);
+
+  // 🔌 Global WebSocket connection for real-time sync
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+
+    const socket = io(SOCKET_URL);
+    socket.on('connect', () => {
+      socket.emit('register', { userId: user.id, role: 'CLIENT' });
+    });
+
+    socket.on('sync_ping', () => {
+      console.log('🔔 [Socket] Received sync_ping, syncing DB...');
+      syncDatabase().catch((err) => console.warn('Real-time sync failed:', err));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [isAuthenticated, user?.id]);
 
   // 🔔 Global: handle tap on push notification (works from background + killed state)
   useEffect(() => {

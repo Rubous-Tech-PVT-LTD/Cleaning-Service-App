@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Clock, MessageCircle, User } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
 import { Theme } from '../theme';
 import { useAuth } from '../contexts/AuthContext';
+import { syncDatabase } from '../db/sync';
 
 const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
   let items = [];
@@ -87,6 +88,18 @@ const BookingItem = withObservables(['booking'], ({ booking }: any) => ({
 const MyBookingsScreenBase = ({ navigation, bookings }: any) => {
   const { t, i18n } = useTranslation();
   const { isGuest } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await syncDatabase();
+    } catch (error) {
+      console.warn('Sync failed', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   // Guest mode UI
   if (isGuest) {
@@ -121,7 +134,12 @@ const MyBookingsScreenBase = ({ navigation, bookings }: any) => {
         <TouchableOpacity onPress={() => navigation.goBack()}><ChevronLeft size={28} /></TouchableOpacity>
         <Text style={{ fontSize: 24, fontWeight: 'bold', marginLeft: 16 }}>{t('common.my_bookings')}</Text>
       </View>
-      <ScrollView style={{ flex: 1, padding: 24 }}>
+      <ScrollView 
+        style={{ flex: 1, padding: 24 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Theme.primary]} />
+        }
+      >
         {bookings.length === 0 ? (
           <View style={{ alignItems: 'center', marginTop: 100 }}>
             <Clock size={64} color={Theme.textSecondary} />
