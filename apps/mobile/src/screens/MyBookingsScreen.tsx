@@ -9,7 +9,7 @@ import { Theme } from '../theme';
 import { useAuth } from '../contexts/AuthContext';
 import { syncDatabase } from '../db/sync';
 
-const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
+const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: any) => {
   let items = [];
   try {
     items = booking.items ? JSON.parse(booking.items) : [];
@@ -18,6 +18,21 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
   }
 
   const primaryServiceTitle = service ? (i18n.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
+  
+  // Translate item titles based on current language
+  const getItemTitle = (item: any) => {
+    // Always try to translate based on service ID when available
+    if (item.serviceId) {
+      const itemService = services ? services.find((s: any) => s.id === item.serviceId) : null;
+      if (itemService) {
+        return i18n.language === 'hi' ? itemService.nameHi : itemService.nameEn;
+      }
+    }
+    // Fallback to stored title only if service ID is not available or service not found
+    return item.title || 'Service';
+  };
+  
+  const itemsTitle = items.length > 0 ? items.map((it: any) => getItemTitle(it)).join(', ') : primaryServiceTitle;
   const isChatEnabled = ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'].includes(booking.status);
 
   return (
@@ -29,7 +44,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary }}>
-            {items.length > 0 ? items.map((it: any) => it.title).join(', ') : primaryServiceTitle}
+            {itemsTitle}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
             <Clock size={14} color={Theme.textSecondary} />
@@ -83,6 +98,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
 const BookingItem = withObservables(['booking'], ({ booking }: any) => ({
   booking: booking.observe(),
   service: booking.service.observe(),
+  services: database.collections.get('services').query().observe(),
 }))(BookingItemBase);
 
 const MyBookingsScreenBase = ({ navigation, bookings }: any) => {

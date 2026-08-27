@@ -21,7 +21,7 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
   const { t, i18n } = useTranslation();
   const { isAuthenticated, isGuest } = useAuth();
   const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
-  const { serviceId, title, price } = route.params;
+  const { serviceId, price } = route.params;
   const [loading, setLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState({
     date: new Date(),
@@ -30,7 +30,7 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
 
   // Manage multiple items
   const [items, setItems] = useState<any[]>([
-    { serviceId, title, price: Number(price), quantity: 1 }
+    { serviceId, price: Number(price), quantity: 1 }
   ]);
 
   const [activeLocation, setActiveLocation] = useState<ActiveLocation | null>(null);
@@ -61,7 +61,6 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
     if (items.find(i => i.serviceId === service.id)) return;
     setItems([...items, { 
       serviceId: service.id, 
-      title: i18n.language === 'hi' ? service.nameHi : service.nameEn, 
       price: Number(service.basePrice), 
       quantity: 1 
     }]);
@@ -98,6 +97,13 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
         ? addresses.find((a: any) => a.id === activeLocation.savedAddressId) || defaultAddress
         : defaultAddress;
 
+      // Store only service IDs, not translated titles
+      const itemsForStorage = items.map((item: any) => ({
+        serviceId: item.serviceId,
+        price: item.price,
+        quantity: item.quantity || 1,
+      }));
+
       const newBookingId = await database.write(async () => {
         const nb = await database.get('bookings').create((booking: any) => {
           booking.serviceId = items[0].serviceId; // Primary service
@@ -106,7 +112,7 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
           booking.status = 'PENDING';
           booking.scheduledAt = finalDate.getTime();
           booking.totalPrice = totalPrice;
-          booking.items = JSON.stringify(items);
+          booking.items = JSON.stringify(itemsForStorage);
         });
 
         await database.get('chats').create((chat: any) => {
@@ -123,9 +129,12 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
         Alert.alert('Sync Error', err.message);
       });
 
+      const primaryService = relatedServices.find((s: any) => s.id === items[0].serviceId);
+      const serviceTitle = primaryService ? (i18n.language === 'hi' ? primaryService.nameHi : primaryService.nameEn) : 'Service';
+
       NotificationService.sendLocalNotification(
         'Booking Confirmed! 🎉',
-        `Your booking for ${items[0].title} has been received successfully.`
+        `Your booking for ${serviceTitle} has been received successfully.`
       );
 
       navigation.navigate('BookingSuccess', { 
@@ -156,22 +165,26 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
           {/* Selected Items List */}
           <View style={{ backgroundColor: 'white', padding: 24, borderRadius: 28, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, elevation: 5, marginBottom: 24 }}>
             <Text style={{ fontSize: 13, color: Theme.textSecondary, fontWeight: '800', marginBottom: 16, textTransform: 'uppercase' }}>{t('booking.selected_services')}</Text>
-            {items.map((item, idx) => (
-              <View key={item.serviceId}>
-                {idx > 0 && <View style={{ height: 1, backgroundColor: Theme.muted, marginVertical: 12 }} />}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary }}>{item.title}</Text>
-                    <Text style={{ fontSize: 14, color: Theme.primary, fontWeight: '700', marginTop: 2 }}>₹{item.price}</Text>
+            {items.map((item, idx) => {
+              const service = relatedServices.find((s: any) => s.id === item.serviceId);
+              const serviceTitle = service ? (i18n.language === 'hi' ? service.nameHi : service.nameEn) : 'Service';
+              return (
+                <View key={item.serviceId}>
+                  {idx > 0 && <View style={{ height: 1, backgroundColor: Theme.muted, marginVertical: 12 }} />}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary }}>{serviceTitle}</Text>
+                      <Text style={{ fontSize: 14, color: Theme.primary, fontWeight: '700', marginTop: 2 }}>₹{item.price}</Text>
+                    </View>
+                    {items.length > 1 && (
+                      <TouchableOpacity onPress={() => removeItem(item.serviceId)} style={{ padding: 8 }}>
+                        <X size={18} color={Theme.error} />
+                      </TouchableOpacity>
+                    )}
                   </View>
-                  {items.length > 1 && (
-                    <TouchableOpacity onPress={() => removeItem(item.serviceId)} style={{ padding: 8 }}>
-                      <X size={18} color={Theme.error} />
-                    </TouchableOpacity>
-                  )}
                 </View>
-              </View>
-            ))}
+              );
+            })}
             <View style={{ height: 1, backgroundColor: Theme.border, marginVertical: 20 }} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 15, color: Theme.textSecondary, fontWeight: '800' }}>{t('booking.bill_total')}</Text>

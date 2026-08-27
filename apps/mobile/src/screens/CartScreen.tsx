@@ -19,7 +19,7 @@ import { NotificationService } from '../services/NotificationService';
 import { syncDatabase } from '../db/sync';
 import { getActiveLocation, ActiveLocation } from '../services/locationService';
 
-const CartScreenBase = ({ navigation, addresses }: any) => {
+const CartScreenBase = ({ navigation, addresses, services }: any) => {
   const { t, i18n } = useTranslation();
   const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -29,6 +29,19 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
   const [userAddress, setUserAddress] = useState<any>(null);
   const [activeLocation, setActiveLocation] = useState<ActiveLocation | null>(null);
   const insets = useSafeAreaInsets();
+
+  // Helper function to get translated service name by ID
+  const getServiceTitle = (item: any) => {
+    // Always try to translate based on service ID when available
+    if (item.serviceId) {
+      const service = services ? services.find((s: any) => s.id === item.serviceId) : null;
+      if (service) {
+        return i18n.language === 'hi' ? service.nameHi : service.nameEn;
+      }
+    }
+    // Fallback to stored title only if service ID is not available or service not found
+    return item.title || 'Service';
+  };
 
   useEffect(() => {
     fetchCart();
@@ -155,6 +168,13 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
       }
 
       // Create booking locally in WatermelonDB
+      // Store only service IDs, not translated titles
+      const itemsForStorage = items.map((item: any) => ({
+        serviceId: item.serviceId,
+        price: item.price,
+        quantity: item.quantity || 1,
+      }));
+
       const newBookingId = await database.write(async () => {
         const nb = await database.get('bookings').create((booking: any) => {
           booking.serviceId = primaryItem.serviceId;
@@ -163,7 +183,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
           booking.status = 'PENDING';
           booking.scheduledAt = scheduledAt;
           booking.totalPrice = getFinalAmount();
-          booking.items = JSON.stringify(items);
+          booking.items = JSON.stringify(itemsForStorage);
         });
 
         await database.get('chats').create((chat: any) => {
@@ -184,9 +204,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
       await api.delete('/cart/clear');
 
       // Send local notification
-      const itemTitle = typeof primaryItem.title === 'string' 
-        ? primaryItem.title 
-        : (primaryItem.title?.[i18n.language === 'hi' ? 'hi' : 'en'] || primaryItem.title?.en || String(primaryItem.title || ''));
+      const itemTitle = getServiceTitle(primaryItem);
       
       NotificationService.sendLocalNotification(
         t('cart.booking_confirmed'),
@@ -293,9 +311,7 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                 {t('cart.review_booking')}
               </Text>
               {items.map((item: any, index: number) => {
-                const title = typeof item.title === 'string' 
-                  ? item.title 
-                  : (item.title?.[i18n.language === 'hi' ? 'hi' : 'en'] || item.title?.en || String(item.title || ''));
+                const title = getServiceTitle(item);
                 
                 return (
                 <View
@@ -364,7 +380,30 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
                 </View>
                 );
               })}
+               {/* Add More Services Button */}
+            <View
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 10,
+              borderTopWidth:1,
+                
+                borderColor: '#E5E7EB',
+              }}
+            >
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Text style={{ fontSize: 16, color: Theme.textSecondary }}>
+                  {t('cart.missed_something')}{' '}
+                  <Text style={{ fontSize: 16, color: Theme.primaryDark, fontWeight: '600' }}>
+                    {t('cart.add_more_services')}
+                  </Text>
+                </Text>
+              </TouchableOpacity>
             </View>
+            </View>
+
+           
 
             <View
               style={{
@@ -593,4 +632,5 @@ const CartScreenBase = ({ navigation, addresses }: any) => {
 
 export const CartScreen = withObservables([], () => ({
   addresses: database.collections.get('addresses').query().observe(),
+  services: database.collections.get('services').query().observe(),
 }))(CartScreenBase);

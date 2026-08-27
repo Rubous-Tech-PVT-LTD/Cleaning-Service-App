@@ -404,7 +404,13 @@ const HomeScreen = ({ navigation, categories }: any) => {
          <View style={{ paddingBottom: 60 }}>
             <View style={{ paddingHorizontal: 24, marginBottom: 16 }}><Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>{t('home.trending_now')}</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-              {trendingServices.map((service: any, index: number) => (
+              {trendingServices.map((service: any, index: number) => {
+                const isComingSoon = service.subcategoryNameEn ? 
+                  (service.subcategoryNameEn.toLowerCase().includes('plumbing') || 
+                   service.subcategoryNameEn.toLowerCase().includes('plumber') || 
+                   service.subcategoryNameEn.toLowerCase().includes('electrical') || 
+                   service.subcategoryNameEn.toLowerCase().includes('electrician')) : false;
+                return (
                 <TrendingCard
                   key={service.id}
                   index={index}
@@ -412,8 +418,10 @@ const HomeScreen = ({ navigation, categories }: any) => {
                   price={`₹${service.basePrice}`}
                   image={service.imageUrl ? { uri: service.imageUrl } : require('../assets/Cleaning-Kit-Image.png')}
                   onPress={() => navigation.navigate('ServiceDetail', { serviceId: service.id })}
+                  isComingSoon={isComingSoon}
                 />
-              ))}
+                );
+              })}
             </ScrollView>
           </View>
 
@@ -500,7 +508,7 @@ const NavTab = ({ icon, label, active, onPress }: any) => (
     <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', marginTop: 4, color: active ? Theme.primary : Theme.textSecondary }}>{label}</Text>
   </TouchableOpacity>
 );
-const TrendingCard = ({ title, price, image, onPress, index }: any) => {
+const TrendingCard = ({ title, price, image, onPress, index, isComingSoon }: any) => {
   const slideAnim = useRef(new Animated.Value(50)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -529,7 +537,11 @@ const TrendingCard = ({ title, price, image, onPress, index }: any) => {
           <Image source={typeof image === 'string' ? { uri: image } : image} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         </View>
         <Text style={{ fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, fontSize: 14 }}>{title}</Text>
-        <Text style={{ color: Theme.primary, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>{price}</Text>
+        {isComingSoon ? (
+          <Text style={{ color: Theme.accent, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>Coming Soon</Text>
+        ) : (
+          <Text style={{ color: Theme.primary, fontFamily: 'Poppins_700Bold', marginTop: 4 }}>{price}</Text>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );

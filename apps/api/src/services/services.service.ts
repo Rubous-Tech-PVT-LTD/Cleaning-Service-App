@@ -15,6 +15,9 @@ export class ServicesService {
       include: {
         category: {
           select: { nameTranslations: true }
+        },
+        subcategory: {
+          select: { nameTranslations: true }
         }
       }
     });
@@ -23,7 +26,10 @@ export class ServicesService {
   async findOne(id: string) {
     return this.prisma.service.findUnique({
       where: { id },
-      include: { category: true }
+      include: { 
+        category: true,
+        subcategory: true
+      }
     });
   }
 
@@ -154,6 +160,9 @@ export class ServicesService {
       include: {
         category: {
           select: { nameTranslations: true }
+        },
+        subcategory: {
+          select: { nameTranslations: true }
         }
       }
     });
@@ -165,7 +174,8 @@ export class ServicesService {
       basePrice: service.basePrice,
       imageUrl: service.imageUrl,
       estimatedTime: service.estimatedTime,
-      category: service.category
+      category: service.category,
+      subcategory: service.subcategory
     }));
   }
 }

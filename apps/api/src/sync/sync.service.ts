@@ -105,6 +105,13 @@ export class SyncService {
             lte: syncBoundaryDate,
           },
         },
+        include: {
+          subcategory: {
+            select: {
+              nameTranslations: true
+            }
+          }
+        }
       });
 
       // ==========================================================
@@ -353,6 +360,12 @@ export class SyncService {
 
         image_url: r.imageUrl,
         status: r.status,
+
+        included_items_str: r.includedItems ? JSON.stringify(r.includedItems) : null,
+        not_included_items_str: r.notIncludedItems ? JSON.stringify(r.notIncludedItems) : null,
+
+        // Include subcategory name for mobile app to determine "coming soon" status
+        subcategory_name_en: r.subcategory?.nameTranslations?.en || null,
 
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
