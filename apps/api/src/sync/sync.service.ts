@@ -7,7 +7,7 @@ export class SyncService {
   constructor(
     private prisma: PrismaService,
     private trackingGateway: TrackingGateway,
-  ) {}
+  ) { }
 
   // ============================================================
   // PULL CHANGES
@@ -19,6 +19,11 @@ export class SyncService {
     role?: string,
   ) {
     try {
+      const syncBoundaryRow = await (this.prisma as any).$queryRaw`
+        SELECT NOW() AS sync_boundary
+      `;
+      const syncBoundaryDate: Date = syncBoundaryRow[0].sync_boundary;
+      const syncBoundary = syncBoundaryDate.getTime();
       const lastPulledDate = lastPulledAt
         ? new Date(lastPulledAt)
         : new Date(0);
@@ -26,11 +31,38 @@ export class SyncService {
       const toChangeset = (
         items: any[],
         mapper: (r: any) => any,
-      ) => ({
-        created: items.map(mapper),
-        updated: [],
-        deleted: [],
-      });
+      ) => {
+        if (!lastPulledAt || lastPulledDate.getTime() === 0) {
+          // Initial sync - all records are created
+          return {
+            created: items.map(mapper),
+            updated: [],
+            deleted: [],
+          };
+        }
+
+        // Subsequent syncs - classify based on createdAt vs lastPulledAt
+        const created: any[] = [];
+        const updated: any[] = [];
+
+        for (const item of items) {
+          const createdAt = item.createdAt ? item.createdAt.getTime() : 0;
+
+          if (createdAt > lastPulledAt) {
+            // Record was created after last pull
+            created.push(mapper(item));
+          } else {
+            // Record existed before but was updated after last pull
+            updated.push(mapper(item));
+          }
+        }
+
+        return {
+          created,
+          updated,
+          deleted: [],
+        };
+      };
 
       // ==========================================================
       // GLOBAL DATA
@@ -41,6 +73,7 @@ export class SyncService {
         where: {
           updatedAt: {
             gt: lastPulledDate,
+            lte: syncBoundaryDate,
           },
         },
         include: {
@@ -59,6 +92,7 @@ export class SyncService {
         where: {
           updatedAt: {
             gt: lastPulledDate,
+            lte: syncBoundaryDate,
           },
         },
       });
@@ -68,6 +102,7 @@ export class SyncService {
         where: {
           updatedAt: {
             gt: lastPulledDate,
+            lte: syncBoundaryDate,
           },
         },
       });
@@ -102,6 +137,20 @@ export class SyncService {
         // ========================================================
 
         if (isProvider) {
+          // Fetch user to get their professions
+          const providerUser = await (this.prisma as any).user.findUnique({
+            where: { id: userId },
+            include: { profile: true }
+          });
+          
+          const professionIds: string[] = [];
+          if (providerUser?.profile?.professionId) {
+            professionIds.push(providerUser.profile.professionId);
+          }
+          if (providerUser?.profile?.professionIds && Array.isArray(providerUser.profile.professionIds)) {
+            professionIds.push(...(providerUser.profile.professionIds as string[]));
+          }
+
           bookings = await (this.prisma as any).booking.findMany({
             where: {
               OR: [
@@ -110,11 +159,18 @@ export class SyncService {
                 },
                 {
                   status: 'PENDING',
+                  serviceId: { in: professionIds }
                 },
               ],
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
+            },
+            include: {
+              address: true,
+              service: true,
+              client: true,
             },
           });
 
@@ -136,15 +192,20 @@ export class SyncService {
               ],
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
           });
 
           chats = await (this.prisma as any).chat.findMany({
             where: {
-              providerId: userId,
+              OR: [
+                { providerId: userId },
+                { booking: { providerId: userId } },
+              ],
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
           });
@@ -152,11 +213,18 @@ export class SyncService {
           messages = await (this.prisma as any).message.findMany({
             where: {
               chat: {
-                providerId: userId,
+                OR: [
+                  { providerId: userId },
+                  { booking: { providerId: userId } },
+                ],
               },
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
+            },
+            include: {
+              chat: true,
             },
           });
         }
@@ -171,7 +239,12 @@ export class SyncService {
               clientId: userId,
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
+            },
+            include: {
+              address: true,
+              service: true,
             },
           });
 
@@ -180,15 +253,20 @@ export class SyncService {
               userId,
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
           });
 
           chats = await (this.prisma as any).chat.findMany({
             where: {
-              clientId: userId,
+              OR: [
+                { clientId: userId },
+                { booking: { clientId: userId } },
+              ],
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
             },
           });
@@ -196,11 +274,18 @@ export class SyncService {
           messages = await (this.prisma as any).message.findMany({
             where: {
               chat: {
-                clientId: userId,
+                OR: [
+                  { clientId: userId },
+                  { booking: { clientId: userId } },
+                ],
               },
               updatedAt: {
                 gt: lastPulledDate,
+                lte: syncBoundaryDate,
               },
+            },
+            include: {
+              chat: true,
             },
           });
         }
@@ -294,6 +379,34 @@ export class SyncService {
 
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
+
+        // Include address details for navigation
+        address: r.address ? {
+          id: r.address.id,
+          address_line1: r.address.addressLine1,
+          address_line2: r.address.addressLine2,
+          city: r.address.city,
+          state: r.address.state,
+          pincode: r.address.pincode,
+          latitude: r.address.latitude,
+          longitude: r.address.longitude,
+          label: r.address.label,
+        } : null,
+
+        // Include service details for display
+        service: r.service ? {
+          id: r.service.id,
+          name_en: r.service.nameTranslations?.en || '',
+          name_hi: r.service.nameTranslations?.hi || '',
+          base_price: Number(r.service.basePrice),
+        } : null,
+
+        // Include client details for provider reference
+        client: r.client ? {
+          id: r.client.id,
+          full_name: r.client.fullName,
+          phone: r.client.phone,
+        } : null,
       });
 
       // Address mapper
@@ -312,6 +425,9 @@ export class SyncService {
         pincode: r.pincode,
 
         is_default: r.isDefault,
+
+        latitude: r.latitude,
+        longitude: r.longitude,
 
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
@@ -392,18 +508,15 @@ export class SyncService {
       };
 
       console.log(
-        `✅ [Sync] Pull successful for user ${
-          userId || 'guest'
-        } — ${categories.length} cats, ${
-          subcategories.length
-        } subcats, ${services.length} services, ${
-          bookings.length
+        `✅ [Sync] Pull successful for user ${userId || 'guest'
+        } — ${categories.length} cats, ${subcategories.length
+        } subcats, ${services.length} services, ${bookings.length
         } bookings`,
       );
 
       return {
         changes,
-        timestamp: Date.now(),
+        timestamp: syncBoundary,
       };
     } catch (error) {
       console.error(
@@ -479,6 +592,9 @@ export class SyncService {
               isDefault:
                 addr.is_default,
 
+              latitude: addr.latitude,
+              longitude: addr.longitude,
+
               version: {
                 increment: 1,
               },
@@ -504,8 +620,41 @@ export class SyncService {
 
               isDefault:
                 addr.is_default,
+
+              latitude: addr.latitude,
+              longitude: addr.longitude,
             },
           });
+        }
+
+        for (const addr of changes.addresses.updated || []) {
+          const addressId = addr.id || addr.addressId;
+          const existingAddress = await (this.prisma as any).address.findFirst({
+            where: {
+              OR: [
+                { id: addressId },
+                { offlineId: addressId },
+              ],
+            },
+          });
+
+          if (existingAddress) {
+            await (this.prisma as any).address.update({
+              where: { id: existingAddress.id },
+              data: {
+                label: addr.label,
+                addressLine1: addr.address_line1,
+                addressLine2: addr.address_line2,
+                city: addr.city,
+                state: addr.state,
+                pincode: addr.pincode,
+                isDefault: addr.is_default,
+                latitude: addr.latitude,
+                longitude: addr.longitude,
+                version: { increment: 1 },
+              },
+            });
+          }
         }
       }
 
@@ -541,17 +690,17 @@ export class SyncService {
           const bookingAddress =
             addressId
               ? await (this.prisma as any).address.findFirst({
-                  where: {
-                    OR: [
-                      {
-                        id: addressId,
-                      },
-                      {
-                        offlineId: addressId,
-                      },
-                    ],
-                  },
-                })
+                where: {
+                  OR: [
+                    {
+                      id: addressId,
+                    },
+                    {
+                      offlineId: addressId,
+                    },
+                  ],
+                },
+              })
               : null;
 
           const newBooking =
@@ -580,27 +729,27 @@ export class SyncService {
 
                 ...(serviceId
                   ? {
-                      service: {
-                        connect: {
-                          id: serviceId,
-                        },
+                    service: {
+                      connect: {
+                        id: serviceId,
                       },
-                    }
+                    },
+                  }
                   : {}),
 
                 ...(bookingAddress?.id
                   ? {
-                      address: {
-                        connect: {
-                          id: bookingAddress.id,
-                        },
+                    address: {
+                      connect: {
+                        id: bookingAddress.id,
                       },
-                    }
+                    },
+                  }
                   : {}),
 
                 scheduledAt: new Date(
                   booking.scheduled_at ||
-                    booking.scheduledAt,
+                  booking.scheduledAt,
                 ),
 
                 totalPrice:
@@ -615,16 +764,37 @@ export class SyncService {
 
                 otp: generatedOtp,
               },
+              include: {
+                service: true,
+                client: true,
+                address: true,
+              },
             });
 
-          // Broadcast pending booking to providers
+          // Broadcast pending booking to matching providers
           if (
             newBooking.status ===
             'PENDING'
           ) {
-            this.trackingGateway.broadcastNewBooking(
-              newBooking,
-            );
+            const matchingProviders = await (this.prisma as any).user.findMany({
+              where: {
+                role: 'PROVIDER',
+                profile: {
+                  OR: [
+                    { professionIds: { array_contains: newBooking.serviceId } },
+                    { professionId: newBooking.serviceId }
+                  ],
+                },
+              },
+            });
+            const matchingProviderIds = matchingProviders.map((p: any) => p.id);
+            if (matchingProviderIds.length > 0) {
+              this.trackingGateway.notifyProviders(
+                matchingProviderIds,
+                'new_booking',
+                newBooking,
+              );
+            }
           }
         }
 
@@ -675,12 +845,12 @@ export class SyncService {
 
           const localPriority =
             STATUS_PRIORITY[
-              localStatus
+            localStatus
             ] ?? 0;
 
           const serverPriority =
             STATUS_PRIORITY[
-              serverStatus
+            serverStatus
             ] ?? 0;
 
           // Default: server wins
@@ -719,7 +889,7 @@ export class SyncService {
           if (
             localScheduledAt &&
             localScheduledAt !==
-              serverBooking.scheduledAt.getTime()
+            serverBooking.scheduledAt.getTime()
           ) {
             resolvedScheduledAt =
               new Date(localScheduledAt);
@@ -810,8 +980,11 @@ export class SyncService {
       // ==========================================================
 
       if (changes.chats) {
-        for (const chat of changes.chats
-          .created || []) {
+        const allChats = [
+          ...(changes.chats.created || []),
+          ...(changes.chats.updated || []),
+        ];
+        for (const chat of allChats) {
           const chatBookingId =
             chat.booking_id ||
             chat.bookingId;
@@ -834,39 +1007,39 @@ export class SyncService {
             });
 
           if (booking) {
-            await (
-              this.prisma as any
-            ).chat.upsert({
+            const authoritativeProviderId =
+              booking.providerId ||
+              (chat.provider_id && chat.provider_id !== 'system' ? chat.provider_id : null) ||
+              (chat.providerId && chat.providerId !== 'system' ? chat.providerId : null) ||
+              'system';
+
+            const existingChat = await (this.prisma as any).chat.findFirst({
               where: {
-                offlineId:
-                  chat.offlineId ||
-                  chat.id,
-              },
-
-              update: {
-                version: {
-                  increment: 1,
-                },
-              },
-
-              create: {
-                offlineId:
-                  chat.offlineId ||
-                  chat.id,
-
-                bookingId:
-                  booking.id,
-
-                clientId:
-                  chat.client_id ||
-                  chat.clientId,
-
-                providerId:
-                  chat.provider_id ||
-                  chat.providerId ||
-                  'system',
+                OR: [
+                  { bookingId: booking.id },
+                  { offlineId: chat.offlineId || chat.id },
+                ],
               },
             });
+
+            if (existingChat) {
+              await (this.prisma as any).chat.update({
+                where: { id: existingChat.id },
+                data: {
+                  ...(booking.providerId ? { providerId: booking.providerId } : {}),
+                  version: { increment: 1 },
+                },
+              });
+            } else {
+              await (this.prisma as any).chat.create({
+                data: {
+                  offlineId: chat.offlineId || chat.id,
+                  bookingId: booking.id,
+                  clientId: chat.client_id || chat.clientId,
+                  providerId: authoritativeProviderId,
+                },
+              });
+            }
           }
         }
       }
@@ -876,8 +1049,11 @@ export class SyncService {
       // ==========================================================
 
       if (changes.messages) {
-        for (const msg of changes.messages
-          .created || []) {
+        const allMessages = [
+          ...(changes.messages.created || []),
+          ...(changes.messages.updated || []),
+        ];
+        for (const msg of allMessages) {
           const msgChatId =
             msg.chat_id ||
             msg.chatId;
@@ -910,6 +1086,7 @@ export class SyncService {
               },
 
               update: {
+                content: msg.content,
                 version: {
                   increment: 1,
                 },
@@ -931,8 +1108,10 @@ export class SyncService {
                   msg.content,
 
                 createdAt: new Date(
-                  msg.created_at ||
-                    msg.createdAt,
+                  Math.min(
+                    msg.created_at || msg.createdAt,
+                    Date.now()
+                  )
                 ),
               },
             });

@@ -2,44 +2,46 @@ import React, { useState } from 'react';
 import { switchMap } from 'rxjs/operators';
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Calendar, X, Clock } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Theme } from '../theme';
 import api from '../api';
 import { SlotSelector } from '../components/SlotSelector';
 
-const CANCEL_REASONS = [
-  'Plans changed',
-  'Found another service provider',
-  'Provider not responding',
-  'Service no longer needed',
-  'Scheduled wrong time',
-  'Other',
-];
-
 import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
 
 const CancellationScreenBase = ({ navigation, route, booking, service }: any) => {
+  const { t, i18n } = useTranslation();
   const [selectedReason, setSelectedReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'cancel' | 'reschedule'>('cancel');
   const [newDate, setNewDate] = useState(new Date());
 
-  const bookingTitle = service ? (route.params.i18n?.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
+  const bookingTitle = service ? (i18n.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
+
+  const cancelReasons = [
+    t('manage_booking.reason_plans_changed'),
+    t('manage_booking.reason_found_another'),
+    t('manage_booking.reason_provider_not_responding'),
+    t('manage_booking.reason_not_needed'),
+    t('manage_booking.reason_wrong_time'),
+    t('manage_booking.reason_other')
+  ];
 
   const handleCancel = async () => {
     if (!selectedReason) {
-      Alert.alert('Select Reason', 'Please select a reason for cancellation.');
+      Alert.alert(t('common.error'), t('manage_booking.why_cancelling'));
       return;
     }
     Alert.alert(
-      'Confirm Cancellation',
-      'Are you sure you want to cancel this booking?',
+      t('manage_booking.cancel'),
+      t('manage_booking.cancel_booking'),
       [
-        { text: 'No', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Yes, Cancel',
+          text: t('manage_booking.cancel_booking'),
           style: 'destructive',
           onPress: async () => {
             setLoading(true);
@@ -49,11 +51,11 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
                   record.status = 'CANCELLED';
                 });
               });
-              Alert.alert('Cancelled', 'Your booking has been cancelled locally. It will sync once online.', [
+              Alert.alert(t('manage_booking.cancel'), t('booking_detail.status_cancelled'), [
                 { text: 'OK', onPress: () => navigation.goBack() }
               ]);
             } catch (e) {
-              Alert.alert('Error', 'Could not cancel booking.');
+              Alert.alert(t('common.error'), t('cart.error_confirming_booking'));
             } finally {
               setLoading(false);
             }
@@ -74,7 +76,7 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
           <ChevronLeft size={22} color={Theme.textPrimary} />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginLeft: 16 }}>Manage Booking</Text>
+        <Text style={{ flex: 1, fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginLeft: 16 }}>{t('manage_booking.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 24 }}>
@@ -104,7 +106,7 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
               style={{ flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: mode === m ? 'white' : 'transparent', alignItems: 'center', elevation: mode === m ? 2 : 0 }}
             >
               <Text style={{ fontSize: 14, fontWeight: '800', color: mode === m ? Theme.primary : Theme.textSecondary }}>
-                {m === 'cancel' ? '❌ Cancel' : '📅 Reschedule'}
+                {m === 'cancel' ? t('manage_booking.cancel') : t('manage_booking.reschedule')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -112,9 +114,9 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
 
         {mode === 'cancel' ? (
           <>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary, marginBottom: 16 }}>Why are you cancelling?</Text>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary, marginBottom: 16 }}>{t('manage_booking.why_cancelling')}</Text>
             <View style={{ gap: 12, marginBottom: 32 }}>
-              {CANCEL_REASONS.map((reason) => (
+              {cancelReasons.map((reason) => (
                 <TouchableOpacity
                   key={reason}
                   onPress={() => setSelectedReason(reason)}
@@ -130,11 +132,9 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
 
             {/* Policy note */}
             <View style={{ backgroundColor: '#FEF3C7', borderRadius: 16, padding: 16, marginBottom: 28 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400E' }}>📋 Cancellation Policy</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400E' }}>{t('manage_booking.cancellation_policy')}</Text>
               <Text style={{ fontSize: 13, color: '#92400E', marginTop: 6, lineHeight: 20 }}>
-                • Free cancellation up to 2 hours before the appointment{'\n'}
-                • 50% charge if cancelled within 2 hours{'\n'}
-                • No refund for same-day cancellations
+                {t('manage_booking.cancellation_policy_text')}
               </Text>
             </View>
 
@@ -143,7 +143,7 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
                 {loading ? <ActivityIndicator color="white" /> : (
                   <>
                     <X size={20} color="white" />
-                    <Text style={{ marginLeft: 10, fontSize: 16, fontWeight: '900', color: 'white' }}>Cancel Booking</Text>
+                    <Text style={{ marginLeft: 10, fontSize: 16, fontWeight: '900', color: 'white' }}>{t('manage_booking.cancel_booking')}</Text>
                   </>
                 )}
               </LinearGradient>
@@ -151,8 +151,8 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
           </>
         ) : (
           <View style={{ paddingVertical: 10 }}>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary, marginBottom: 16 }}>Select New Slot</Text>
-            <SlotSelector 
+            <Text style={{ fontSize: 16, fontWeight: '800', color: Theme.textPrimary, marginBottom: 16 }}>{t('manage_booking.select_new_slot')}</Text>
+            <SlotSelector
               onSlotSelect={(date, time) => {
                 const finalDate = new Date(date);
                 const [timeStr, period] = time.split(' ');
@@ -161,10 +161,10 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
                 if (period === 'AM' && hours === 12) hours = 0;
                 finalDate.setHours(hours, minutes, 0, 0);
                 setNewDate(finalDate);
-              }} 
+              }}
             />
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               onPress={async () => {
                 setLoading(true);
                 try {
@@ -173,10 +173,10 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
                       record.scheduledAt = newDate.getTime();
                     });
                   });
-                  Alert.alert('Rescheduled', 'Booking updated successfully.');
+                  Alert.alert(t('manage_booking.reschedule'), t('cart.booking_confirmed'));
                   navigation.goBack();
                 } catch (e) {
-                  Alert.alert('Error', 'Could not reschedule.');
+                  Alert.alert(t('common.error'), t('cart.error_confirming_booking'));
                 } finally {
                   setLoading(false);
                 }
@@ -184,7 +184,7 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
               disabled={loading}
               style={{ marginTop: 32, backgroundColor: Theme.primary, paddingVertical: 18, borderRadius: 16, alignItems: 'center' }}
             >
-              {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '900', fontSize: 16 }}>Confirm Reschedule</Text>}
+              {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '900', fontSize: 16 }}>{t('manage_booking.confirm_reschedule')}</Text>}
             </TouchableOpacity>
           </View>
         )}

@@ -85,6 +85,9 @@ export class AuthService {
       });
     }
 
+    // Handle professionIds array
+    const professionIds = dto.professionIds || [dto.professionId];
+    
     // Upsert Profile
     await this.prisma.profile.upsert({
       where: { userId: user.id },
@@ -93,7 +96,10 @@ export class AuthService {
         city: dto.city,
         state: dto.state,
         country: dto.country,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
         professionId: dto.professionId,
+        professionIds: professionIds,
         documents: dto.documents || {},
         isVerified: true, // Automatically accept as per request
       },
@@ -103,7 +109,10 @@ export class AuthService {
         city: dto.city,
         state: dto.state,
         country: dto.country,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
         professionId: dto.professionId,
+        professionIds: professionIds,
         documents: dto.documents || {},
         isVerified: true,
       },

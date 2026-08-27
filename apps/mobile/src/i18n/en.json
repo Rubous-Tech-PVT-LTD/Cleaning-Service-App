@@ -22,21 +22,41 @@
     "noSubcategories": "No Subcategories Available",
     "noSubcategoriesDescription": "This category doesn't have any subcategories yet. Check back later!",
     "noServices": "No Services Available",
-    "noServicesDescription": "No services found in this category. Try exploring other categories."
+    "noServicesDescription": "No services found in this category. Try exploring other categories.",
+    "error": "Error",
+    "failed_to_load": "Failed to load data.",
+    "invalid_duration": "Invalid duration selected",
+    "failed_add_cart": "Failed to add to cart",
+    "failed_remove_cart": "Failed to remove from cart",
+    "reviews": "reviews",
+    "anonymous": "Anonymous",
+    "cancel": "Cancel",
+    "edit": "EDIT",
+    "error": "Error"
   },
   "search": {
     "placeholder": "Search for services...",
+    "sticky_placeholder": "Search services...",
+    "for_prefix": "Search for \"",
+    "for_suffix": "\"",
     "recent": "Recent Searches",
     "clear_all": "Clear All",
     "trending": "Trending",
     "no_results": "No services found for",
     "popular": "🔥 Popular",
     "low_price": "💰 Lowest Price",
-    "top_rated": "⭐ Top Rated"
+    "top_rated": "⭐ Top Rated",
+    "placeholders": [
+      "Deep house cleaning",
+      "AC repair & service",
+      "Expert home painting",
+      "Bathroom cleaning"
+    ]
   },
   "booking": {
     "select_date": "Select Date",
     "select_time": "Select Time Slot",
+    "select_services": "Select Services",
     "morning": "Morning",
     "afternoon": "Afternoon",
     "evening": "Evening",
@@ -58,7 +78,32 @@
     "other": "Other",
     "set_default": "Set as default address",
     "no_address": "No addresses saved",
-    "add_new": "ADD NEW ADDRESS"
+    "add_new": "ADD NEW ADDRESS",
+    "select_location": "Select Location",
+    "search_location": "Search your location",
+    "search_placeholder": "Search locality, sector, area",
+    "quick_actions": "QUICK ACTIONS",
+    "add_address": "Add address",
+    "use_current_location": "Use current location",
+    "saved_addresses": "SAVED ADDRESSES",
+    "currently_selected": "Currently selected",
+    "mobile": "Mobile:",
+    "permission_denied": "Permission Denied",
+    "permission_msg": "Please allow location access to use this feature.",
+    "current_location_label": "Current Location",
+    "location_error": "Failed to get your location. Please try again or enter manually.",
+    "whats_your_location": "What's your location?",
+    "location_reason": "We need your location to show you our serviceable hubs.",
+    "enter_manually": "Enter location manually"
+  },
+  "login": {
+    "login_securely": "Login securely",
+    "skip_for_now": "Skip for now"
+   },
+  "login_modal": {
+    "title": "Login Required",
+    "message": "Please login to continue with this action.",
+    "login": "Login"
   },
   "profile": {
     "title": "Profile",
@@ -72,7 +117,19 @@
     "full_name": "Full Name",
     "enter_name": "Enter your full name",
     "locked": "LOCKED",
-    "phone_note": "Phone number cannot be changed"
+    "phone_note": "Phone number cannot be changed",
+    "guest_mode": "Guest Mode",
+    "guest_description": "You're browsing as a guest. Login to access your profile, bookings, and more features.",
+    "login_now": "Login Now",
+    "saved_payments": "Saved Payments",
+    "refer_earn": "Refer & Earn",
+    "help_center": "Help Center",
+    "terms_privacy": "Terms & Privacy",
+    "test_notification": "Test Notification",
+    "logout_alert_title": "Logout",
+    "logout_alert_message": "Are you sure you want to logout?",
+    "cancel": "Cancel",
+    "switch": "SWITCH"
   },
   "service": {
     "verified": "Verified",
@@ -83,6 +140,243 @@
     "see_all": "See All",
     "booking_options": "Booking Options",
     "day_wise": "Day-wise",
-    "bulk_hiring": "Bulk Hiring"
+    "bulk_hiring": "Bulk Hiring",
+    "total_price": "Total Price",
+    "num_days": "Number of Days",
+    "num_labourers": "Number of Labourers",
+    "bulk_desc": "Bulk hiring includes a flat 10% discount on total wages. Tools and materials are not included.",
+    "standard_desc": "Professional service delivered right to your doorstep. We ensure 100% safety and high-quality standards with our verified experts.",
+    "included_items": [
+      "Professional Equipment",
+      "Verified Partner",
+      "Post-service Cleanup",
+      "Service Warranty"
+    ],
+    "not_included_items": [
+      "Material Costs",
+      "Extra Spare Parts",
+      "Deep Stains removal",
+      "Furniture Moving"
+    ],
+    "steps": [
+      { "title": "1. Choose your service", "desc": "Select from our range of verified services and choose a slot." },
+      { "title": "2. Expert matches with you", "desc": "We assign the best-rated professional near your location." },
+      { "title": "3. Relax & Get it done", "desc": "Our pro arrives on time and completes the job with care." }
+    ],
+    "no_reviews": "No reviews yet. Be the first to review!",
+    "related_title": "You might also like"
+  },
+  "home": {
+    "instant_service": "Get Instant\nService",
+    "instant_eta": "15 mins",
+    "schedule_later": "Schedule for\nLater",
+    "schedule_prefix": "Today, ",
+    "coming_soon_title_prefix": "WE ARE COMING ",
+    "coming_soon_title_suffix": "SOON",
+    "coming_soon_body": "We're bringing our amazing cleaning and home services to your location. Stay tuned!",
+    "notify_me": "Notify me!",
+    "change_location": "Change location",
+    "search_services": "Search services...",
+    "exclusive_offers": "Exclusive Offers",
+    "see_all": "See All",
+    "why_houcee": "Why Houcee?",
+    "trust_verified_pro": "Verified Pro",
+    "trust_on_time": "On-Time",
+    "trust_quality": "5★ Quality",
+    "trust_support": "24/7 Support",
+    "trending_now": "Trending Now",
+    "common_questions": "Common Questions",
+    "nav_home": "Home",
+    "nav_my_booking": "My Booking",
+    "nav_profile": "Profile",
+    "new_badge": "NEW",
+    "quick_categories": {
+      "cleaning": "Cleaning",
+      "plumbing": "Plumbing",
+      "electrical": "Electrical",
+      "painting": "Painting",
+      "labour": "Labour"
+    },
+    "offers": [
+      {
+        "label": "FIRST ORDER",
+        "title": "Flat ₹200 OFF",
+        "subtitle": "On all cleaning services",
+        "code_prefix": "USE: ",
+        "code": "CLEAN200"
+      },
+      {
+        "label": "REFER & EARN",
+        "title": "Earn ₹500",
+        "subtitle": "Invite friends to Houcee",
+        "code_prefix": "",
+        "code": "SHARE NOW →"
+      }
+    ],
+    "faqs": [
+      {
+        "q": "How do I book a service?",
+        "a": "Simply select a category, choose your preferred service, select a date and time, and confirm your booking."
+      },
+      {
+        "q": "Are the professionals verified?",
+        "a": "Yes, every professional on our platform undergoes a rigorous background check and skills verification."
+      },
+      {
+        "q": "What if I need to cancel or reschedule?",
+        "a": "You can cancel or reschedule your booking for free up to 2 hours before the scheduled time via the 'My Bookings' section."
+      },
+      {
+        "q": "How do I pay for the service?",
+        "a": "You can pay online via UPI, Credit/Debit cards, or choose to pay in cash after the service is completed."
+      },
+      {
+        "q": "Is there any warranty on repairs?",
+        "a": "Yes, we provide a 30-day service warranty on all our repair works for your peace of mind."
+      }
+    ]
+  },
+  "cart": {
+    "save_prefix": "Save ₹",
+    "book": "BOOK",
+    "added": "ADDED",
+    "error_loading_cart": "Failed to load cart",
+    "error_removing_item": "Failed to remove item",
+    "login_required": "Login Required",
+    "login_required_message": "Please login to confirm your booking",
+    "location_required": "Location Required",
+    "location_required_message": "Please set your location to continue",
+    "address_required": "Address Required",
+    "address_required_message": "Please add an address to continue",
+    "sync_error": "Sync Error",
+    "booking_confirmed": "Booking Confirmed",
+    "empty": "Your cart is empty",
+    "continue_shopping": "Continue Shopping",
+    "review_booking": "Review Booking",
+    "instant": "Instant Service",
+    "booking_details": "Booking Details",
+    "change": "Change",
+    "add_address": "Add Address",
+    "phone_number": "Phone Number",
+    "bill_details": "Bill Details",
+    "item_total": "Item Total",
+    "gst": "GST (18%)",
+    "service_fee": "Service Fee (5%)",
+    "to_pay": "To Pay",
+    "not_serviceable": "Location Not Serviceable",
+    "location_out_of_service": "Sorry, we don't serve this location yet. Please select a different location.",
+    "change_location": "Change Location",
+    "confirm_booking": "Confirm Booking",
+    "service": "service",
+    "services": "services",
+    "go_to_cart": "Go to cart",
+    "title": "Your Cart",
+    "error_confirming_booking": "Error confirming booking"
+  },
+  "schedule": {
+    "title": "Schedule for later",
+    "select_duration": "Select Duration",
+    "select_date": "Select date",
+    "select_time": "Select time",
+    "view_all_slots": "View all slots",
+    "hide_slots": "Hide slots"
+  },
+  "booking_success": {
+    "title": "Booking Confirmed!",
+    "message": "Your booking has been successfully confirmed. Our expert will arrive at your location on time.",
+    "booking_id": "Booking ID",
+    "scheduled_for": "Scheduled for",
+    "service_location": "Service Location",
+    "total_paid": "Total Paid",
+    "view_all_bookings": "View All Bookings",
+    "back_to_home": "Back to Home"
+  },
+  "booking_detail": {
+    "title": "Booking Details",
+    "loading": "Loading booking details...",
+    "emergency_sos": "Emergency SOS",
+    "sos_confirm_message": "Are you sure you want to trigger an emergency SOS?",
+    "yes_trigger_sos": "Yes, Trigger SOS",
+    "permission_denied": "Permission Denied",
+    "location_permission_required": "Location permission is required to share your emergency location.",
+    "sos_sent": "SOS Sent",
+    "sos_sent_message": "Your emergency alert has been sent. Help is on the way.",
+    "sos_failed": "SOS Failed",
+    "sos_failed_message": "Failed to send SOS. Please try again.",
+    "provide_pin": "PROVIDE THIS PIN TO RIDER",
+    "live_tracking": "Live Tracking",
+    "waiting_provider": "Waiting for provider location...",
+    "on_the_way": "On the way!",
+    "appointment": "Appointment",
+    "order_summary": "Order Summary",
+    "total_amount": "Total Amount",
+    "need_help": "Need help with this booking?",
+    "contact_support": "Contact support or report an issue",
+    "emergency_sos_button": "EMERGENCY SOS",
+    "reschedule_cancel": "Reschedule or Cancel",
+    "no_address": "No address specified",
+    "status_completed": "COMPLETED",
+    "status_accepted": "ACCEPTED",
+    "status_in_progress": "IN_PROGRESS",
+    "status_cancelled": "CANCELLED"
+  },
+  "instant_service": {
+    "title": "Hourly Services",
+    "ratings_count": "4.9 (61k ratings)",
+    "save": "Save ₹",
+    "added": "ADDED",
+    "book": "BOOK",
+    "one_booking": "One Booking. Countless Tasks.",
+    "one_booking_desc": "Let our professionals take care of everyday household tasks while you focus on work, family and everything else on your schedule.",
+    "how_long": "How long does it take?",
+    "how_its_done": "How it's done?",
+    "estimations_based": "Estimations are based on 2BHK",
+    "why_customers_love": "Why Customers Love Hourly Services",
+    "does_not_include": "Does not include",
+    "step1_title": "Plan the Work",
+    "step1_desc": "Your professional plans the tasks as per your needs and time booked.",
+    "step2_title": "Start Cleaning",
+    "step2_desc": "They'll begin with the tasks you want like sweeping, mopping, or bathroom cleaning.",
+    "step3_title": "Final Checks",
+    "step3_desc": "Before finishing, they'll give a quick wipe and make sure everything looks clean and tidy.",
+    "faqs": "FAQs"
+  },
+  "help_center": {
+    "title": "Help Center",
+    "contact_us": "Contact Us",
+    "whatsapp": "WhatsApp",
+    "call_us": "Call Us",
+    "common_questions": "Common Questions",
+    "faq1_q": "How do I book a service?",
+    "faq1_a": "Simply choose a category from the home screen, select the service you need, choose a date and time slot, and confirm your booking. You'll receive a notification once it's confirmed!",
+    "faq2_q": "Can I cancel my booking?",
+    "faq2_a": "Yes, you can cancel your booking up to 2 hours before the scheduled time. Go to 'My Bookings', select the booking, and tap 'Cancel'.",
+    "faq3_q": "How do I pay for the service?",
+    "faq3_a": "Currently, we support Cash on Delivery. We are working on adding online payment options via UPI, Credit/Debit cards, and Wallets very soon!",
+    "faq4_q": "What if I'm not satisfied with the service?",
+    "faq4_a": "Your satisfaction is our priority. If you're unhappy with the service, please contact our support team within 24 hours, and we'll resolve it for you.",
+    "faq5_q": "Is there a warranty on the work?",
+    "faq5_a": "Most services come with a 7-day service warranty. Please check the service details page for specific warranty information.",
+    "still_need_help": "Still need help?",
+    "still_need_help_desc": "Send us an email and we'll get back to you within 24 hours.",
+    "email_support": "Email Support"
+  },
+  "manage_booking": {
+    "title": "Manage Booking",
+    "cancel": "❌ Cancel",
+    "reschedule": "📅 Reschedule",
+    "why_cancelling": "Why are you cancelling?",
+    "reason_plans_changed": "Plans changed",
+    "reason_found_another": "Found another service provider",
+    "reason_provider_not_responding": "Provider not responding",
+    "reason_not_needed": "Service no longer needed",
+    "reason_wrong_time": "Scheduled wrong time",
+    "reason_other": "Other",
+    "cancellation_policy": "📋 Cancellation Policy",
+    "cancellation_policy_text": "• Free cancellation up to 2 hours before the appointment\n• 50% charge if cancelled within 2 hours\n• No refund for same-day cancellations",
+    "cancel_booking": "Cancel Booking",
+    "select_new_slot": "Select New Slot",
+    "confirm_reschedule": "Confirm Reschedule",
+    "manage": "MANAGE"
   }
 }

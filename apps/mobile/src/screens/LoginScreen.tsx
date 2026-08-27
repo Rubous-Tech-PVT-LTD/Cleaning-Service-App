@@ -104,7 +104,7 @@ export const LoginScreen = ({ navigation }: any) => {
               </View>
               <View style={{ justifyContent: 'center' }}>
                 <Text style={{ fontSize: 42, fontWeight: '900', color: '#FFFFFF', letterSpacing: -1, lineHeight: 42 }}>houcee</Text>
-                <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.9)', fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}>one tap away</Text>
+                <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.9)', fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}> one tap away</Text>
               </View>
             </View>
             <ActivityIndicator size="large" color="#FFFFFF" />
@@ -136,18 +136,18 @@ export const LoginScreen = ({ navigation }: any) => {
             </View>
             <View style={{ justifyContent: 'center' }}>
               <Text style={{ fontSize: 42, fontWeight: '900', color: '#1E1B4B', letterSpacing: -1, lineHeight: 42 }}>houcee</Text>
-              <Text style={{ fontSize: 15, color: Theme.primary, fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}>one tap away</Text>
+              <Text style={{ fontSize: 15, color: Theme.primary, fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}>{t('login.one_tap_away', 'one tap away')}</Text>
             </View>
           </View>
 
           <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 10 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>Phone Number</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>{t('common.phone_number', 'Phone Number')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1.5, borderBottomColor: Theme.border, paddingBottom: 12 }}>
               <Text style={{ fontSize: 22, fontWeight: '700', color: Theme.textPrimary, marginRight: 12 }}>+91</Text>
               <TextInput style={{ flex: 1, fontSize: 22, fontWeight: '700', color: Theme.textPrimary }} placeholder="00000 00000" placeholderTextColor="#cbd5e1" keyboardType="phone-pad" value={phone} onChangeText={setPhone} maxLength={10} />
             </View>
             <TouchableOpacity onPress={handleRequestOtp} disabled={loading || phone.length < 10} style={{ marginTop: 32, backgroundColor: Theme.primary, paddingVertical: 18, borderRadius: 16, alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 }}>
-              {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Login securely</Text>}
+              {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>{t('login.login_securely', 'Login securely')}</Text>}
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -155,7 +155,7 @@ export const LoginScreen = ({ navigation }: any) => {
               style={{ marginTop: 16, paddingVertical: 12, alignItems: 'center' }}
             >
               <Text style={{ color: Theme.textSecondary, fontWeight: '600', fontSize: 14 }}>
-                Skip for now
+                {t('login.skip_for_now', 'Skip for now')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -163,7 +163,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
         <View style={{ paddingBottom: 40, alignItems: 'center' }}>
           <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '500', letterSpacing: 0.5 }}>
-            A product by <Text style={{ fontWeight: '800', color: Theme.primary }}>Rubous Tech Pvt. Ltd</Text>
+            {t('login.product_by', 'A product by')} <Text style={{ fontWeight: '800', color: Theme.primary }}>Rubous Tech Pvt. Ltd</Text>
           </Text>
         </View>
       </Animated.View>

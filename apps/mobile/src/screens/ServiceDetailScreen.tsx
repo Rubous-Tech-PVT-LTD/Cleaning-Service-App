@@ -54,7 +54,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
               {reviewsData.total > 0 ? reviewsData.average.toFixed(1) : '5.0'}
             </Text>
             <Text style={{ fontSize: 14, color: Theme.textSecondary, marginLeft: 8 }}>
-              ({reviewsData.total > 0 ? reviewsData.total : '0'} reviews)
+              ({reviewsData.total > 0 ? reviewsData.total : '0'} {t('common.reviews')})
             </Text>
           </View>
 
@@ -64,7 +64,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
 
           <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 24, borderRadius: 28, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 5, marginBottom: 32 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, color: Theme.textSecondary, fontWeight: '800', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total Price</Text>
+              <Text style={{ fontSize: 13, color: Theme.textSecondary, fontWeight: '800', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('service.total_price')}</Text>
               <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary }}>₹{totalPrice.toFixed(0)}</Text>
             </View>
             <View style={{ backgroundColor: Theme.infoLight, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 }}>
@@ -94,7 +94,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 15, fontWeight: '700', color: Theme.textSecondary }}>
-                  {bookingType === 'day' ? 'Number of Days' : 'Number of Labourers'}
+                  {bookingType === 'day' ? t('service.num_days') : t('service.num_labourers')}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderRadius: 18, padding: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
                   <TouchableOpacity onPress={() => setQuantity(Math.max(1, quantity - 1))} style={{ width: 40, height: 40, backgroundColor: '#F1F5F9', borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
@@ -111,7 +111,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
 
           <View style={{ backgroundColor: '#F1F5F9', padding: 20, borderRadius: 24, marginBottom: 32 }}>
             <Text style={{ fontSize: 15, color: Theme.textSecondary, lineHeight: 24, fontWeight: '500' }}>
-              {bookingType === 'bulk' && isLabour ? "Bulk hiring includes a flat 10% discount on total wages. Tools and materials are not included." : "Professional service delivered right to your doorstep. We ensure 100% safety and high-quality standards with our verified experts."}
+              {bookingType === 'bulk' && isLabour ? t('service.bulk_desc') : t('service.standard_desc')}
             </Text>
           </View>
 
@@ -120,19 +120,17 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
             {/* Left: What is Included */}
             <View style={{ flex: 1, backgroundColor: Theme.infoLight, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: Theme.border }}>
               <Text style={{ fontSize: 14, fontWeight: '900', color: Theme.info, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('service.included')}</Text>
-              <InclusionItem text="Professional Equipment" included />
-              <InclusionItem text="Verified Partner" included />
-              <InclusionItem text="Post-service Cleanup" included />
-              <InclusionItem text="Service Warranty" included />
+              {(t('service.included_items', { returnObjects: true }) as string[]).map((item: string, index: number) => (
+                <InclusionItem key={index} text={item} included />
+              ))}
             </View>
 
             {/* Right: What is NOT Included */}
             <View style={{ flex: 1, backgroundColor: Theme.background, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: Theme.border }}>
               <Text style={{ fontSize: 14, fontWeight: '900', color: Theme.error, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('service.not_included')}</Text>
-              <InclusionItem text="Material Costs" included={false} />
-              <InclusionItem text="Extra Spare Parts" included={false} />
-              <InclusionItem text="Deep Stains removal" included={false} />
-              <InclusionItem text="Furniture Moving" included={false} />
+              {(t('service.not_included_items', { returnObjects: true }) as string[]).map((item: string, index: number) => (
+                <InclusionItem key={index} text={item} included={false} />
+              ))}
             </View>
           </View>
 
@@ -140,21 +138,14 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
           <View style={{ marginBottom: 40 }}>
             <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('service.how_it_works')}</Text>
             <View style={{ gap: 20 }}>
-              <StepItem 
-                icon={<Sparkles size={20} color={Theme.primary} />} 
-                title="1. Choose your service" 
-                desc="Select from our range of verified services and choose a slot." 
-              />
-              <StepItem 
-                icon={<ShieldCheck size={20} color={Theme.primary} />} 
-                title="2. Expert matches with you" 
-                desc="We assign the best-rated professional near your location." 
-              />
-              <StepItem 
-                icon={<Clock size={20} color={Theme.primary} />} 
-                title="3. Relax & Get it done" 
-                desc="Our pro arrives on time and completes the job with care." 
-              />
+              {(t('service.steps', { returnObjects: true }) as any[]).map((step: any, index: number) => (
+                <StepItem 
+                  key={index}
+                  icon={index === 0 ? <Sparkles size={20} color={Theme.primary} /> : index === 1 ? <ShieldCheck size={20} color={Theme.primary} /> : <Clock size={20} color={Theme.primary} />}
+                  title={step.title} 
+                  desc={step.desc} 
+                />
+              ))}
             </View>
           </View>
 
@@ -170,12 +161,12 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
             </View>
             
             {reviewsData.total === 0 ? (
-              <Text style={{ fontSize: 14, color: Theme.textSecondary, fontStyle: 'italic' }}>No reviews yet. Be the first to review!</Text>
+              <Text style={{ fontSize: 14, color: Theme.textSecondary, fontStyle: 'italic' }}>{t('service.no_reviews')}</Text>
             ) : (
               reviewsData.reviews.slice(0, 3).map((r: any) => (
                 <ReviewCard 
                   key={r.id}
-                  name={r.booking?.client?.fullName || 'Anonymous'} 
+                  name={r.booking?.client?.fullName || t('common.anonymous')} 
                   rating={r.rating} 
                   date={new Date(r.createdAt).toLocaleDateString()} 
                   comment={r.comment} 
@@ -187,7 +178,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
           {/* Related Services Section */}
           {relatedServices && relatedServices.length > 0 && (
             <View style={{ marginBottom: 40 }}>
-              <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>You might also like</Text>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('service.related_title')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
                 {relatedServices.map((item: any) => (
                   <TouchableOpacity

@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckCircle, XCircle, Trash2, AlertCircle } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Theme } from '../theme';
@@ -22,6 +23,7 @@ import { useAuthGuard } from '../hooks/useAuthGuard';
 import { LoginRequiredModal } from '../components/LoginRequiredModal';
 
 export const InstantServiceScreen = ({ navigation }: any) => {
+  const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
   const [data, setData] = useState<any>(null);
@@ -211,10 +213,10 @@ export const InstantServiceScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Hourly Services</Text>
+          <Text style={styles.title}>{t('instant_service.title', 'Hourly Services')}</Text>
           <View style={styles.ratingRow}>
             <Text style={styles.star}>⭐</Text>
-            <Text style={styles.ratingText}>4.9 (61k ratings)</Text>
+            <Text style={styles.ratingText}>{t('instant_service.ratings_count', '4.9 (61k ratings)')}</Text>
           </View>
 
           <ScrollView
@@ -226,18 +228,22 @@ export const InstantServiceScreen = ({ navigation }: any) => {
             {data.durations.map((dur: any) => {
               const isAdded =
                 cartItem?.bookingType !== 'scheduled' && cartItem?.duration?.id === dur.id;
+              
+              const label = typeof dur.label === 'string' 
+                ? dur.label 
+                : (dur.label?.[i18n.language === 'hi' ? 'hi' : 'en'] || dur.label?.en || String(dur.label || ''));
 
               return (
                 <View
                   key={dur.id}
                   style={[styles.durationCard, isAdded && styles.durationCardSelected]}
                 >
-                  <Text style={styles.durationTitle}>{dur.label}</Text>
+                  <Text style={styles.durationTitle}>{label}</Text>
                   <View style={styles.priceRow}>
                     <Text style={styles.price}>₹{dur.price}</Text>
                     <Text style={styles.oldPrice}>₹{dur.oldPrice}</Text>
                   </View>
-                  <Text style={styles.saveText}>Save ₹{dur.saveAmount}</Text>
+                  <Text style={styles.saveText}>{t('instant_service.save', 'Save ₹')}{dur.saveAmount}</Text>
                   <TouchableOpacity
                     style={isAdded ? styles.addedBtn : styles.bookBtn}
                     disabled={cartLoading}
@@ -251,11 +257,11 @@ export const InstantServiceScreen = ({ navigation }: any) => {
                   >
                     {isAdded ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Text style={styles.addedBtnText}>ADDED</Text>
+                        <Text style={styles.addedBtnText}>{t('instant_service.added', 'ADDED')}</Text>
                         <Trash2 size={16} color="#FFFFFF" />
                       </View>
                     ) : (
-                      <Text style={styles.bookBtnText}>{cartLoading ? '...' : 'BOOK'}</Text>
+                      <Text style={styles.bookBtnText}>{cartLoading ? '...' : t('instant_service.book', 'BOOK')}</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -264,19 +270,18 @@ export const InstantServiceScreen = ({ navigation }: any) => {
           </ScrollView>
 
           <View style={styles.descriptionSection}>
-            <Text style={styles.descTitle}>One Booking. Countless Tasks.</Text>
+            <Text style={styles.descTitle}>{t('instant_service.one_booking', 'One Booking. Countless Tasks.')}</Text>
             <Text style={styles.descText}>
-              Let our professionals take care of everyday household tasks while you focus on work,
-              family and everything else on your schedule.
+              {t('instant_service.one_booking_desc', 'Let our professionals take care of everyday household tasks while you focus on work, family and everything else on your schedule.')}
             </Text>
           </View>
 
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>How long does it take?</Text>
-              <Text style={styles.linkText}>How it's done?</Text>
+              <Text style={styles.sectionTitle}>{t('instant_service.how_long', 'How long does it take?')}</Text>
+              <Text style={styles.linkText}>{t('instant_service.how_its_done', "How it's done?")}</Text>
             </View>
-            <Text style={styles.subtitle}>Estimations are based on 2BHK</Text>
+            <Text style={styles.subtitle}>{t('instant_service.estimations_based', 'Estimations are based on 2BHK')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -284,50 +289,65 @@ export const InstantServiceScreen = ({ navigation }: any) => {
             >
               {estimationColumns.map((col, colIdx) => (
                 <View key={colIdx} style={{ gap: 16 }}>
-                  {col.map((est: any) => (
-                    <View key={est.id} style={styles.estimationCard}>
-                      <View style={styles.estimationImagePlaceholder}>
-                        <Text style={{ fontSize: 24 }}>🧼</Text>
+                  {col.map((est: any) => {
+                    const title = typeof est.title === 'string' 
+                      ? est.title 
+                      : (est.title?.[i18n.language === 'hi' ? 'hi' : 'en'] || est.title?.en || String(est.title || ''));
+                    return (
+                      <View key={est.id} style={styles.estimationCard}>
+                        <View style={styles.estimationImagePlaceholder}>
+                          <Text style={{ fontSize: 24 }}>🧼</Text>
+                        </View>
+                        <Text style={styles.estimationTitle}>{title}</Text>
+                        <Text style={styles.estimationTime}>{est.time}</Text>
                       </View>
-                      <Text style={styles.estimationTitle}>{est.title}</Text>
-                      <Text style={styles.estimationTime}>{est.time}</Text>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </View>
               ))}
             </ScrollView>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Why Customers Love Hourly Services</Text>
-            {data.whyCustomersLove.map((item: string, index: number) => (
-              <View key={index} style={styles.listItem}>
-                <CheckCircle size={20} color="#10B981" />
-                <Text style={styles.listItemText}>{item}</Text>
-              </View>
-            ))}
+            <Text style={styles.sectionTitle}>{t('instant_service.why_customers_love', 'Why Customers Love Hourly Services')}</Text>
+            {data.whyCustomersLove.map((item: any, index: number) => {
+              const text = typeof item === 'string' 
+                ? item 
+                : (item?.[i18n.language === 'hi' ? 'hi' : 'en'] || item?.en || String(item || ''));
+              return (
+                <View key={index} style={styles.listItem}>
+                  <CheckCircle size={20} color="#10B981" />
+                  <Text style={styles.listItemText}>{text}</Text>
+                </View>
+              );
+            })}
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Does not include</Text>
-            {data.doesNotInclude.map((item: string, index: number) => (
-              <View key={index} style={styles.listItem}>
-                <XCircle size={20} color="#EF4444" />
-                <Text style={styles.listItemText}>{item}</Text>
-              </View>
-            ))}
+            <Text style={styles.sectionTitle}>{t('instant_service.does_not_include', 'Does not include')}</Text>
+            {data.doesNotInclude.map((item: any, index: number) => {
+              const text = typeof item === 'string' 
+                ? item 
+                : (item?.[i18n.language === 'hi' ? 'hi' : 'en'] || item?.en || String(item || ''));
+              return (
+                <View key={index} style={styles.listItem}>
+                  <XCircle size={20} color="#EF4444" />
+                  <Text style={styles.listItemText}>{text}</Text>
+                </View>
+              );
+            })}
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>How it's done?</Text>
+            <Text style={styles.sectionTitle}>{t('instant_service.how_its_done', "How it's done?")}</Text>
             <View style={styles.stepItem}>
               <View style={styles.stepIconPlaceholder}>
                 <Text>📋</Text>
               </View>
               <View style={styles.stepTextContainer}>
-                <Text style={styles.stepTitle}>Plan the Work</Text>
+                <Text style={styles.stepTitle}>{t('instant_service.step1_title', 'Plan the Work')}</Text>
                 <Text style={styles.stepDesc}>
-                  Your professional plans the tasks as per your needs and time booked.
+                  {t('instant_service.step1_desc', 'Your professional plans the tasks as per your needs and time booked.')}
                 </Text>
               </View>
             </View>
@@ -336,9 +356,9 @@ export const InstantServiceScreen = ({ navigation }: any) => {
                 <Text>🧹</Text>
               </View>
               <View style={styles.stepTextContainer}>
-                <Text style={styles.stepTitle}>Start Cleaning</Text>
+                <Text style={styles.stepTitle}>{t('instant_service.step2_title', 'Start Cleaning')}</Text>
                 <Text style={styles.stepDesc}>
-                  They'll begin with the tasks you want like sweeping, mopping, or bathroom cleaning.
+                  {t('instant_service.step2_desc', "They'll begin with the tasks you want like sweeping, mopping, or bathroom cleaning.")}
                 </Text>
               </View>
             </View>
@@ -347,20 +367,27 @@ export const InstantServiceScreen = ({ navigation }: any) => {
                 <Text>✨</Text>
               </View>
               <View style={styles.stepTextContainer}>
-                <Text style={styles.stepTitle}>Final Checks</Text>
+                <Text style={styles.stepTitle}>{t('instant_service.step3_title', 'Final Checks')}</Text>
                 <Text style={styles.stepDesc}>
-                  Before finishing, they'll give a quick wipe and make sure everything looks clean
-                  and tidy.
+                  {t('instant_service.step3_desc', "Before finishing, they'll give a quick wipe and make sure everything looks clean and tidy.")}
                 </Text>
               </View>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>FAQs</Text>
-            {data.faqs.map((faq: any, index: number) => (
-              <FAQItem key={index} question={faq.question} answer={faq.answer} />
-            ))}
+            <Text style={styles.sectionTitle}>{t('instant_service.faqs', 'FAQs')}</Text>
+            {data.faqs.map((faq: any, index: number) => {
+              const question = typeof faq.question === 'string' 
+                ? faq.question 
+                : (faq.question?.[i18n.language === 'hi' ? 'hi' : 'en'] || faq.question?.en || String(faq.question || ''));
+              const answer = typeof faq.answer === 'string' 
+                ? faq.answer 
+                : (faq.answer?.[i18n.language === 'hi' ? 'hi' : 'en'] || faq.answer?.en || String(faq.answer || ''));
+              return (
+                <FAQItem key={index} question={question} answer={answer} />
+              );
+            })}
           </View>
 
           <View style={{ height: 160 }} />

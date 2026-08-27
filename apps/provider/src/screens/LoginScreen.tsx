@@ -6,10 +6,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { BASE_URL } from '../api';
 import { Theme } from '../theme';
 
 const { width, height } = Dimensions.get('window');
+
+// ─── Globe Icon Component ──
+const GlobeIcon = ({ size = 16, color = 'white' }: { size?: number; color?: string }) => {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
+      <Path d="M2 12h20" />
+      <Path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </Svg>
+  );
+};
 
 // ─── Same Logo Component as Client App (mobile/src/screens/LoginScreen.tsx) ──
 // Uses react-native-svg directly instead of lucide for Zap & Leaf paths
@@ -69,6 +82,7 @@ const HouceeLogo = ({ size = 80, white = true }: { size?: number; white?: boolea
 };
 
 export const LoginScreen = ({ navigation }: any) => {
+  const { t, i18n } = useTranslation();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSplashing, setIsSplashing] = useState(true);
@@ -85,6 +99,12 @@ export const LoginScreen = ({ navigation }: any) => {
     }, 2500);
     return () => clearTimeout(timer);
   }, []);
+
+  const toggleLanguage = async () => {
+    const nextLang = i18n.language === 'en' ? 'hi' : 'en';
+    await i18n.changeLanguage(nextLang);
+    await AsyncStorage.setItem('user-language', nextLang);
+  };
 
   const handleRequestOtp = async () => {
     if (phone.length < 10) return;
@@ -156,7 +176,7 @@ export const LoginScreen = ({ navigation }: any) => {
               </View>
               <View style={{ justifyContent: 'center' }}>
                 <Text style={{ fontSize: 42, fontWeight: '900', color: '#FFFFFF', letterSpacing: -1, lineHeight: 42 }}>houcee</Text>
-                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '700', letterSpacing: 1, marginTop: 2 }}>PARTNER APP</Text>
+                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '700', letterSpacing: 1, marginTop: 2 }}>partner app</Text>
               </View>
             </View>
             <ActivityIndicator size="large" color="#FFFFFF" />
@@ -167,12 +187,25 @@ export const LoginScreen = ({ navigation }: any) => {
       {/* ── Login Form ── */}
       <Animated.View style={{ flex: 1, opacity: isSplashing ? 0 : contentFadeAnim }}>
 
+        {/* Language Toggle Button */}
+        <View style={{ paddingHorizontal: 32, paddingVertical: 20, alignItems: 'flex-end', zIndex: 20 }}>
+          <TouchableOpacity 
+            onPress={toggleLanguage} 
+            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}
+          >
+            <GlobeIcon size={16} color="white" />
+            <Text style={{ marginLeft: 8, fontWeight: 'bold', color: 'white' }}>
+              {i18n.language === 'hi' ? 'English' : 'हिंदी'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Logo section (same as client form) */}
-        <View style={{ paddingHorizontal: 32, paddingTop: 48, zIndex: 10, flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ paddingHorizontal: 32, paddingTop: 16, zIndex: 10, flexDirection: 'row', alignItems: 'center' }}>
           <HouceeLogo size={80} white />
           <View style={{ marginLeft: 16, justifyContent: 'center' }}>
             <Text style={{ fontSize: 42, fontWeight: '900', color: '#1E1B4B', letterSpacing: -1, lineHeight: 42 }}>houcee</Text>
-            <Text style={{ fontSize: 14, color: Theme.primary, fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}>PARTNER APP</Text>
+            <Text style={{ fontSize: 14, color: Theme.primary, fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}>partner app</Text>
           </View>
         </View>
 
@@ -183,7 +216,7 @@ export const LoginScreen = ({ navigation }: any) => {
             shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.05, shadowRadius: 20, elevation: 10,
           }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>Phone Number</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>{t('common.phone_number')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1.5, borderBottomColor: Theme.border, paddingBottom: 12 }}>
               <Text style={{ fontSize: 22, fontWeight: '700', color: Theme.textPrimary, marginRight: 12 }}>+91</Text>
               <TextInput
@@ -208,7 +241,7 @@ export const LoginScreen = ({ navigation }: any) => {
             >
               {loading
                 ? <ActivityIndicator color="white" />
-                : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Login securely</Text>
+                : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>{t('login.login_securely', 'Login securely')}</Text>
               }
             </TouchableOpacity>
             
@@ -218,7 +251,7 @@ export const LoginScreen = ({ navigation }: any) => {
               onPress={() => navigation.navigate('Registration')}
             >
               <Text style={{ fontSize: 14, color: Theme.textSecondary, fontWeight: '600' }}>
-                New Partner? <Text style={{ color: Theme.primary, fontWeight: '800' }}>Apply Here</Text>
+                {t('login.new_partner', 'New Partner?')} <Text style={{ color: Theme.primary, fontWeight: '800' }}>{t('login.apply_here', 'Apply Here')}</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -226,7 +259,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
         <View style={{ paddingBottom: 40, alignItems: 'center' }}>
           <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '500', letterSpacing: 0.5 }}>
-            A product by <Text style={{ fontWeight: '800', color: Theme.primary }}>Rubous Tech Pvt. Ltd</Text>
+            product by <Text style={{ fontWeight: '800', color: Theme.primary }}>Rubous Tech Pvt. Ltd</Text>
           </Text>
         </View>
       </Animated.View>

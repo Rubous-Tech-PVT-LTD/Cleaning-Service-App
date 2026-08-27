@@ -5,17 +5,22 @@ export class CreateBookingDto {
   @ApiProperty({ description: 'The ID of the service to book' })
   @IsString()
   @IsNotEmpty()
-  serviceId: string;
+  serviceId!: string;
 
   @ApiProperty({ description: 'The scheduled date and time for the service' })
   @IsDateString()
   @IsNotEmpty()
-  scheduledAt: string;
+  scheduledAt!: string;
 
   @ApiProperty({ description: 'The total price agreed for the service' })
   @IsNumber()
   @IsNotEmpty()
-  totalPrice: number;
+  totalPrice!: number;
+
+  @ApiProperty({ description: 'The address ID for the service location' })
+  @IsString()
+  @IsNotEmpty()
+  addressId!: string;
 
   @ApiProperty({ description: 'Optional provider ID if pre-selected' })
   @IsString()

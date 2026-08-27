@@ -1,6 +1,5 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Req } from '@nestjs/common';
 import { SyncService } from './sync.service';
-import { JwtAuthGuard } from '../auth/strategies/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Sync')
@@ -15,9 +14,17 @@ export class SyncController {
   @ApiQuery({ name: 'lastPulledAt', required: false, type: Number })
   @ApiQuery({ name: 'userId', required: false, type: String })
   @ApiQuery({ name: 'role', required: false, type: String })
-  pull(@Query('lastPulledAt') lastPulledAt?: string, @Query('userId') userId?: string, @Query('role') role?: string) {
+  pull(
+    @Query('lastPulledAt') lastPulledAt?: string,
+    @Query('userId') userId?: string,
+    @Query('role') role?: string,
+    @Req() req?: any,
+  ) {
     const timestamp = lastPulledAt ? parseInt(lastPulledAt) : null;
-    return this.syncService.pullChanges(timestamp, userId, role);
+    const authUser = req?.user;
+    const effectiveUserId = authUser?.id || userId;
+    const effectiveRole = authUser?.role || role;
+    return this.syncService.pullChanges(timestamp, effectiveUserId, effectiveRole);
   }
 
   @Post('push')

@@ -3,8 +3,12 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, RefreshCo
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '../theme';
 import api from '../api';
+import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
+
 
 export const WalletScreen = () => {
+  const { t } = useTranslation();
   const [completedJobs, setCompletedJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalEarnings, setTotalEarnings] = useState(0);
@@ -33,8 +37,8 @@ export const WalletScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Wallet</Text>
-        <Text style={styles.headerSubtitle}>Your earnings & payout history</Text>
+        <Text style={styles.headerTitle}>{t('provider.wallet')}</Text>
+        <Text style={styles.headerSubtitle}>{t('provider.earnings_payout_history')}</Text>
       </View>
 
       <ScrollView 
@@ -43,22 +47,57 @@ export const WalletScreen = () => {
       >
         {/* Total Earnings Card */}
         <View style={styles.earningsCard}>
-          <Text style={styles.earningsLabel}>TOTAL EARNINGS</Text>
+          <Text style={styles.earningsLabel}>{t('provider.total_earnings')}</Text>
           <Text style={styles.earningsAmount}>₹{totalEarnings.toLocaleString()}</Text>
-          <Text style={styles.earningsSub}>From {completedJobs.length} completed jobs</Text>
+          <Text style={styles.earningsSub}>{t('provider.from_completed_jobs')} {completedJobs.length} {t('provider.completed_jobs')}</Text>
         </View>
 
-        <Text style={styles.historyTitle}>Recent Payouts</Text>
+        <Text style={styles.historyTitle}>{t('provider.recent_payouts')}</Text>
 
         {completedJobs.length === 0 && !loading ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No earnings yet.</Text>
-            <Text style={styles.emptyStateSub}>Complete jobs to see your balance grow.</Text>
+            <Text style={styles.emptyStateText}>{t('provider.no_earnings_yet')}</Text>
+            <Text style={styles.emptyStateSub}>{t('provider.complete_jobs_earnings')}</Text>
           </View>
         ) : (
           completedJobs.map(job => {
             const bookingDate = job.scheduledAt ? new Date(job.scheduledAt).toLocaleDateString() : 'Unknown Date';
-            const serviceName = job.service?.nameTranslations?.en || 'Service Request';
+            
+            // Handle service name with language support
+            let serviceName = 'Service Request';
+            const isHindi = i18n.language === 'hi';
+            
+            if (job.service) {
+              // Try sync API format first (snake_case)
+              if (isHindi && job.service.name_hi) {
+                serviceName = job.service.name_hi;
+              } else if (job.service.name_en) {
+                serviceName = job.service.name_en;
+              }
+              // Try regular API format (camelCase with JSON object)
+              else if (typeof job.service.nameTranslations === 'object' && job.service.nameTranslations.hi && isHindi) {
+                serviceName = job.service.nameTranslations.hi;
+              } else if (typeof job.service.nameTranslations === 'object' && job.service.nameTranslations.en) {
+                serviceName = job.service.nameTranslations.en;
+              }
+              // Try if nameTranslations is a stringified JSON
+              else if (typeof job.service.nameTranslations === 'string') {
+                try {
+                  const parsed = JSON.parse(job.service.nameTranslations);
+                  if (isHindi && parsed.hi) {
+                    serviceName = parsed.hi;
+                  } else {
+                    serviceName = parsed.en || job.service.nameTranslations;
+                  }
+                } catch {
+                  serviceName = job.service.nameTranslations;
+                }
+              }
+              // Fallback to name field
+              else if (job.service.name) {
+                serviceName = job.service.name;
+              }
+            }
 
             return (
               <View key={job.id} style={styles.historyItem}>

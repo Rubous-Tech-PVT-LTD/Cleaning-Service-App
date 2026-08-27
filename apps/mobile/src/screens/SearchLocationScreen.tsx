@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Navigation, ChevronRight, Home, Briefcase, MapPin, Plus, Phone } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import withObservables from '@nozbe/with-observables';
+import { useTranslation } from 'react-i18next';
 import { database } from '../db';
 import { LocationSearchInput } from '../components/LocationSearchInput';
 import {
@@ -14,6 +15,7 @@ import {
 import { Theme } from '../theme';
 
 const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const goHomeWithLocation = async (location: Awaited<ReturnType<typeof buildActiveLocationFromManual>>) => {
@@ -80,8 +82,8 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
           (address.addressLine2 ? ', ' + address.addressLine2 : ''),
         city: address.city,
         state: address.state,
-        lat: 0,
-        lng: 0,
+        lat: address.latitude || 0,
+        lng: address.longitude || 0,
         savedAddressId: address.id,
       });
       await goHomeWithLocation(activeLocation);
@@ -110,21 +112,21 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
           <ChevronLeft size={24} color={Theme.textPrimary} />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.textPrimary, marginLeft: 8 }}>
-          Search your location
+          {t('address.search_location', 'Search your location')}
         </Text>
       </View>
 
       <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: 16 }}>
           <LocationSearchInput
-            placeholder="Search locality, sector, area"
+            placeholder={t('address.search_placeholder', 'Search locality, sector, area')}
             onSelect={handleManualSelect}
           />
         </View>
 
         <View style={{ marginTop: 24 }}>
           <Text style={{ fontSize: 14, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>
-            QUICK ACTIONS
+            {t('address.quick_actions', 'QUICK ACTIONS')}
           </Text>
           
           <TouchableOpacity
@@ -142,7 +144,7 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
           >
             <Plus size={20} color={Theme.primary} />
             <Text style={{ flex: 1, marginLeft: 12, fontSize: 15, fontWeight: '600', color: Theme.textPrimary }}>
-              Add address
+              {t('address.add_address', 'Add address')}
             </Text>
             <ChevronRight size={20} color={Theme.textSecondary} />
           </TouchableOpacity>
@@ -162,7 +164,7 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
           >
             <Navigation size={20} color={Theme.primary} />
             <Text style={{ flex: 1, marginLeft: 12, fontSize: 15, fontWeight: '600', color: Theme.textPrimary }}>
-              Use current location
+              {t('address.use_current_location', 'Use current location')}
             </Text>
             {loading ? (
               <ActivityIndicator size="small" color={Theme.primary} />
@@ -175,7 +177,7 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
         {addresses && addresses.length > 0 && (
           <View style={{ marginTop: 24, paddingBottom: 24 }}>
             <Text style={{ fontSize: 14, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>
-              SAVED ADDRESSES
+              {t('address.saved_addresses', 'SAVED ADDRESSES')}
             </Text>
             {addresses.map((item: any) => (
               <TouchableOpacity
@@ -190,7 +192,7 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
                   </Text>
                   {item.isDefault && (
                     <View style={{ backgroundColor: '#10B981', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, marginLeft: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#FFFFFF' }}>Currently selected</Text>
+                      <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#FFFFFF' }}>{t('address.currently_selected', 'Currently selected')}</Text>
                     </View>
                   )}
                 </View>
@@ -201,14 +203,14 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
                   <Phone size={14} color={Theme.textSecondary} />
                   <Text style={{ fontSize: 12, color: Theme.textSecondary, marginLeft: 4 }}>
-                    Mobile: {item.mobile || 'N/A'}
+                    {t('address.mobile', 'Mobile:')} {item.mobile || 'N/A'}
                   </Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('AddressPicker', { addressId: item.id })}
                   style={{ marginTop: 12 }}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: 'bold', color: Theme.primary }}>EDIT</Text>
+                  <Text style={{ fontSize: 14, fontWeight: 'bold', color: Theme.primary }}>{t('common.edit', 'EDIT')}</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}

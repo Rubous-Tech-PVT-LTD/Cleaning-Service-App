@@ -10,10 +10,10 @@ const resources = {
   hi: { translation: hi },
 };
 
-const LANGUAGE_KEY = 'user-language';
+const LANGUAGE_KEY = 'user_language';
 
 const initI18n = async () => {
-  const savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
+  const savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY) || (await AsyncStorage.getItem('user-language'));
   
   i18n
     .use(initReactI18next)

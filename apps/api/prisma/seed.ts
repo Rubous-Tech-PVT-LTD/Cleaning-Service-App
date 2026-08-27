@@ -970,6 +970,16 @@ async function main() {
       isActive: true,
       order: 3,
     },
+    {
+  name: 'Guna',
+  slug: 'guna',
+  aliases: ['Guna', 'Soni Colony','Bude Balaji','Bhargava Colony'],
+  latitude: 24.6469,
+  longitude: 77.3113,
+  radiusKm: 30,
+  isActive: true,
+  order: 4,
+},
   ];
 
   for (const city of supportedCities) {

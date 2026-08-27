@@ -17,6 +17,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
   }
 
   const primaryServiceTitle = service ? (i18n.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
+  const isChatEnabled = ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'].includes(booking.status);
 
   return (
     <TouchableOpacity 
@@ -48,18 +49,20 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n }: any) => {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={{ fontSize: 16, fontWeight: '900', color: Theme.primary }}>₹{booking.totalPrice}</Text>
         <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Chat', { bookingId: booking.id, serviceName: primaryServiceTitle, providerId: booking.providerId })}
-            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F4EDFF', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}
-          >
-            <MessageCircle size={20} color={Theme.primary} />
-          </TouchableOpacity>
+          {isChatEnabled && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Chat', { bookingId: booking.id, serviceName: primaryServiceTitle, providerId: booking.providerId, clientId: booking.clientId })}
+              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F4EDFF', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}
+            >
+              <MessageCircle size={20} color={Theme.primary} />
+            </TouchableOpacity>
+          )}
           {(booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED') && (
             <TouchableOpacity
               onPress={() => navigation.navigate('Cancellation', { bookingId: booking.id })}
               style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, justifyContent: 'center', marginRight: 8 }}
             >
-              <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.textPrimary }}>MANAGE</Text>
+              <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.textPrimary }}>{t('manage_booking.manage')}</Text>
             </TouchableOpacity>
           )}
           {booking.status === 'COMPLETED' && (

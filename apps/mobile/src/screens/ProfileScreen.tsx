@@ -35,12 +35,12 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t('profile.logout_alert_title', 'Logout'),
+      t('profile.logout_alert_message', 'Are you sure you want to logout?'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('profile.cancel', 'Cancel'), style: 'cancel' },
         { 
-          text: 'Logout', 
+          text: t('profile.logout', 'Logout'), 
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -63,15 +63,15 @@ export const ProfileScreen = ({ navigation }: any) => {
           <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: Theme.primary + '20', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
             <User size={60} color={Theme.primary} />
           </View>
-          <Text style={{ fontSize: 28, fontWeight: '900', color: Theme.textPrimary, marginBottom: 12 }}>Guest Mode</Text>
+          <Text style={{ fontSize: 28, fontWeight: '900', color: Theme.textPrimary, marginBottom: 12 }}>{t('profile.guest_mode', 'Guest Mode')}</Text>
           <Text style={{ fontSize: 16, color: Theme.textSecondary, textAlign: 'center', marginBottom: 32, lineHeight: 24 }}>
-            You're browsing as a guest. Login to access your profile, bookings, and more features.
+            {t('profile.guest_description', 'You\'re browsing as a guest. Login to access your profile, bookings, and more features.')}
           </Text>
           <TouchableOpacity
             onPress={handleLogin}
             style={{ backgroundColor: Theme.primary, paddingVertical: 18, paddingHorizontal: 32, borderRadius: 16, width: '100%', alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 }}
           >
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Login Now</Text>
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>{t('profile.login_now', 'Login Now')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -97,7 +97,7 @@ export const ProfileScreen = ({ navigation }: any) => {
 
         {/* Action List */}
         <View style={{ padding: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: Theme.textPrimary, marginTop: 32, marginBottom: 16 }}>Support & Settings</Text>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: Theme.textPrimary, marginTop: 32, marginBottom: 16 }}>{t('profile.support_settings', 'Support & Settings')}</Text>
           <View style={{ backgroundColor: 'white', borderRadius: 24, overflow: 'hidden' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: Theme.muted }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: Theme.infoLight, justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
@@ -118,24 +118,24 @@ export const ProfileScreen = ({ navigation }: any) => {
                 <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '600' }}>{i18n.language === 'en' ? 'English' : 'हिंदी'}</Text>
               </View>
               <View style={{ backgroundColor: Theme.muted, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: Theme.primary }}>SWITCH</Text>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: Theme.primary }}>{t('profile.switch', 'SWITCH')}</Text>
               </View>
             </TouchableOpacity>
-            <MenuItem icon={<CreditCard size={20} color="#EC4899" />} title="Saved Payments" onPress={() => {}} />
+            <MenuItem icon={<CreditCard size={20} color="#EC4899" />} title={t('profile.saved_payments', 'Saved Payments')} onPress={() => {}} />
             <MenuItem 
               icon={<Gift size={20} color="#F59E0B" />} 
-              title="Refer & Earn" 
+              title={t('profile.refer_earn', 'Refer & Earn')} 
               onPress={() => requireAuth(() => navigation.navigate('ReferEarn'))} 
             />
             <MenuItem 
               icon={<HelpCircle size={20} color="#8B5CF6" />} 
-              title="Help Center" 
+              title={t('profile.help_center', 'Help Center')} 
               onPress={() => navigation.navigate('HelpCenter')} 
             />
-            <MenuItem icon={<Shield size={20} color="#10B981" />} title="Terms & Privacy" onPress={() => navigation.navigate('Terms')} />
+            <MenuItem icon={<Shield size={20} color="#10B981" />} title={t('profile.terms_privacy', 'Terms & Privacy')} onPress={() => navigation.navigate('Terms')} />
             <MenuItem 
               icon={<Bell size={20} color={Theme.primary} />} 
-              title="Test Notification" 
+              title={t('profile.test_notification', 'Test Notification')} 
               onPress={() => NotificationService.sendLocalNotification('Hello! 👋', 'This is a test notification from Cleanyo.')} 
             />
           </View>

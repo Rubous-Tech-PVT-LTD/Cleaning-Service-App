@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsObject, IsNumber, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsObject, IsNumber, IsBoolean, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -56,4 +56,15 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsNumber()
   longitude?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  professionId?: string;
+
+  @ApiProperty({ required: false, description: 'Array of profession/service IDs for multiple selections' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  professionIds?: string[];
 }

@@ -3,8 +3,11 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '../theme';
 import api from '../api';
+import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
 
 export const ReviewsScreen = () => {
+  const { t } = useTranslation();
   const [data, setData] = useState<{ reviews: any[], averageRating: number, totalReviews: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,8 +34,8 @@ export const ReviewsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Reviews</Text>
-        <Text style={styles.headerSubtitle}>See what clients say about you</Text>
+        <Text style={styles.headerTitle}>{t('provider.my_reviews')}</Text>
+        <Text style={styles.headerSubtitle}>{t('provider.see_what_clients_say')}</Text>
       </View>
 
       <ScrollView 
@@ -41,26 +44,61 @@ export const ReviewsScreen = () => {
       >
         {/* Summary Card */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>AVERAGE RATING</Text>
+          <Text style={styles.summaryLabel}>{t('provider.average_rating')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
             <Text style={styles.averageRating}>{data?.averageRating ? data.averageRating.toFixed(1) : '0.0'}</Text>
             <Text style={styles.starIcon}>★</Text>
           </View>
-          <Text style={styles.totalReviews}>Based on {data?.totalReviews || 0} reviews</Text>
+          <Text style={styles.totalReviews}>{t('provider.based_on_reviews')} {data?.totalReviews || 0} {t('provider.reviews')}</Text>
         </View>
 
-        <Text style={styles.sectionTitle}>Recent Feedback</Text>
+        <Text style={styles.sectionTitle}>{t('provider.recent_feedback')}</Text>
 
         {(!data?.reviews || data.reviews.length === 0) && !loading ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No reviews yet.</Text>
-            <Text style={styles.emptyStateSub}>Complete jobs to start getting feedback.</Text>
+            <Text style={styles.emptyStateText}>{t('provider.no_reviews_yet')}</Text>
+            <Text style={styles.emptyStateSub}>{t('provider.complete_jobs_feedback')}</Text>
           </View>
         ) : (
           data?.reviews.map((review: any) => {
             const date = new Date(review.createdAt).toLocaleDateString();
             const clientName = review.booking?.client?.fullName || 'Anonymous Client';
-            const serviceName = review.booking?.service?.nameTranslations?.en || 'Service';
+            
+            // Handle service name with language support
+            let serviceName = 'Service';
+            const isHindi = i18n.language === 'hi';
+            
+            if (review.booking?.service) {
+              // Try sync API format first (snake_case)
+              if (isHindi && review.booking.service.name_hi) {
+                serviceName = review.booking.service.name_hi;
+              } else if (review.booking.service.name_en) {
+                serviceName = review.booking.service.name_en;
+              }
+              // Try regular API format (camelCase with JSON object)
+              else if (typeof review.booking.service.nameTranslations === 'object' && review.booking.service.nameTranslations.hi && isHindi) {
+                serviceName = review.booking.service.nameTranslations.hi;
+              } else if (typeof review.booking.service.nameTranslations === 'object' && review.booking.service.nameTranslations.en) {
+                serviceName = review.booking.service.nameTranslations.en;
+              }
+              // Try if nameTranslations is a stringified JSON
+              else if (typeof review.booking.service.nameTranslations === 'string') {
+                try {
+                  const parsed = JSON.parse(review.booking.service.nameTranslations);
+                  if (isHindi && parsed.hi) {
+                    serviceName = parsed.hi;
+                  } else {
+                    serviceName = parsed.en || review.booking.service.nameTranslations;
+                  }
+                } catch {
+                  serviceName = review.booking.service.nameTranslations;
+                }
+              }
+              // Fallback to name field
+              else if (review.booking.service.name) {
+                serviceName = review.booking.service.name;
+              }
+            }
 
             return (
               <View key={review.id} style={styles.reviewCard}>
