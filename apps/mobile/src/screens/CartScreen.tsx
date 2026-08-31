@@ -18,6 +18,7 @@ import { database } from '../db';
 import { NotificationService } from '../services/NotificationService';
 import { syncDatabase } from '../db/sync';
 import { getActiveLocation, ActiveLocation } from '../services/locationService';
+import { parseEstimatedTime } from '../utils/durationPriceUtils';
 
 const CartScreenBase = ({ navigation, addresses, services }: any) => {
   const { t, i18n } = useTranslation();
@@ -118,7 +119,11 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
   const getTotalPrice = () => {
     if (!cart?.items) return 0;
     return cart.items.reduce(
-      (total: number, item: any) => total + item.price * (item.quantity || 1),
+      (total: number, item: any) => {
+        // Use the dynamic price from duration object if available, otherwise use item.price
+        const itemPrice = Math.round(item.duration?.price || item.price);
+        return total + itemPrice * (item.quantity || 1);
+      },
       0,
     );
   };
@@ -126,8 +131,8 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
   const calculateGST = (amount: number) => Math.round(amount * 0.18);
   const calculateServiceFee = (amount: number) => Math.round(amount * 0.05);
   const getFinalAmount = () => {
-    const subtotal = getTotalPrice();
-    return subtotal + calculateGST(subtotal) + calculateServiceFee(subtotal);
+    const subtotal = Math.round(getTotalPrice());
+    return Math.round(subtotal + calculateGST(subtotal) + calculateServiceFee(subtotal));
   };
 
   const handleConfirmBooking = async () => {
@@ -171,7 +176,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
       // Store only service IDs, not translated titles
       const itemsForStorage = items.map((item: any) => ({
         serviceId: item.serviceId,
-        price: item.price,
+        price: Math.round(item.duration?.price || item.price),
         quantity: item.quantity || 1,
       }));
 
@@ -182,7 +187,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
           booking.addressId = bookingAddress.id;
           booking.status = 'PENDING';
           booking.scheduledAt = scheduledAt;
-          booking.totalPrice = getFinalAmount();
+          booking.totalPrice = Math.round(getFinalAmount());
           booking.items = JSON.stringify(itemsForStorage);
         });
 
@@ -216,7 +221,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
       // Navigate to success screen
       navigation.navigate('BookingSuccess', {
         bookingId: newBookingId,
-        totalPrice: getFinalAmount(),
+        totalPrice: Math.round(getFinalAmount()),
         date: scheduledAt,
         addressLabel: bookingAddress.label,
         addressLine1: bookingAddress.addressLine1,
@@ -239,7 +244,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
   }
 
   const items = cart?.items || [];
-  const subtotal = getTotalPrice();
+  const subtotal = Math.round(getTotalPrice());
   const gst = calculateGST(subtotal);
   const serviceFee = calculateServiceFee(subtotal);
   const finalAmount = getFinalAmount();
@@ -312,6 +317,8 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
               </Text>
               {items.map((item: any, index: number) => {
                 const title = getServiceTitle(item);
+                // Use dynamic price from duration object if available, otherwise use item.price
+                const itemPrice = Math.round(item.duration?.price || item.price);
                 
                 return (
                 <View
@@ -367,7 +374,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
                       </Text>
                     )}
                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.primary }}>
-                      ₹{item.price}
+                      ₹{itemPrice}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -526,7 +533,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
               >
                 <Text style={{ fontSize: 14, color: Theme.textSecondary }}>{t('cart.item_total')}</Text>
                 <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
-                  ₹{subtotal}
+                  ₹{Math.round(subtotal)}
                 </Text>
               </View>
               <View
@@ -538,7 +545,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
               >
                 <Text style={{ fontSize: 14, color: Theme.textSecondary }}>{t('cart.gst')}</Text>
                 <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
-                  ₹{gst}
+                  ₹{Math.round(gst)}
                 </Text>
               </View>
               <View
@@ -550,7 +557,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
               >
                 <Text style={{ fontSize: 14, color: Theme.textSecondary }}>{t('cart.service_fee')}</Text>
                 <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
-                  ₹{serviceFee}
+                  ₹{Math.round(serviceFee)}
                 </Text>
               </View>
               <View
@@ -567,7 +574,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
                   {t('cart.to_pay')}
                 </Text>
                 <Text style={{ fontSize: 20, fontWeight: 'bold', color: Theme.primary }}>
-                  ₹{finalAmount}
+                  ₹{Math.round(finalAmount)}
                 </Text>
               </View>
             </View>
@@ -619,7 +626,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
-                  {t('cart.confirm_booking')} • ₹{finalAmount}
+                  {t('cart.confirm_booking')} • ₹{Math.round(finalAmount)}
                 </Text>
               )}
             </TouchableOpacity>

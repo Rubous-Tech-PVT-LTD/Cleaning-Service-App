@@ -4,6 +4,7 @@ export const QUICK_CATEGORIES = [
   { slug: 'electrical', nameEn: 'Electrical', img: require('../assets/electrical_studio.png') },
   { slug: 'painting', nameEn: 'Painting', img: require('../assets/painting.png') },
   { slug: 'labour', nameEn: 'Labour', img: require('../assets/plumbing_studio.png') }, // Using placeholder image for now
+  { slug: 'mehndi-and-art', nameEn: 'Mehndi and Art', img: require('../assets/plumbing_studio.png') }, // Using placeholder image for now
 ];
 
 export const SEARCH_PLACEHOLDERS = [

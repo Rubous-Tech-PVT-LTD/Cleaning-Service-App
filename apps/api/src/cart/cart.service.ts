@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddToCartDto, CartBookingType } from './dto/add-to-cart.dto';
+import { PricingService } from '../pricing/pricing.service';
 
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingService: PricingService
+  ) {}
 
   private async validateServiceId(serviceId: string): Promise<void> {
     const service = await this.prisma.service.findUnique({
@@ -18,33 +22,6 @@ export class CartService {
     if (service.status !== 'ACTIVE') {
       throw new BadRequestException(`Service ${serviceId} is not available`);
     }
-  }
-
-  private async getServerPrice(serviceId: string, clientPrice: number, duration?: any): Promise<number> {
-    const service = await this.prisma.service.findUnique({
-      where: { id: serviceId },
-      select: { basePrice: true },
-    });
-
-    if (!service) {
-      throw new BadRequestException(`Service with ID ${serviceId} does not exist`);
-    }
-
-    const serverPrice = Number(service.basePrice);
-    
-    // For hourly services, use the duration price instead of basePrice
-    if (serviceId === 'hourly-service' && duration && duration.price) {
-      const durationPrice = Number(duration.price);
-      console.log(`Hourly service pricing: Using duration price ₹${durationPrice} instead of base price ₹${serverPrice}`);
-      return durationPrice;
-    }
-    
-    // Log price mismatch but use server price for regular services
-    if (Math.abs(clientPrice - serverPrice) > 0.01) {
-      console.warn(`Price mismatch for service ${serviceId}: Client ₹${clientPrice}, Server ₹${serverPrice}. Using server price.`);
-    }
-    
-    return serverPrice;
   }
 
   async getCart(userId: string) {
@@ -94,7 +71,7 @@ export class CartService {
 
       return transformedCart;
     } catch (error) {
-      if (error.code === 'P2002') {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
         // Unique constraint violation - cart might be created by another request
         return await this.prisma.cart.findUnique({
           where: { userId },
@@ -180,16 +157,16 @@ export class CartService {
         // Validate service exists and is active
         await this.validateServiceId(dto.item.serviceId);
 
-        // Get server price for the service (pass duration for hourly services)
-        const serverPrice = await this.getServerPrice(dto.item.serviceId, dto.item.price, dto.item.duration);
-
-        // For hourly services, duration price is already handled in getServerPrice
-        const finalPrice = serverPrice;
+        // Calculate price using PricingService based on duration
+        const calculatedPrice = await this.pricingService.calculatePrice(
+          dto.item.serviceId, 
+          dto.item.duration
+        );
 
         const normalizedItem = this.normalizeCartItem(dto);
         
-        // Override price with server price
-        normalizedItem.price = finalPrice;
+        // Set price to server-calculated price
+        normalizedItem.price = calculatedPrice;
 
         let cart = await tx.cart.findUnique({
           where: { userId },
@@ -229,7 +206,7 @@ export class CartService {
             where: { id: existingCartItem.id },
             data: {
               quantity: existingCartItem.quantity + 1,
-              price: finalPrice,
+              price: calculatedPrice,
               bookingType: normalizedItem.bookingType,
               scheduledAt: normalizedItem.scheduledAt ? new Date(normalizedItem.scheduledAt) : null,
               duration: normalizedItem.duration,
@@ -245,7 +222,7 @@ export class CartService {
               type: normalizedItem.type,
               title: normalizedItem.title,
               quantity: normalizedItem.quantity,
-              price: finalPrice,
+              price: calculatedPrice,
               bookingType: normalizedItem.bookingType,
               scheduledAt: normalizedItem.scheduledAt ? new Date(normalizedItem.scheduledAt) : null,
               duration: normalizedItem.duration,
@@ -283,11 +260,11 @@ export class CartService {
         // Validate service exists
         await this.validateServiceId(item.serviceId);
 
-        // Get server price if price is provided (pass duration for hourly services)
-        let finalPrice = item.price;
-        if (item.price) {
-          finalPrice = await this.getServerPrice(item.serviceId, item.price, item.duration);
-        }
+        // Calculate price using PricingService based on duration
+        const calculatedPrice = await this.pricingService.calculatePrice(
+          item.serviceId, 
+          item.duration
+        );
 
         const existingCartItem = await tx.cartItem.findFirst({
           where: {
@@ -302,7 +279,7 @@ export class CartService {
             where: { id: existingCartItem.id },
             data: {
               quantity: item.quantity,
-              price: finalPrice,
+              price: calculatedPrice,
               bookingType: item.bookingType,
               scheduledAt: item.scheduledAt ? new Date(item.scheduledAt) : null,
               duration: item.duration,
@@ -317,7 +294,7 @@ export class CartService {
               type: item.type,
               title: item.title,
               quantity: item.quantity || 1,
-              price: finalPrice,
+              price: calculatedPrice,
               bookingType: item.bookingType,
               scheduledAt: item.scheduledAt ? new Date(item.scheduledAt) : null,
               duration: item.duration,

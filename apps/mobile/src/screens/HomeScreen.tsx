@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Animated, TextInput, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Animated, TextInput, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, ChevronDown, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow} from 'lucide-react-native';
+import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, ChevronDown, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow, Plus, Minus } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import NetInfo from '@react-native-community/netinfo';
@@ -18,8 +18,9 @@ import { getActiveLocation, ActiveLocation } from '../services/locationService';
 import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
 import api from '../api';
+import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, DURATION_INCREMENT_MINS, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
 
-const HomeScreen = ({ navigation, categories }: any) => {
+const HomeScreen = ({ navigation, categories, services }: any) => {
   const { t, i18n } = useTranslation();
   const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
   const [isOffline, setIsOffline] = useState(false);
@@ -29,24 +30,95 @@ const HomeScreen = ({ navigation, categories }: any) => {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [savedAddress, setSavedAddress] = useState<ActiveLocation | null>(null);
   const [trendingServices, setTrendingServices] = useState<any[]>([]);
+  
+  const [cart, setCart] = useState<any>(null);
+  const [cartItemsMap, setCartItemsMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadAddress();
     fetchTrendingServices();
+    fetchCart();
   }, [navigation]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadAddress();
       fetchTrendingServices();
+      fetchCart();
     });
     return unsubscribe;
   }, [navigation]);
+
+  const fetchCart = async () => {
+    try {
+      const res = await api.get('/cart');
+      setCart(res.data);
+      const itemsMap: Record<string, any> = {};
+      if (res.data?.items) {
+        res.data.items.forEach((item: any) => {
+          itemsMap[item.serviceId] = item;
+        });
+      }
+      setCartItemsMap(itemsMap);
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+    }
+  };
+
+  const handleAddToCart = async (serviceItem: any, currentDuration: number) => {
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+      if (!userId) {
+        Alert.alert(t('cart.login_required'), t('cart.login_required_message'));
+        return;
+      }
+      
+      const itemBaseTime = Math.round(parseEstimatedTime(serviceItem.estimatedTime));
+
+      // Check if duration exceeds maximum
+      if (currentDuration > MAX_DURATION_MINS) {
+        Alert.alert(
+          'Maximum Duration Reached',
+          getMaxDurationMessage()
+        );
+        return;
+      }
+
+      // Backend will calculate price based on duration
+      const itemToAdd = {
+        serviceId: serviceItem.id,
+        title: i18n.language === 'hi' ? serviceItem.nameHi : serviceItem.nameEn,
+        quantity: 1,
+        type: 'service',
+        duration: {
+          label: `${currentDuration} mins`
+        }
+      };
+
+      await api.post('/cart', {
+        item: itemToAdd,
+        bookingType: 'instant' 
+      });
+      await fetchCart();
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
+
+  const handleRemoveFromCart = async (serviceId: string) => {
+    try {
+      await api.delete('/cart', { serviceId });
+      await fetchCart();
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       await syncDatabase();
+      await fetchCart();
     } catch (e) {
       console.error('Manual sync failed:', e);
     } finally {
@@ -238,7 +310,7 @@ const HomeScreen = ({ navigation, categories }: any) => {
 
             <TouchableOpacity
                 activeOpacity={0.9}
-                onPress={() => navigation.navigate('ScheduleForLater')}
+                onPress={() => navigation.navigate('ServiceSelection')}
                 style={{ flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 16, height: 110, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
               >
                 <Text style={{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, lineHeight: 20, marginBottom: 12 }}>{t('home.schedule_later')}</Text>
@@ -287,8 +359,150 @@ const HomeScreen = ({ navigation, categories }: any) => {
 
         {/* Bottom Section */}
         <View style={{ backgroundColor: 'white', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: 40, paddingTop: 24, minHeight: height * 0.6 }}>
-          <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
-            <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('common.services')}</Text>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 20 }}>
+            <View style={{ marginBottom: 20, paddingHorizontal: 8 }}>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary }}>All house help services</Text>
+              <Text style={{ fontSize: 14, color: Theme.textSecondary, marginTop: 4 }}>Schedule & book for later</Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+              {(!services || services.length === 0) ? (
+                  [1, 2, 3, 4, 5, 6].map((i) => (
+                  <View key={i} style={{ width: '31.33%', marginRight: i % 3 === 0 ? 0 : '3%', marginBottom: 16, alignItems: 'center' }}>
+                    <Skeleton style={{ width: '100%', aspectRatio: 1, borderRadius: 24, marginBottom: 12 }} />
+                    <Skeleton style={{ width: '70%', height: 12, borderRadius: 6 }} />
+                  </View>
+                ))
+              ) : (() => {
+                  const dailyHomeHelpCategory = (categories || []).find((c: any) => c?.nameEn === 'Daily Home Help');
+                  const dailyHomeHelpCategoryId = dailyHomeHelpCategory?.id;
+                  const filteredServices = services.filter((s: any) => s.categoryId === dailyHomeHelpCategoryId);
+
+                  return filteredServices.map((service: any, index: number) => {
+                    const isComingSoon = service.subcategoryNameEn ? 
+                      (service.subcategoryNameEn.toLowerCase().includes('plumbing') || 
+                      service.subcategoryNameEn.toLowerCase().includes('plumber') || 
+                      service.subcategoryNameEn.toLowerCase().includes('electrical') || 
+                      service.subcategoryNameEn.toLowerCase().includes('electrician')) : false;
+
+                    const cartItem = cartItemsMap[service.id];
+                    const isInCart = !!cartItem;
+                    
+                    // Calculate current duration for UI
+                    const baseTime = Math.round(parseEstimatedTime(service.estimatedTime));
+                    let currentDuration = baseTime;
+                    if (cartItem && cartItem.duration) {
+                      const cartTime = Math.round(parseEstimatedTime(cartItem.duration.label || cartItem.duration));
+                      if (baseTime > 0) {
+                        currentDuration = cartTime;
+                      }
+                    }
+
+                    // Calculate estimated price for display
+                    const basePrice = Number(service.basePrice);
+                    const currentEstimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseTime, currentDuration));
+
+                    const handleIncrease = () => {
+                      const newDuration = Math.round(getNextDuration(currentDuration));
+                      if (isDurationAtMaximum(newDuration)) {
+                        Alert.alert(
+                          'Maximum Duration Reached',
+                          getMaxDurationMessage()
+                        );
+                        return;
+                      }
+                      handleAddToCart(service, newDuration);
+                    };
+
+                    const handleDecrease = () => {
+                      // If already at base duration, remove from cart
+                      if (currentDuration === baseTime) {
+                        handleRemoveFromCart(service.id);
+                        return;
+                      }
+                      
+                      const newDuration = Math.round(getPrevDuration(currentDuration, baseTime));
+                      handleAddToCart(service, newDuration);
+                    };
+
+                    return (
+                    <TouchableOpacity
+                      key={service.id}
+                      onPress={() => navigation.navigate('ServiceDetail', { serviceId: service.id })}
+                      activeOpacity={0.9}
+                      style={{ width: '31.33%', marginRight: (index + 1) % 3 === 0 ? 0 : '3%', backgroundColor: 'white', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, paddingBottom: 12 }}
+                    >
+                      <View style={{ width: '100%', aspectRatio: 1, backgroundColor: '#F8FAFC', borderTopLeftRadius: 16, borderTopRightRadius: 16, position: 'relative', overflow: 'hidden' }}>
+                        {service.imageUrl ? (
+                          <Image source={{ uri: service.imageUrl }} style={{ width: '100%', height: '100%', position: 'absolute' }} resizeMode="cover" />
+                        ) : (
+                          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.border, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', top: '30%' }}>
+                            <Home size={20} color={Theme.textSecondary} />
+                          </View>
+                        )}
+                        <View style={{ position: 'absolute', top: 6, alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 }}>
+                          <Star size={10} color="#f59e0b" fill="#f59e0b" />
+                          <Text style={{ fontSize: 9, fontWeight: '800', color: Theme.textPrimary, marginLeft: 4 }}>4.9 (4k)</Text>
+                        </View>
+                      </View>
+
+                      <View style={{ paddingHorizontal: 8, paddingTop: 12 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: Theme.textPrimary, lineHeight: 16, height: 32 }} numberOfLines={2}>
+                          {i18n.language === 'hi' ? service.nameHi : service.nameEn}
+                        </Text>
+
+                        {isComingSoon ? (
+                          <View style={{ marginTop: 8 }}>
+                            <Text style={{ fontSize: 10, fontWeight: '800', color: Theme.accent }}>Coming Soon</Text>
+                          </View>
+                        ) : (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: Theme.textPrimary }}>
+                              ₹{currentEstimatedPrice}
+                            </Text>
+                            <Text style={{ fontSize: 10, color: Theme.textSecondary, textDecorationLine: 'line-through', marginLeft: 4 }}>
+                              ₹{Math.round(currentEstimatedPrice * 1.4)}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      
+                      {/* Plus Button / Increment Decrement */}
+                      {!isComingSoon && (
+                        <View style={{ position: 'absolute', right: 8, top: '48%', zIndex: 10 }}>
+                          {isInCart ? (
+                            <View style={{ backgroundColor: 'white', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, flexDirection: 'row', alignItems: 'center', minWidth: 70, justifyContent: 'space-between' }}>
+                              <TouchableOpacity onPress={handleDecrease} style={{ padding: 2 }}>
+                                <Minus size={14} color={Theme.primary} />
+                              </TouchableOpacity>
+                              <View style={{ alignItems: 'center', paddingHorizontal: 2 }}>
+                                <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.primary }}>{Math.round(currentDuration)}</Text>
+                                <Text style={{ fontSize: 8, color: Theme.textSecondary, marginTop: -2 }}>Mins</Text>
+                              </View>
+                              <TouchableOpacity onPress={handleIncrease} style={{ padding: 2 }}>
+                                <Plus size={14} color={Theme.primary} />
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <TouchableOpacity 
+                              onPress={() => handleAddToCart(service, baseTime)}
+                              style={{ backgroundColor: 'white', borderRadius: 8, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 }}
+                            >
+                              <Plus size={18} color={Theme.primary} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                    );
+                  });
+              })()}
+              </View>
+          </View>
+
+          {/* Categories Section Restored */}
+          <View style={{ paddingHorizontal: 24, paddingBottom: 40, marginTop: 10 }}>
+            <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('common.categories', 'Categories')}</Text>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
                 {(!categories || categories.length === 0) ? (
@@ -549,5 +763,6 @@ const TrendingCard = ({ title, price, image, onPress, index, isComingSoon }: any
 
 export const EnhancedHomeScreen = withObservables([], () => ({
   categories: database.collections.get('categories').query().observeWithColumns(['order']),
+  services: database.collections.get('services').query().observe(),
 }))(HomeScreen);
 

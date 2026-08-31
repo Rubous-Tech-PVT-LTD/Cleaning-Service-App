@@ -28,6 +28,7 @@ import { SearchLocationScreen } from '../screens/SearchLocationScreen';
 import { ScheduleForLaterScreen } from '../screens/ScheduleForLaterScreen';
 import { InstantServiceScreen } from '../screens/InstantServiceScreen';
 import { CartScreen } from '../screens/CartScreen';
+import { ServiceSelectionScreen } from '../screens/ServiceSelectionScreen';
 
 const Stack = createStackNavigator();
 
@@ -51,6 +52,7 @@ export const AppNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?
       <Stack.Screen name="AddressList" component={AddressListScreen} />
       <Stack.Screen name="AddressPicker" component={AddressPickerScreen} />
       <Stack.Screen name="SearchLocation" component={SearchLocationScreen} />
+      <Stack.Screen name="ServiceSelection" component={ServiceSelectionScreen} />
       <Stack.Screen name="ScheduleForLater" component={ScheduleForLaterScreen} />
       <Stack.Screen name="InstantService" component={InstantServiceScreen} />
       <Stack.Screen name="Cart" component={CartScreen} />
