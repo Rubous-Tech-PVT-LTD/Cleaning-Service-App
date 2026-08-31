@@ -367,6 +367,9 @@ export class SyncService {
         // Include subcategory name for mobile app to determine "coming soon" status
         subcategory_name_en: r.subcategory?.nameTranslations?.en || null,
 
+        // Include estimated time from backend
+        estimated_time: r.estimatedTime || null,
+
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });

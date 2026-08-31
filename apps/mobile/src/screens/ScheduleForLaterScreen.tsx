@@ -33,10 +33,11 @@ type ScheduleDate = {
   dateISO: string;
 };
 
-export const ScheduleForLaterScreen = ({ navigation }: any) => {
-  const { t } = useTranslation();
+export const ScheduleForLaterScreen = ({ navigation, route }: any) => {
+  const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
+  const selectedService = route.params?.selectedService;
   const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -64,7 +65,12 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
       }
     };
     fetchScheduleOptions();
-  }, []);
+
+    // Redirect to service selection if no service is selected
+    if (!selectedService) {
+      navigation.replace('ServiceSelection');
+    }
+  }, [selectedService, navigation]);
 
   useEffect(() => {
     fetchCartData();
@@ -116,7 +122,10 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
         items = res.data.cartItems || [];
       }
       
-      const hourlyItem = items.find((item: any) => item.type === 'hourly');
+      // Find hourly item for the selected service, or any hourly item if no service selected
+      const hourlyItem = selectedService 
+        ? items.find((item: any) => item.type === 'hourly' && item.serviceId === selectedService.id)
+        : items.find((item: any) => item.type === 'hourly');
       console.log('Hourly item found:', hourlyItem);
       setCartItem(hourlyItem || null);
     } catch (e) {
@@ -132,6 +141,11 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
   ) => {
     if (!requireAuth()) return;
     if (syncingRef.current) return;
+    if (!selectedService) {
+      Alert.alert('Error', 'Please select a service first');
+      navigation.navigate('ServiceSelection');
+      return;
+    }
 
     const duration = DURATIONS.find((d) => d.id === durationId);
     const dateInfo = dates.find((d) => d.id === dateId);
@@ -141,7 +155,8 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
       cartItem?.bookingType === 'scheduled' &&
       cartItem?.duration?.id === durationId &&
       cartItem?.schedule?.dateId === dateId &&
-      cartItem?.schedule?.time === time
+      cartItem?.schedule?.time === time &&
+      cartItem?.serviceId === selectedService.id
     ) {
       return;
     }
@@ -150,12 +165,15 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
       syncingRef.current = true;
       setCartLoading(true);
 
+      const serviceName = i18n.language === 'hi' 
+        ? selectedService.nameTranslations?.hi || selectedService.nameTranslations?.en 
+        : selectedService.nameTranslations?.en;
+
       const item = {
         type: 'hourly',
-        serviceId: 'hourly-service',
-        title: 'Hourly Service',
+        serviceId: selectedService.id,
+        title: serviceName,
         duration,
-        price: duration.price,
         quantity: 1,
       };
 
@@ -183,7 +201,7 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
         items = res.data?.cartItems || [];
       }
       
-      const hourlyItem = items.find((i: any) => i.type === 'hourly');
+      const hourlyItem = items.find((i: any) => i.type === 'hourly' && i.serviceId === selectedService.id);
       console.log('Setting cart item:', hourlyItem);
       setCartItem(hourlyItem || null);
     } catch (e) {
@@ -223,6 +241,25 @@ export const ScheduleForLaterScreen = ({ navigation }: any) => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {selectedService && (
+          <View style={styles.selectedServiceSection}>
+            <Text style={styles.sectionTitle}>{t('schedule.selected_service', 'Selected Service')}</Text>
+            <View style={styles.selectedServiceCard}>
+              <Text style={styles.selectedServiceName}>
+                {i18n.language === 'hi' 
+                  ? selectedService.nameTranslations?.hi || selectedService.nameTranslations?.en 
+                  : selectedService.nameTranslations?.en}
+              </Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('ServiceSelection')}
+                style={styles.changeServiceButton}
+              >
+                <Text style={styles.changeServiceText}>{t('schedule.change_service', 'Change')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('schedule.select_duration')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
@@ -328,6 +365,39 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  selectedServiceSection: {
+    marginTop: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+  },
+  selectedServiceCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  selectedServiceName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Theme.textPrimary,
+  },
+  changeServiceButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#10B981',
+    borderRadius: 8,
+  },
+  changeServiceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   section: {
     marginTop: 24,

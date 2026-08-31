@@ -1,18 +1,98 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Star, Image as ImageIcon, Home, Bell, MessageCircle } from 'lucide-react-native';
+import { ChevronLeft, Star, Image as ImageIcon, Home, Bell, MessageCircle, Plus, Minus } from 'lucide-react-native';
 import withObservables from '@nozbe/with-observables';
 import { Q } from '@nozbe/watermelondb';
 import { database } from '../db';
 import { Theme } from '../theme';
 import { Skeleton } from '../components/Skeleton';
+import api from '../api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, DURATION_INCREMENT_MINS, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
 
 const ServiceListScreenBase = ({ route, navigation, services }: any) => {
   const { t, i18n } = useTranslation();
   const { title } = route.params;
   const [activeSort, setActiveSort] = React.useState('popular'); // popular, low_price, top_rated
+  const [cart, setCart] = React.useState<any>(null);
+  const [cartItemsMap, setCartItemsMap] = React.useState<Record<string, any>>({});
+
+  React.useEffect(() => {
+    fetchCart();
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchCart();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const fetchCart = async () => {
+    try {
+      const res = await api.get('/cart');
+      setCart(res.data);
+      const itemsMap: Record<string, any> = {};
+      if (res.data?.items) {
+        res.data.items.forEach((item: any) => {
+          itemsMap[item.serviceId] = item;
+        });
+      }
+      setCartItemsMap(itemsMap);
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+    }
+  };
+
+
+
+  const handleAddToCart = async (serviceItem: any, currentDuration: number) => {
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+      if (!userId) {
+        Alert.alert(t('cart.login_required'), t('cart.login_required_message'));
+        return;
+      }
+      
+      const itemBaseTime = Math.round(parseEstimatedTime(serviceItem.estimatedTime));
+
+      // Check if duration exceeds maximum
+      if (currentDuration > MAX_DURATION_MINS) {
+        Alert.alert(
+          'Maximum Duration Reached',
+          getMaxDurationMessage()
+        );
+        return;
+      }
+
+      // Backend will calculate price based on duration
+      const itemToAdd = {
+        serviceId: serviceItem.id,
+        title: i18n.language === 'hi' ? serviceItem.nameHi : serviceItem.nameEn,
+        quantity: 1,
+        type: 'service',
+        duration: {
+          label: `${currentDuration} mins`
+        }
+      };
+
+      await api.post('/cart', {
+        item: itemToAdd,
+        bookingType: 'instant' // assuming these are instant services based on UI
+      });
+      await fetchCart();
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
+
+  const handleRemoveFromCart = async (serviceId: string) => {
+    try {
+      await api.delete('/cart', { serviceId });
+      await fetchCart();
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+    }
+  };
 
   const sortedServices = React.useMemo(() => {
     let list = [...services];
@@ -85,7 +165,7 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
         </ScrollView>
       </View>
       <ScrollView style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: 20, paddingVertical: 24, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 24, flexDirection: 'row', flexWrap: 'wrap' }}>
           {sortedServices.length === 0 ? (
             <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
               <Home size={64} color={Theme.textSecondary} style={{ marginBottom: 16 }} />
@@ -96,71 +176,115 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
                 {t('common.noServicesDescription')}
               </Text>
             </View>
-          ) : sortedServices.map((service: any) => {
+          ) : sortedServices.map((service: any, index: number) => {
             const isComingSoon = isComingSoonService(service);
+            const cartItem = cartItemsMap[service.id];
+            const isInCart = !!cartItem;
+            
+            // Calculate current duration for UI
+            const baseTime = Math.round(parseEstimatedTime(service.estimatedTime));
+            let currentDuration = baseTime;
+            if (cartItem && cartItem.duration) {
+              const cartTime = Math.round(parseEstimatedTime(cartItem.duration.label || cartItem.duration));
+              if (baseTime > 0) {
+                currentDuration = cartTime;
+              }
+            }
+
+            const handleIncrease = () => {
+              const newDuration = Math.round(getNextDuration(currentDuration));
+              if (isDurationAtMaximum(newDuration)) {
+                Alert.alert(
+                  'Maximum Duration Reached',
+                  getMaxDurationMessage()
+                );
+                return;
+              }
+              handleAddToCart(service, newDuration);
+            };
+
+            const handleDecrease = () => {
+              // If already at base duration, remove from cart
+              if (currentDuration === baseTime) {
+                handleRemoveFromCart(service.id);
+                return;
+              }
+              
+              const newDuration = Math.round(getPrevDuration(currentDuration, baseTime));
+              handleAddToCart(service, newDuration);
+            };
+
             return (
             <TouchableOpacity
               key={service.id}
               onPress={() => navigation.navigate('ServiceDetail', { serviceId: service.id })}
               activeOpacity={0.9}
-              style={{ width: '48%', backgroundColor: 'white', borderRadius: 28, marginBottom: 20, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 5 }}
+              style={{ width: '31.33%', marginRight: (index + 1) % 3 === 0 ? 0 : '3%', backgroundColor: 'white', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, paddingBottom: 12 }}
             >
-              <View style={{ width: '100%', aspectRatio: 1.1, backgroundColor: Theme.muted, position: 'relative', justifyContent: 'center', alignItems: 'center' }}>
-                <ImageIcon size={32} color={'#CBD5E1'} style={{ position: 'absolute' }} />
+              <View style={{ width: '100%', aspectRatio: 1, backgroundColor: '#F8FAFC', borderTopLeftRadius: 16, borderTopRightRadius: 16, position: 'relative', overflow: 'hidden' }}>
+                <ImageIcon size={24} color={'#CBD5E1'} style={{ position: 'absolute', alignSelf: 'center', top: '40%' }} />
                 <Image
                   source={{ uri: service.imageUrl || 'https://images.unsplash.com/photo-1581578731548-c64695ce6958?q=80&w=400' }}
                   style={{ width: '100%', height: '100%', position: 'absolute' }}
                   resizeMode="cover"
                 />
-                <View style={{ position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 }}>
-                  <Star size={12} color="#f59e0b" fill="#f59e0b" />
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: Theme.textPrimary, marginLeft: 4 }}>4.9</Text>
+                <View style={{ position: 'absolute', top: 6, alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 }}>
+                  <Star size={10} color="#f59e0b" fill="#f59e0b" />
+                  <Text style={{ fontSize: 9, fontWeight: '800', color: Theme.textPrimary, marginLeft: 4 }}>4.9 (4k)</Text>
                 </View>
-                {/* Save Badge - Only show for non-coming-soon services */}
-                {!isComingSoon && (
-                  <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: Theme.primary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                     <Text style={{ color: 'white', fontSize: 10, fontWeight: '900' }}>30% OFF</Text>
-                  </View>
-                )}
-                {/* Coming Soon Badge */}
-                {isComingSoon && (
-                  <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: Theme.accent, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                     <Text style={{ color: 'white', fontSize: 10, fontWeight: '900' }}>Coming Soon</Text>
-                  </View>
-                )}
               </View>
 
-              <View style={{ padding: 16 }}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: Theme.textPrimary, lineHeight: 20, height: 40 }} numberOfLines={2}>
+              <View style={{ paddingHorizontal: 8, paddingTop: 12 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: Theme.textPrimary, lineHeight: 16, height: 32 }} numberOfLines={2}>
                   {i18n.language === 'hi' ? service.nameHi : service.nameEn}
                 </Text>
 
                 {isComingSoon ? (
-                  <View style={{ marginTop: 12 }}>
-                   
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                      <TouchableOpacity 
-                        onPress={() => handleNotifyMe(service)}
-                        style={{ flex: 1, backgroundColor: Theme.primary, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-                      >
-                        <Bell size={14} color="white" />
-                        <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>Notify Me</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        onPress={() => handleWhatsApp(service)}
-                        style={{ width: 36, height: 36, backgroundColor: '#25D366', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <MessageCircle size={16} color="white" />
-                      </TouchableOpacity>
-                    </View>
+                  <View style={{ marginTop: 8 }}>
+                    <Text style={{ fontSize: 10, fontWeight: '800', color: Theme.accent }}>Coming Soon</Text>
                   </View>
                 ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-                    <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.primary }}>₹{Number(service.basePrice).toFixed(0)}</Text>
-                    <Text style={{ fontSize: 12, color: Theme.textSecondary, textDecorationLine: 'line-through', marginLeft: 8 }}>₹{(Number(service.basePrice) * 1.4).toFixed(0)}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: Theme.textPrimary }}>
+                      ₹{isInCart && cartItem?.duration?.price 
+                        ? Math.round(Number(cartItem.duration.price)) 
+                        : Math.round(Number(service.basePrice))}
+                    </Text>
+                    <Text style={{ fontSize: 10, color: Theme.textSecondary, textDecorationLine: 'line-through', marginLeft: 4 }}>
+                      ₹{isInCart && cartItem?.duration?.price 
+                        ? Math.round(Number(cartItem.duration.price) * 1.4) 
+                        : Math.round(Number(service.basePrice) * 1.4)}
+                    </Text>
                   </View>
                 )}
               </View>
+              
+              {/* Plus Button / Increment Decrement */}
+              {!isComingSoon && (
+                <View style={{ position: 'absolute', right: 8, top: '48%', zIndex: 10 }}>
+                  {isInCart ? (
+                    <View style={{ backgroundColor: 'white', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, flexDirection: 'row', alignItems: 'center', minWidth: 70, justifyContent: 'space-between' }}>
+                      <TouchableOpacity onPress={handleDecrease} style={{ padding: 2 }}>
+                        <Minus size={14} color={Theme.primary} />
+                      </TouchableOpacity>
+                      <View style={{ alignItems: 'center', paddingHorizontal: 2 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.primary }}>{Math.round(currentDuration)}</Text>
+                        <Text style={{ fontSize: 8, color: Theme.textSecondary, marginTop: -2 }}>Mins</Text>
+                      </View>
+                      <TouchableOpacity onPress={handleIncrease} style={{ padding: 2 }}>
+                        <Plus size={14} color={Theme.primary} />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity 
+                      onPress={() => handleAddToCart(service, baseTime)}
+                      style={{ backgroundColor: 'white', borderRadius: 8, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 }}
+                    >
+                      <Plus size={18} color={Theme.primary} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </TouchableOpacity>
             );
           })}

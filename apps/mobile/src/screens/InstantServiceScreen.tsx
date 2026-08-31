@@ -109,7 +109,6 @@ export const InstantServiceScreen = ({ navigation }: any) => {
         serviceId: 'hourly-service',
         title: 'Hourly Service',
         duration,
-        price: duration.price,
         quantity: 1,
       };
 

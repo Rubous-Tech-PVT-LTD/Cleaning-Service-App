@@ -168,7 +168,7 @@ async function main() {
       descriptionTranslations: { en: 'Complete kitchen cleaning and sanitization', hi: 'पूर्ण रसोईघर सफाई और सेनिटाइजेशन' },
       basePrice: 149,
       estimatedTime: '45 mins',
-      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431896/female-deep-cleaner_duj2fg.png',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786685470/Gemini_Generated_Image_rgmpdhrgmpdhrgmp_swccun.png',
       includedItems: [
      { en: 'Vegetable washing', hi: 'सब्जियों को धोना' },
 { en: 'Vegetable chopping and cutting', hi: 'सब्जियों को काटना और टुकड़े करना' },
@@ -189,7 +189,7 @@ async function main() {
       descriptionTranslations: { en: 'Home cooking service', hi: 'घरेलू खाना बनाने की सेवा' },
       basePrice: 249,
       estimatedTime: '60 mins',
-      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786685470/Gemini_Generated_Image_rgmpdhrgmpdhrgmp_swccun.png',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1788166631/cooking_reqdng.png',
       includedItems: [
         { en: '1 dal or sabzi', hi: '1 दाल या सब्जी' },
 { en: 'Rice or roti preparation', hi: 'चावल या रोटी बनाना' },
@@ -268,7 +268,7 @@ async function main() {
       descriptionTranslations: { en: 'Complete wardrobe cleaning service', hi: 'पूरी अलमारी की सफाई की सेवा' },
       basePrice: 399,
       estimatedTime: '120 mins',
-      imageUrl: 'YOUR_IMAGE_URL',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168965/wardrobe_gbdjzm.png',
       includedItems: [
         { en: 'Exterior wardrobe cleaning', hi: 'अलमारी के बाहरी हिस्से की सफाई' },
         { en: 'Interior shelf and rack cleaning', hi: 'अलमारी के अंदर शेल्फ और रैक की सफाई' },
@@ -1228,7 +1228,7 @@ async function main() {
       },
       basePrice: 199,
       estimatedTime: '60 mins',
-       imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692040/water_tank_cleaning_ir8u0g.png',
+       imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168972/water_tank_overhang_okq13l.png',
       isTrending: false,
       includedItems: [
         { en: 'Tank interior cleaning', hi: 'टंकी आंतरिक सफाई' },
@@ -1252,7 +1252,7 @@ async function main() {
   },
   basePrice: 399,
   estimatedTime: '90 mins',
-  imageUrl: 'YOUR_IMAGE_URL',
+  imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692040/water_tank_cleaning_ir8u0g.png',
   isTrending: false,
   includedItems: [
     { en: 'Tank draining', hi: 'टंकी का पानी निकालना' },
@@ -1277,7 +1277,7 @@ async function main() {
   },
   basePrice: 1999,
   estimatedTime: '180 mins',
-  imageUrl: 'YOUR_IMAGE_URL',
+  imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168964/1bhk_g23tdg.png',
   isTrending: false,
   includedItems: [
     { en: 'Deep floor mopping', hi: 'फर्श की गहरी सफाई और पोछा' },
@@ -1302,7 +1302,7 @@ async function main() {
   },
   basePrice: 2999,
   estimatedTime: '240 mins',
-  imageUrl: 'YOUR_IMAGE_URL',
+  imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168964/2bhk_wlzcc1.png',
   isTrending: false,
   includedItems: [
     { en: 'Deep floor mopping', hi: 'फर्श की गहरी सफाई और पोछा' },
@@ -1326,7 +1326,7 @@ async function main() {
   },
   basePrice: 3999,
   estimatedTime: '300 mins',
-  imageUrl: 'YOUR_IMAGE_URL',
+  imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168965/3bhk_v89edr.png',
   isTrending: false,
   includedItems: [
     { en: 'Deep floor mopping', hi: 'फर्श की गहरी सफाई और पोछा' },
@@ -1350,7 +1350,7 @@ async function main() {
   },
   basePrice: 4999,
   estimatedTime: '360 mins',
-  imageUrl: 'YOUR_IMAGE_URL',
+  imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168967/4bhk_le5aux.png',
   isTrending: false,
   includedItems: [
     { en: 'Deep floor mopping', hi: 'फर्श की गहरी सफाई और पोछा' },
@@ -1665,6 +1665,75 @@ async function main() {
   }
 
   // ---------------------------------------------------------
+  // 6. MEHNDI AND ART
+  // ---------------------------------------------------------
+
+  const mehndiAndArt = await prisma.category.create({
+    data: {
+      nameTranslations: {
+        en: 'Mehndi and Art',
+        hi: 'मेहंदी और कला',
+      },
+      slug: 'mehndi-and-art',
+      iconUrl:
+        'https://res.cloudinary.com/dcmoseix9/image/upload/v1788169358/mehndi_category_mkiesw.png',
+      order: 6,
+    },
+  });
+
+  console.log('✅ Created category: Mehndi and Art');
+
+  // ---------------------------------------------------------
+  // MEHNDI AND ART SERVICES
+  // ---------------------------------------------------------
+
+  const mehndiArtServices = [
+    {
+      nameTranslations: {
+        en: 'Mehndi and Art Services',
+        hi: 'मेहंदी और कला सेवाएं',
+      },
+      descriptionTranslations: {
+        en: 'Professional mehndi and art services for all occasions',
+        hi: 'सभी अवसरों के लिए पेशेवर मेहंदी और कला सेवाएं',
+      },
+      basePrice: 999,
+      estimatedTime: '60 mins',
+      imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1788166249/mehndi_o556jv.png',
+      isTrending: true,
+      includedItems: [
+        { en: 'Professional mehndi designs', hi: 'पेशेवर मेहंदी डिजाइन' },
+        { en: 'Face painting and art services', hi: 'चेहरा पेंटिंग और कला सेवाएं' },
+        { en: 'Premium quality materials', hi: 'प्रीमियम गुणवत्ता वाली सामग्री' },
+        { en: 'Professional artists', hi: 'पेशेवर कलाकार' }
+      ],
+      notIncludedItems: [
+        { en: 'Multiple design changes', hi: 'कई डिजाइन परिवर्तन' },
+        { en: 'Additional materials cost', hi: 'अतिरिक्त सामग्री लागत' },
+        { en: 'Complex bridal packages', hi: 'जटिल दुल्हन पैकेज' }
+      ]
+    }
+  ];
+
+  for (const service of mehndiArtServices) {
+    await (prisma as any).service.create({
+      data: {
+        categoryId: mehndiAndArt.id,
+        nameTranslations: service.nameTranslations,
+        descriptionTranslations: service.descriptionTranslations,
+        basePrice: service.basePrice,
+        estimatedTime: service.estimatedTime,
+        imageUrl: service.imageUrl || null,
+        status: 'ACTIVE',
+        isTrending: service.isTrending || false,
+        includedItems: service.includedItems || [],
+        notIncludedItems: service.notIncludedItems || [],
+      },
+    });
+    console.log(`  └── ✅ Created service: ${service.nameTranslations.en}`);
+  }
+
+  // ---------------------------------------------------------
   // SUMMARY
   // ---------------------------------------------------------
 
@@ -1680,10 +1749,11 @@ async function main() {
   console.log('3. General Home Services (5 services)');
   console.log('4. Home Repair and Renovations (5 services)');
   console.log('5. Babysitting and Elder Care (3 services)');
+  console.log('6. Mehndi and Art (1 service)');
 
   console.log('\nSubcategories created: 2');
-  console.log('Services created: 51');
-  console.log('Categories created: 5');
+  console.log('Services created: 52');
+  console.log('Categories created: 6');
 
   // ---------------------------------------------------------
   // SUPPORTED SERVICE CITIES

@@ -10,6 +10,7 @@ import { database } from '../db';
 import { Theme } from '../theme';
 import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, DURATION_INCREMENT_MINS, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
 
 const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }: any) => {
   const { t, i18n } = useTranslation();
@@ -17,31 +18,14 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
   const [quantity, setQuantity] = useState(1);
   const [reviewsData, setReviewsData] = useState<{ reviews: any[], average: number, total: number }>({ reviews: [], average: 0, total: 0 });
   const [cart, setCart] = useState<any>(null);
-  const [selectedDuration, setSelectedDuration] = useState<number>(1); // Multiplier for estimated time
+  const [selectedDuration, setSelectedDuration] = useState<number>(1); // Multiplier for estimated time (1 = base duration)
   const [isCurrentServiceInCart, setIsCurrentServiceInCart] = useState(false);
   const [relatedServicesInCart, setRelatedServicesInCart] = useState<Set<string>>(new Set());
 
-  // Parse estimated time to get base minutes
-  const parseEstimatedTime = (timeString: string | null | undefined): number => {
-    if (!timeString) return 60; // Default to 60 mins if not specified
-    
-    // Handle formats like "60 mins", "30 mins (12-15 garments)", "45 mins (up to 300sq ft)"
-    const match = timeString.match(/(\d+)\s*mins/);
-    if (match) {
-      return parseInt(match[1], 10);
-    }
-    
-    // Fallback for other formats
-    const numericMatch = timeString.match(/(\d+)/);
-    if (numericMatch) {
-      return parseInt(numericMatch[1], 10);
-    }
-    
-    return 60; // Default fallback
-  };
 
-  const baseEstimatedTime = parseEstimatedTime(service?.estimatedTime);
-  const currentEstimatedTime = baseEstimatedTime * selectedDuration;
+
+  const baseEstimatedTime = Math.round(parseEstimatedTime(service?.estimatedTime));
+  const currentEstimatedTime = Math.round(baseEstimatedTime * selectedDuration);
 
   useEffect(() => {
     fetchCart();
@@ -79,13 +63,17 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
       if (currentServiceInCart) {
         const cartItem = res.data?.items?.find((item: any) => item.serviceId === service?.id);
         if (cartItem?.duration) {
-          // Calculate duration multiplier from cart
-          const cartBaseTime = parseEstimatedTime(service?.estimatedTime);
-          const cartTime = parseEstimatedTime(cartItem.duration?.label || cartItem.duration);
+          // Calculate current duration from cart
+          const cartTime = Math.round(parseEstimatedTime(cartItem.duration?.label || cartItem.duration));
+          const cartBaseTime = Math.round(parseEstimatedTime(service?.estimatedTime));
           if (cartBaseTime > 0) {
-            setSelectedDuration(Math.round(cartTime / cartBaseTime));
+            const multiplier = cartTime / cartBaseTime;
+            setSelectedDuration(multiplier);
           }
         }
+      } else {
+        // Reset to base duration if service is not in cart
+        setSelectedDuration(1);
       }
       
       // Check which related services are in cart
@@ -104,9 +92,9 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
     }
   };
   
-  // Calculate total based on type
+  // Calculate estimated total for display (backend will calculate actual price)
   const basePrice = service?.basePrice || 0;
-  const totalPrice = basePrice * quantity;
+  const estimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseEstimatedTime, Math.round(currentEstimatedTime)) * quantity);
 
   // Check if service belongs to plumber or electrical subcategory
   const subcategoryName = (service?.subcategoryNameEn || '').toLowerCase();
@@ -135,7 +123,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
     Linking.openURL(whatsappUrl);
   };
 
-  const handleAddToCart = async (serviceItem: any, bookingTypeParam?: string, quantityParam?: number, durationMultiplier: number = 1) => {
+  const handleAddToCart = async (serviceItem: any, bookingTypeParam?: string, quantityParam?: number, currentDuration: number) => {
     try {
       const userId = await AsyncStorage.getItem('user_id');
       if (!userId) {
@@ -143,18 +131,25 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
         return;
       }
 
-      const itemBaseTime = parseEstimatedTime(serviceItem.estimatedTime);
-      const itemDuration = itemBaseTime * durationMultiplier;
+      const itemBaseTime = Math.round(parseEstimatedTime(serviceItem.estimatedTime));
 
+      // Check if duration exceeds maximum
+      if (currentDuration > MAX_DURATION_MINS) {
+        Alert.alert(
+          'Maximum Duration Reached',
+          getMaxDurationMessage()
+        );
+        return;
+      }
+
+      // Backend will calculate price based on duration
       const itemToAdd = {
         serviceId: serviceItem.id,
         title: i18n.language === 'hi' ? serviceItem.nameHi : serviceItem.nameEn,
-        price: serviceItem.basePrice * durationMultiplier,
         quantity: quantityParam || quantity,
         type: 'service',
         duration: {
-          label: `${itemDuration} mins`,
-          price: serviceItem.basePrice * durationMultiplier
+          label: `${currentDuration} mins`
         }
       };
 
@@ -181,27 +176,38 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
   };
 
   const handleBookButton = () => {
-    // When user clicks Book, add service with default duration (1x)
-    handleAddToCart(service, 'instant', quantity, 1);
+    // When user clicks Book, add service with default duration (baseEstimatedTime)
+    handleAddToCart(service, 'instant', quantity, baseEstimatedTime);
   };
 
   const handleIncreaseDuration = () => {
-    const newDuration = selectedDuration * 2;
-    setSelectedDuration(newDuration);
+    const newDuration = getNextDuration(currentEstimatedTime);
+    if (isDurationAtMaximum(newDuration)) {
+      Alert.alert(
+        'Maximum Duration Reached',
+        getMaxDurationMessage()
+      );
+      return;
+    }
+    const newMultiplier = Math.round(newDuration / baseEstimatedTime);
+    setSelectedDuration(newMultiplier);
     // Update cart with new duration
     handleAddToCart(service, 'instant', quantity, newDuration);
   };
 
   const handleDecreaseDuration = () => {
-    if (selectedDuration > 1) {
-      const newDuration = selectedDuration / 2;
-      setSelectedDuration(newDuration);
-      // Update cart with new duration
-      handleAddToCart(service, 'instant', quantity, newDuration);
-    } else {
-      // Remove from cart if at minimum
+    // If already at base duration, remove from cart
+    if (currentEstimatedTime === baseEstimatedTime) {
+      setSelectedDuration(1);
       handleRemoveFromCart(service.id);
+      return;
     }
+    
+    const newDuration = getPrevDuration(currentEstimatedTime, baseEstimatedTime);
+    const newMultiplier = Math.round(newDuration / baseEstimatedTime);
+    setSelectedDuration(newMultiplier);
+    // Update cart with new duration
+    handleAddToCart(service, 'instant', quantity, newDuration);
   };
 
   return (
@@ -240,7 +246,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
                     <TouchableOpacity onPress={handleDecreaseDuration} style={{ width: 40, height: 40, backgroundColor: '#F1F5F9', borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
                       <Minus size={20} color={Theme.textPrimary} />
                     </TouchableOpacity>
-                    <Text style={{ width: 48, textAlign: 'center', fontSize: 16, fontWeight: '900', color: Theme.primary }}>{currentEstimatedTime} mins</Text>
+                    <Text style={{ width: 48, textAlign: 'center', fontSize: 16, fontWeight: '900', color: Theme.primary }}>{Math.round(currentEstimatedTime)} mins</Text>
                     <TouchableOpacity onPress={handleIncreaseDuration} style={{ width: 40, height: 40, backgroundColor: Theme.primary, borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
                       <Plus size={20} color="white" />
                     </TouchableOpacity>
@@ -268,7 +274,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
             ) : (
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, color: Theme.textSecondary, fontWeight: '800', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('service.total_price')}</Text>
-                <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary }}>₹{totalPrice.toFixed(0)}</Text>
+                <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary }}>₹{Math.round(estimatedPrice)}</Text>
               </View>
             )}
             <View style={{ backgroundColor: Theme.infoLight, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 }}>
@@ -384,12 +390,24 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
                         {isItemComingSoon ? (
                           <Text style={{ fontSize: 14, fontWeight: '900', color: Theme.textSecondary }}>Coming Soon</Text>
                         ) : (
-                          <Text style={{ fontSize: 16, fontWeight: '900', color: Theme.primary }}>₹{Number(item.basePrice).toFixed(0)}</Text>
+                          <Text style={{ fontSize: 16, fontWeight: '900', color: Theme.primary }}>
+                            ₹{isInCart && relatedServicesInCart.has(item.id) ? 
+                              (() => {
+                                const relatedCartItem = cart?.items?.find((i: any) => i.serviceId === item.id);
+                                return relatedCartItem?.duration?.price 
+                                  ? Math.round(Number(relatedCartItem.duration.price)) 
+                                  : Math.round(Number(item.basePrice));
+                              })() 
+                              : Math.round(Number(item.basePrice))}
+                          </Text>
                         )}
                       </TouchableOpacity>
                       {!isItemComingSoon && (
                         <TouchableOpacity
-                          onPress={() => isInCart ? handleRemoveFromCart(item.id) : handleAddToCart(item)}
+                          onPress={() => isInCart ? handleRemoveFromCart(item.id) : (() => {
+                            const itemBaseTime = Math.round(parseEstimatedTime(item.estimatedTime));
+                            handleAddToCart(item, 'instant', 1, itemBaseTime);
+                          })()}
                           style={{ position: 'absolute', top: 20, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: isInCart ? '#22C55E' : Theme.primary, justifyContent: 'center', alignItems: 'center', shadowColor: isInCart ? '#22C55E' : Theme.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 }}
                         >
                           {isInCart ? <Check size={18} color="white" /> : <Plus size={18} color="white" />}
