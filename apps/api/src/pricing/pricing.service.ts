@@ -1,6 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+interface PricingResult {
+  price: number;
+  formattedDuration: string;
+}
+
 @Injectable()
 export class PricingService {
   constructor(private readonly prisma: PrismaService) {}

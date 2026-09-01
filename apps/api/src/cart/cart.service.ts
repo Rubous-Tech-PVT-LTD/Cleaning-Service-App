@@ -202,10 +202,16 @@ export class CartService {
 
         if (existingCartItem) {
           // Update existing cart item
+          // If duration or booking type changed, preserve quantity (it's a duration update)
+          // Otherwise increment quantity (it's adding more of the same item)
+          const isDurationUpdate = 
+            JSON.stringify(normalizedItem.duration) !== JSON.stringify(existingCartItem.duration) ||
+            normalizedItem.bookingType !== existingCartItem.bookingType;
+
           return tx.cartItem.update({
             where: { id: existingCartItem.id },
             data: {
-              quantity: existingCartItem.quantity + 1,
+              quantity: isDurationUpdate ? existingCartItem.quantity : existingCartItem.quantity + (normalizedItem.quantity || 1),
               price: calculatedPrice,
               bookingType: normalizedItem.bookingType,
               scheduledAt: normalizedItem.scheduledAt ? new Date(normalizedItem.scheduledAt) : null,
@@ -278,7 +284,7 @@ export class CartService {
           return tx.cartItem.update({
             where: { id: existingCartItem.id },
             data: {
-              quantity: item.quantity,
+              quantity: item.quantity || existingCartItem.quantity,
               price: calculatedPrice,
               bookingType: item.bookingType,
               scheduledAt: item.scheduledAt ? new Date(item.scheduledAt) : null,

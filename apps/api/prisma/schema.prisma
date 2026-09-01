@@ -154,6 +154,7 @@ model Service {
   subcategoryId           String?
   estimatedTime           String?
   isTrending              Boolean      @default(false)
+  isComingSoon            Boolean      @default(false)
   includedItems           Json?        @default("[]")
   notIncludedItems        Json?        @default("[]")
   bookings                Booking[]
@@ -164,6 +165,7 @@ model Service {
   @@index([subcategoryId])
   @@index([categoryId, subcategoryId])
   @@index([isTrending])
+  @@index([isComingSoon])
   @@map("services")
 }
 

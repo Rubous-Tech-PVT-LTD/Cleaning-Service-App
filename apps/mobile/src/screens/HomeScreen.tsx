@@ -379,11 +379,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                   const filteredServices = services.filter((s: any) => s.categoryId === dailyHomeHelpCategoryId);
 
                   return filteredServices.map((service: any, index: number) => {
-                    const isComingSoon = service.subcategoryNameEn ? 
-                      (service.subcategoryNameEn.toLowerCase().includes('plumbing') || 
-                      service.subcategoryNameEn.toLowerCase().includes('plumber') || 
-                      service.subcategoryNameEn.toLowerCase().includes('electrical') || 
-                      service.subcategoryNameEn.toLowerCase().includes('electrician')) : false;
+                    const isComingSoon = service?.isComingSoon || false;
 
                     const cartItem = cartItemsMap[service.id];
                     const isInCart = !!cartItem;
@@ -619,11 +615,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
             <View style={{ paddingHorizontal: 24, marginBottom: 16 }}><Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>{t('home.trending_now')}</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
               {trendingServices.map((service: any, index: number) => {
-                const isComingSoon = service.subcategoryNameEn ? 
-                  (service.subcategoryNameEn.toLowerCase().includes('plumbing') || 
-                   service.subcategoryNameEn.toLowerCase().includes('plumber') || 
-                   service.subcategoryNameEn.toLowerCase().includes('electrical') || 
-                   service.subcategoryNameEn.toLowerCase().includes('electrician')) : false;
+                const isComingSoon = service?.isComingSoon || false;
                 return (
                 <TrendingCard
                   key={service.id}

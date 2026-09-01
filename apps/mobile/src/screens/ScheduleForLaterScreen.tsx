@@ -231,7 +231,7 @@ export const ScheduleForLaterScreen = ({ navigation, route }: any) => {
           alignItems: 'center',
           paddingHorizontal: 16,
           paddingVertical: 12,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'white',
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8, marginRight: 8 }}>
@@ -355,7 +355,7 @@ export const ScheduleForLaterScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: Theme.background,
   },
   headerTitle: {
     fontSize: 18,
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   },
   selectedServiceSection: {
     marginTop: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
   },
@@ -376,11 +376,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: Theme.infoLight,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: Theme.border,
   },
   selectedServiceName: {
     flex: 1,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   changeServiceButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#10B981',
+    backgroundColor: Theme.primary,
     borderRadius: 8,
   },
   changeServiceText: {
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
   },
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Theme.border,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -427,8 +427,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   selectedCard: {
-    borderColor: '#10B981',
-    backgroundColor: '#ECFDF5',
+    borderColor: Theme.primary,
+    backgroundColor: Theme.infoLight,
     borderWidth: 2,
   },
   cardTitle: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   gridCard: {
     width: '31%',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Theme.border,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',

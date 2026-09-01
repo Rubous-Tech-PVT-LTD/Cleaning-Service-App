@@ -22,6 +22,7 @@ export default class Service extends Model {
   @field('not_included_items_str') notIncludedItemsStr?: string;
   @field('subcategory_name_en') subcategoryNameEn?: string;
   @field('estimated_time') estimatedTime?: string;
+  @field('is_coming_soon') isComingSoon!: boolean;
 
   get includedItems() {
     try {

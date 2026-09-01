@@ -150,11 +150,11 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
         return;
       }
 
-      const items = cart?.items || [];
-      if (items.length === 0) return;
+      const cartItems = cart?.items || [];
+      if (cartItems.length === 0) return;
 
-      const primaryItem = items[0];
-      const scheduledItem = items.find(
+      const primaryItem = cartItems[0];
+      const scheduledItem = cartItems.find(
         (item: any) => item.bookingType === 'scheduled' && item.scheduledAt,
       );
 
@@ -174,7 +174,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
 
       // Create booking locally in WatermelonDB
       // Store only service IDs, not translated titles
-      const itemsForStorage = items.map((item: any) => ({
+      const itemsForStorage = cartItems.map((item: any) => ({
         serviceId: item.serviceId,
         price: Math.round(item.duration?.price || item.price),
         quantity: item.quantity || 1,

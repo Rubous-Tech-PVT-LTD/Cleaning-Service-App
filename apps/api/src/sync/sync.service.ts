@@ -370,6 +370,9 @@ export class SyncService {
         // Include estimated time from backend
         estimated_time: r.estimatedTime || null,
 
+        // Include isComingSoon field from database
+        is_coming_soon: r.isComingSoon || false,
+
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
