@@ -36,7 +36,8 @@
     "cancel": "Cancel",
     "edit": "EDIT",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "mins": "mins"
   },
   "search": {
     "placeholder": "Search for services...",
@@ -146,6 +147,7 @@
     "day_wise": "Day-wise",
     "bulk_hiring": "Bulk Hiring",
     "total_price": "Total Price",
+    "estimated_time": "Estimated time",
     "num_days": "Number of Days",
     "num_labourers": "Number of Labourers",
     "bulk_desc": "Bulk hiring includes a flat 10% discount on total wages. Tools and materials are not included.",

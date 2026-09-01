@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 17,
+  version: 18,
   tables: [
     tableSchema({
       name: 'categories',
@@ -43,6 +43,7 @@ export default appSchema({
         { name: 'not_included_items_str', type: 'string', isOptional: true },
         { name: 'subcategory_name_en', type: 'string', isOptional: true },
         { name: 'estimated_time', type: 'string', isOptional: true },
+        { name: 'is_coming_soon', type: 'boolean' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],

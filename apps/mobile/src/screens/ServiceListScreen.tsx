@@ -105,11 +105,9 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
     return list;
   }, [services, activeSort]);
 
-  // Check if service belongs to plumber or electrical subcategory
+  // Check if service is coming soon based on database field
   const isComingSoonService = (service: any) => {
-    const subcategoryName = (service.subcategoryNameEn || '').toLowerCase();
-    return subcategoryName.includes('plumbing') || subcategoryName.includes('plumber') || 
-           subcategoryName.includes('electrical') || subcategoryName.includes('electrician');
+    return service?.isComingSoon || false;
   };
 
   const handleNotifyMe = (service: any) => {

@@ -131,45 +131,49 @@ export const ServiceSelectionScreen = ({ navigation }: any) => {
             <Text style={styles.emptyText}>{t('common.noServices', 'No services available')}</Text>
           </View>
         ) : (
-          categories.map((category) => (
-            <View key={category.id} style={styles.categorySection}>
-              <Text style={styles.categoryTitle}>{getCategoryName(category)}</Text>
-              <View style={styles.servicesGrid}>
-                {category.services.map((service) => (
-                  <TouchableOpacity
-                    key={service.id}
-                    onPress={() => handleServiceSelect(service)}
-                    style={styles.serviceCard}
-                    activeOpacity={0.9}
-                  >
-                    <View style={styles.serviceImageContainer}>
-                      {service.imageUrl ? (
-                        <Image
-                          source={{ uri: service.imageUrl }}
-                          style={styles.serviceImage}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={styles.serviceImagePlaceholder}>
-                          <ImageIcon size={32} color={Theme.textSecondary} />
+          categories.map((category) => {
+            const filteredServices = category.services.filter((service) => getServiceName(service) !== 'Hourly Service');
+            if (filteredServices.length === 0) return null;
+            return (
+              <View key={category.id} style={styles.categorySection}>
+                <Text style={styles.categoryTitle}>{getCategoryName(category)}</Text>
+                <View style={styles.servicesGrid}>
+                  {filteredServices.map((service) => (
+                    <TouchableOpacity
+                      key={service.id}
+                      onPress={() => handleServiceSelect(service)}
+                      style={styles.serviceCard}
+                      activeOpacity={0.9}
+                    >
+                      <View style={styles.serviceImageContainer}>
+                        {service.imageUrl ? (
+                          <Image
+                            source={{ uri: service.imageUrl }}
+                            style={styles.serviceImage}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles.serviceImagePlaceholder}>
+                            <ImageIcon size={32} color={Theme.textSecondary} />
+                          </View>
+                        )}
+                        <View style={styles.ratingBadge}>
+                          <Star size={10} color="#f59e0b" fill="#f59e0b" />
+                          <Text style={styles.ratingText}>4.9</Text>
                         </View>
-                      )}
-                      <View style={styles.ratingBadge}>
-                        <Star size={10} color="#f59e0b" fill="#f59e0b" />
-                        <Text style={styles.ratingText}>4.9</Text>
                       </View>
-                    </View>
-                    <View style={styles.serviceInfo}>
-                      <Text style={styles.serviceName} numberOfLines={2}>
-                        {getServiceName(service)}
-                      </Text>
-                      <Text style={styles.servicePrice}>₹{Math.round(Number(service.basePrice))}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                      <View style={styles.serviceInfo}>
+                        <Text style={styles.serviceName} numberOfLines={2}>
+                          {getServiceName(service)}
+                        </Text>
+                        <Text style={styles.servicePrice}>₹{Math.round(Number(service.basePrice))}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </View>
-          ))
+            );
+          })
         )}
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -236,7 +240,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -6,
   },
   serviceCard: {
-    width: '48%',
+    width: '31%',
     marginHorizontal: '1%',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,

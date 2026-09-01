@@ -263,6 +263,52 @@ async function main() {
 { en: 'Upholstery cleaning', hi: 'फर्नीचर के कपड़े की सफाई' },
       ]
     },
+     {
+  nameTranslations: { en: 'Laundry', hi: 'कपड़े धोना' },
+  descriptionTranslations: {
+    en: 'Washing, drying and basic folding of clothes',
+    hi: 'कपड़ों की धुलाई, सुखाना और सामान्य तह करना'
+  },
+  basePrice: 199,
+  estimatedTime: '60 mins',
+  imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786686222/Laundry_ld23a0.png',
+  includedItems: [
+  {
+    en: "Washing 1 machine load in customer's washing machine",
+    hi: 'ग्राहक की वॉशिंग मशीन में 1 मशीन लोड कपड़े धोना'
+  },
+  {
+    en: "Using customer's detergent",
+    hi: 'ग्राहक के डिटर्जेंट का उपयोग'
+  },
+  {
+    en: 'Hanging washed clothes for drying',
+    hi: 'धुले हुए कपड़ों को सुखाने के लिए टांगना'
+  },
+  {
+    en: 'Laundry area cleaning',
+    hi: 'लॉन्ड्री क्षेत्र की सफाई'
+  }
+],
+ notIncludedItems: [
+  {
+    en: 'Company-supplied detergent',
+    hi: 'कंपनी द्वारा दिया गया डिटर्जेंट'
+  },
+  {
+    en: 'Drying and folding',
+    hi: 'कपड़ों को सुखाना और तह करना'
+  },
+  {
+    en: 'Stain treatment',
+    hi: 'दाग हटाने का उपचार'
+  },
+  {
+    en: 'Hand-wash-only or dry-clean-only garments',
+    hi: 'केवल हाथ से धोने वाले या केवल ड्राई-क्लीन वाले कपड़े'
+  }
+]
+     },
     {
       nameTranslations: { en: 'Complete Wardrobe Cleaning', hi: 'पूरी अलमारी की सफाई' },
       descriptionTranslations: { en: 'Complete wardrobe cleaning service', hi: 'पूरी अलमारी की सफाई की सेवा' },
@@ -503,9 +549,9 @@ async function main() {
         hi: 'नल मरम्मत और प्रतिस्थापन सेवाएं',
       },
       basePrice: 99,
-      estimatedTime: '30 mins',
+      estimatedTime: '15 mins (1tap)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431904/tap-repair_cmbhfy.png',
-      isTrending: true,
+      isTrending: false,
       includedItems: [
 { en: 'Diagnosis and repair of 1 leaking or faulty tap', hi: '1 लीक या खराब नल की जांच और मरम्मत' },
 { en: 'Minor washer or gasket replacement', hi: 'छोटे वॉशर या गैस्केट को बदलना' },
@@ -527,7 +573,7 @@ async function main() {
         hi: 'शावर मरम्मत और रखरखाव',
       },
       basePrice: 125,
-      estimatedTime: '45 mins',
+      estimatedTime: '30 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786688409/shower_repair_hypk9y.png',
       includedItems: [
         { en: 'Handle repair or adjustment', hi: 'हैंडल की मरम्मत या समायोजन' },
@@ -551,7 +597,7 @@ async function main() {
         hi: 'पानी के मोटर की मरम्मत सेवाएं',
       },
       basePrice: 249,
-      estimatedTime: '60 mins',
+      estimatedTime: '45 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786688708/motor_repair_j6gulm.png',
       includedItems: [
         { en: 'Wiring check and repair', hi: 'वायरिंग की जांच और मरम्मत' },
@@ -575,7 +621,7 @@ async function main() {
         hi: 'पाइप लीक का पता लगाना और मरम्मत',
       },
       basePrice: 125,
-      estimatedTime: '45 mins',
+      estimatedTime: '30 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431901/pipeline-leakage_qvxhf4.png',
       includedItems: [
         { en: 'Minor leak sealing', hi: 'छोटे रिसाव को सील करना' },
@@ -598,7 +644,7 @@ async function main() {
         hi: 'शौचालय फ्लश तंत्र मरम्मत',
       },
       basePrice: 99,
-      estimatedTime: '30 mins',
+      estimatedTime: '15 mins (1 unit)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786688921/Toilet_flush_repair_lymqzt.png',
       includedItems: [
       { en: 'Flush tank mechanism repair for 1 unit', hi: '1 यूनिट के फ्लश टैंक की मैकेनिज्म की मरम्मत' },
@@ -621,7 +667,7 @@ async function main() {
         hi: 'जेट स्प्रे मरम्मत और रखरखाव',
       },
       basePrice: 99,
-      estimatedTime: '30 mins',
+      estimatedTime: '15 mins(1 unit)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689145/jet_spray_repair_xcgekk.png',
       includedItems: [
         { en: 'Leak or trigger repair for 1 jet spray', hi: '1 जेट स्प्रे के रिसाव या ट्रिगर की मरम्मत' },
@@ -644,7 +690,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर अन्य प्लंबिंग सेवाएं',
       },
       basePrice: 399,
-      estimatedTime: '60 mins',
+      estimatedTime: '60 mins (1 hour slab)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689310/other_plumbing_service_xwdorb.png',
       includedItems: [
 { en: 'Other plumbing jobs not listed above', hi: 'ऊपर सूचीबद्ध नहीं किए गए अन्य प्लंबिंग कार्य' },
@@ -671,11 +717,12 @@ async function main() {
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
+        isComingSoon: true,
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },
     });
-    console.log(`    └── ✅ Created service: ${service.nameTranslations.en}`);
+    console.log(`    └── ✅ Created service: ${service.nameTranslations.en} (Coming Soon)`);
   }
 
   // ---------------------------------------------------------
@@ -693,7 +740,7 @@ async function main() {
         hi: 'लाइट फिक्स्चर इंस्टालेशन',
       },
       basePrice: 99,
-      estimatedTime: '30 mins',
+      estimatedTime: '20 mins(1 point)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431891/light-installation_jiemgi.png',
       includedItems: [
         { en: 'Fitting of 1 customer-provided light fixture', hi: '1 ग्राहक द्वारा उपलब्ध कराए गए लाइट फिटिंग को लगाना' },
@@ -715,7 +762,7 @@ async function main() {
         hi: 'प्रति घंटा आधार पर इलेक्ट्रिकल वायरिंग मरम्मत',
       },
       basePrice: 399,
-      estimatedTime: '60 mins',
+      estimatedTime: '60 mins(1 hour slab)',
       imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431904/wiring-issues_otsci3.png',
       includedItems: [
        { en: 'Diagnosis of faulty wiring', hi: 'खराब वायरिंग की जांच' },
@@ -739,9 +786,9 @@ async function main() {
         hi: 'सीलिंग पंखा इंस्टालेशन',
       },
       basePrice: 99,
-      estimatedTime: '45 mins',
+      estimatedTime: '15 mins(1 fan)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431890/fan-installation_innz8k.png',
-      isTrending: true,
+      isTrending: false,
       includedItems: [
        { en: 'Fitting of 1 customer-provided domestic ceiling/wall fan', hi: '1 ग्राहक द्वारा उपलब्ध कराए गए घरेलू सीलिंग/वॉल फैन को लगाना' },
 { en: 'Installation on existing point', hi: 'मौजूदा पॉइंट पर इंस्टॉलेशन' },
@@ -762,7 +809,7 @@ async function main() {
         hi: 'सीलिंग पंखा मरम्मत',
       },
       basePrice: 125,
-      estimatedTime: '45 mins',
+      estimatedTime: '30 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786688222/Fan_repair_txvyuw.png',
       includedItems: [
         { en: 'Capacitor diagnosis and repair', hi: 'कैपेसिटर की जांच और मरम्मत' },
@@ -785,7 +832,7 @@ async function main() {
         hi: 'वॉशिंग मशीन मरम्मत',
       },
       basePrice: 499,
-      estimatedTime: '60 mins',
+      estimatedTime: '45 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689541/washing_machine_repair_txrviy.png',
       includedItems: [
         { en: 'Drainage issue diagnosis and repair', hi: 'ड्रेनेज की समस्या की जांच और मरम्मत' },
@@ -807,7 +854,7 @@ async function main() {
         hi: 'वॉशिंग मशीन इंस्टालेशन',
       },
       basePrice: 499,
-      estimatedTime: '60 mins',
+      estimatedTime: '45 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689494/washing_Machine_installation_yvtbx4.png',
       includedItems: [
       { en: 'Semi-automatic washing machine unboxing', hi: 'सेमी-ऑटोमैटिक वॉशिंग मशीन की अनबॉक्सिंग' },
@@ -831,7 +878,7 @@ async function main() {
         hi: 'एयर कंडीशनर इंस्टालेशन',
       },
       basePrice: 999,
-      estimatedTime: '90 mins',
+      estimatedTime: '90 mins(Window AC up to 1.5 ton)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689661/Ac_install_jls1ne.png',
       includedItems: [
        { en: 'AC unit fitting', hi: 'AC यूनिट लगाना' },
@@ -857,7 +904,7 @@ async function main() {
         hi: 'एयर कंडीशनर सर्विसिंग',
       },
       basePrice: 499,
-      estimatedTime: '60 mins',
+      estimatedTime: '45 mins(Window AC)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690000/Ac_service_yhdb9f.png',
       includedItems: [
         { en: 'Filter and coil cleaning', hi: 'फिल्टर और कॉइल की सफाई' },
@@ -880,7 +927,7 @@ async function main() {
         hi: 'एयर कंडीशनर मरम्मत',
       },
       basePrice: 699,
-      estimatedTime: '75 mins',
+      estimatedTime: '45 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786689806/Ac_repair_yshgdz.png',
       includedItems: [
         { en: 'Cooling issue diagnosis and repair', hi: 'कूलिंग की समस्या की जांच और मरम्मत' },
@@ -925,19 +972,36 @@ async function main() {
         hi: 'रेफ्रिजरेटर मरम्मत',
       },
       basePrice: 499,
-      estimatedTime: '60 mins',
+      estimatedTime: '45 mins(single door fridge)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690248/fridge_repair_bu7fsn.png',
       includedItems: [
-        { en: 'Fridge inspection', hi: 'फ्रिज निरीक्षण' },
-        { en: 'Cooling problem diagnosis', hi: 'कूलिंग समस्या निदान' },
-        { en: 'Minor repairs', hi: 'मामूली मरम्मत' }
+         {
+    en: 'Diagnosis and repair of cooling, thermostat or minor electrical issues',
+    hi: 'कूलिंग, थर्मोस्टैट या मामूली इलेक्ट्रिकल समस्याओं का निदान और मरम्मत'
+  },
+  {
+    en: 'Spare parts unless specifically stated',
+    hi: 'स्पेयर पार्ट्स, जब तक विशेष रूप से शामिल न हों'
+  }
       ],
-      notIncludedItems: [
-        { en: 'Compressor replacement', hi: 'कंप्रेसर प्रतिस्थापन' },
-        { en: 'Gas refill', hi: 'गैस रिफिल' },
-        { en: 'Major part replacement', hi: 'प्रमुख पुर्जा प्रतिस्थापन' }
-      ]
-    },
+   notIncludedItems: [
+  {
+    en: 'Spare parts and gas cost',
+    hi: 'स्पेयर पार्ट्स और गैस की लागत'
+  },
+  {
+    en: 'Compressor replacement',
+    hi: 'कंप्रेसर बदलने की लागत'
+  },
+  {
+    en: 'Double-door or frost-free specific issues',
+    hi: 'डबल-डोर या फ्रॉस्ट-फ्री से संबंधित विशेष समस्याएं'
+  },
+  {
+    en: 'Special repairs quoted separately',
+    hi: 'विशेष मरम्मत के लिए अलग से शुल्क'
+  }
+]},
     {
       nameTranslations: {
         en: 'Socket repair/Installation',
@@ -948,18 +1012,27 @@ async function main() {
         hi: 'इलेक्ट्रिकल सॉकेट इंस्टालेशन',
       },
       basePrice: 99,
-      estimatedTime: '30 mins',
+      estimatedTime: '15 mins(1 socket)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690343/socket_repai_aec63c.png',
-      includedItems: [
-        { en: 'Socket installation', hi: 'सॉकेट इंस्टालेशन' },
-        { en: 'Wiring connection', hi: 'वायरिंग कनेक्शन' },
-        { en: 'Safety testing', hi: 'सुरक्षा परीक्षण' }
-      ],
-      notIncludedItems: [
-        { en: 'Socket purchase', hi: 'सॉकेट खरीदना' },
-        { en: 'Major wiring work', hi: 'प्रमुख वायरिंग काम' },
-        { en: 'Switchboard replacement', hi: 'स्विचबोर्ड प्रतिस्थापन' }
-      ]
+     includedItems: [
+  {
+    en: 'Repair or replacement of 1 socket on an existing wiring point',
+    hi: 'मौजूदा वायरिंग पॉइंट पर 1 सॉकेट की मरम्मत या बदलना'
+  }
+],notIncludedItems: [
+  {
+    en: 'Socket cost for premium fittings',
+    hi: 'प्रीमियम फिटिंग के लिए सॉकेट की लागत'
+  },
+  {
+    en: 'New electrical point or wiring',
+    hi: 'नया इलेक्ट्रिकल पॉइंट या वायरिंग'
+  },
+  {
+    en: 'Additional sockets beyond 1',
+    hi: '1 से अधिक अतिरिक्त सॉकेट'
+  }
+]
     },
     {
       nameTranslations: {
@@ -971,18 +1044,28 @@ async function main() {
         hi: 'स्विच मरम्मत और इंस्टालेशन',
       },
       basePrice: 99,
-      estimatedTime: '25 mins',
+      estimatedTime: '15 mins(1 switch)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431904/switch-repair_h38eku.png',
-      includedItems: [
-        { en: 'Switch installation', hi: 'स्विच इंस्टालेशन' },
-        { en: 'Wiring connection', hi: 'वायरिंग कनेक्शन' },
-        { en: 'Basic testing', hi: 'बुनियादी परीक्षण' }
-      ],
-      notIncludedItems: [
-        { en: 'Switch purchase', hi: 'स्विच खरीदना' },
-        { en: 'Switchboard replacement', hi: 'स्विचबोर्ड प्रतिस्थापन' },
-        { en: 'Complex wiring work', hi: 'जटिल वायरिंग काम' }
-      ]
+     includedItems: [
+  {
+    en: 'Repair or replacement of 1 switch',
+    hi: '1 स्विच की मरम्मत या बदलना'
+  }
+],
+    notIncludedItems: [
+  {
+    en: 'Switch cost',
+    hi: 'स्विच की लागत'
+  },
+  {
+    en: 'New point wiring',
+    hi: 'नई पॉइंट वायरिंग'
+  },
+  {
+    en: 'Additional switches beyond 1',
+    hi: '1 से अधिक अतिरिक्त स्विच'
+  }
+]
     },
     {
       nameTranslations: {
@@ -994,18 +1077,28 @@ async function main() {
         hi: 'एमसीबी मरम्मत और इंस्टालेशन',
       },
       basePrice: 125,
-      estimatedTime: '35 mins',
+      estimatedTime: '30 mins(single MCB)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690477/mcb_repair_hkieuz.png',
-      includedItems: [
-        { en: 'MCB installation', hi: 'एमसीबी इंस्टालेशन' },
-        { en: 'Wiring connection', hi: 'वायरिंग कनेक्शन' },
-        { en: 'Load testing', hi: 'लोड परीक्षण' }
-      ],
+     includedItems: [
+  {
+    en: 'Diagnosis and fixing of 1 MCB tripping or loose connection issue',
+    hi: '1 MCB की ट्रिपिंग या ढीले कनेक्शन की समस्या का निदान और समाधान'
+  }
+],
       notIncludedItems: [
-        { en: 'MCB purchase', hi: 'एमसीबी खरीदना' },
-        { en: 'Main panel replacement', hi: 'मुख्य पैनल प्रतिस्थापन' },
-        { en: 'Complex electrical work', hi: 'जटिल इलेक्ट्रिकल काम' }
-      ]
+  {
+    en: 'MCB unit cost',
+    hi: 'MCB यूनिट की लागत'
+  },
+  {
+    en: 'Distribution board upgrade',
+    hi: 'डिस्ट्रीब्यूशन बोर्ड अपग्रेड'
+  },
+  {
+    en: 'Additional MCBs beyond 1',
+    hi: '1 से अधिक अतिरिक्त MCB'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1017,18 +1110,21 @@ async function main() {
         hi: 'ओवन मरम्मत और रखरखाव',
       },
       basePrice: 449,
-      estimatedTime: '45 mins',
+      estimatedTime: '30 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690655/oven_repair_db0zgb.png',
-      includedItems: [
-        { en: 'Oven inspection', hi: 'ओवन निरीक्षण' },
-        { en: 'Heating element check', hi: 'हीटिंग एलिमेंट जांच' },
-        { en: 'Minor repairs', hi: 'मामूली मरम्मत' }
+       includedItems: [
+  {
+    en: 'Microwave minor issue diagnosis and repair — door, switch or turntable',
+    hi: 'माइक्रोवेव की मामूली समस्या का निदान और मरम्मत — दरवाज़ा, स्विच या टर्नटेबल'
+  }
+
       ],
-      notIncludedItems: [
-        { en: 'Heating element replacement', hi: 'हीटिंग एलिमेंट प्रतिस्थापन' },
-        { en: 'Major electrical work', hi: 'प्रमुख इलेक्ट्रिकल काम' },
-        { en: 'New parts purchase', hi: 'नए पुर्जे खरीदना' }
-      ]
+     notIncludedItems: [
+  {
+    en: 'Spare-part cost',
+    hi: 'स्पेयर पार्ट की लागत'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1040,18 +1136,24 @@ async function main() {
         hi: 'इस्त्री मरम्मत और रखरखाव',
       },
       basePrice: 125,
-      estimatedTime: '30 mins',
+      estimatedTime: '20 mins',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690739/Iron_repair_pqhf8k.png',
-      includedItems: [
-        { en: 'Iron inspection', hi: 'इस्त्री निरीक्षण' },
-        { en: 'Heating element check', hi: 'हीटिंग एलिमेंट जांच' },
-        { en: 'Cord repair', hi: 'कॉर्ड मरम्मत' }
-      ],
-      notIncludedItems: [
-        { en: 'Heating element replacement', hi: 'हीटिंग एलिमेंट प्रतिस्थापन' },
-        { en: 'Sole plate replacement', hi: 'सोल प्लेट प्रतिस्थापन' },
-        { en: 'New iron purchase', hi: 'नई इस्त्री खरीदना' }
-      ]
+    includedItems: [
+  {
+    en: 'Cord or plug repair or replacement',
+    hi: 'कॉर्ड या प्लग की मरम्मत या बदलना'
+  }
+],
+    notIncludedItems: [
+  {
+    en: 'Spare-part cost for heating element',
+    hi: 'हीटिंग एलिमेंट की स्पेयर पार्ट लागत'
+  },
+  {
+    en: 'Steam-generator iron repairs',
+    hi: 'स्टीम-जेनरेटर आयरन की मरम्मत'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1063,18 +1165,28 @@ async function main() {
         hi: 'प्रति घंटा आधार पर अन्य इलेक्ट्रीशियन सेवाएं',
       },
       basePrice: 399,
-      estimatedTime: '60 mins',
+      estimatedTime: '60 mins(1 hour slab)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786690855/other_electrician_service_n6vkhk.png',
       includedItems: [
-        { en: 'General electrical inspection', hi: 'सामान्य इलेक्ट्रिकल निरीक्षण' },
-        { en: 'Minor repairs', hi: 'मामूली मरम्मत' },
-        { en: 'Basic tools provided', hi: 'बुनियादी उपकरण प्रदान किए गए' }
-      ],
+  {
+    en: "First hour of professional's time",
+    hi: 'प्रोफेशनल का पहले एक घंटे का समय'
+  },
+  {
+    en: 'Basic electrical tools',
+    hi: 'बुनियादी इलेक्ट्रिकल उपकरण'
+  }
+],
       notIncludedItems: [
-        { en: 'Major installation work', hi: 'प्रमुख इंस्टालेशन काम' },
-        { en: 'Expensive parts replacement', hi: 'महंगे पुर्जे प्रतिस्थापन' },
-        { en: 'Complex electrical work', hi: 'जटिल इलेक्ट्रिकल काम' }
-      ]
+  {
+    en: 'Material or part cost',
+    hi: 'सामग्री या पार्ट की लागत'
+  },
+  {
+    en: 'Work beyond 1 hour',
+    hi: '1 घंटे से अधिक का काम'
+  }
+]
     },
   ];
   for (const service of electricalServices) {
@@ -1089,11 +1201,12 @@ async function main() {
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
+        isComingSoon: true,
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },
     });
-    console.log(`    └── ✅ Created service: ${service.nameTranslations.en}`);
+    console.log(`    └── ✅ Created service: ${service.nameTranslations.en} (Coming Soon)`);
   }
 
   // ---------------------------------------------------------
@@ -1130,20 +1243,45 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर बागवानी सेवाएं',
       },
       basePrice: 299,
-      estimatedTime: '60 mins',
+      estimatedTime: '60 mins(1 hour slab)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691541/gardening_voitqg.png',
-      isTrending: false,
-      includedItems: [
-        { en: 'Lawn mowing', hi: 'लॉन मोइंग' },
-        { en: 'Plant trimming', hi: 'पौधे ट्रिमिंग' },
-        { en: 'Weed removal', hi: 'खरपतवार हटाना' },
-        { en: 'Basic tools provided', hi: 'बुनियादी उपकरण प्रदान किए गए' }
-      ],
-      notIncludedItems: [
-        { en: 'Plant purchase', hi: 'पौधे खरीदना' },
-        { en: 'Fertilizer application', hi: 'उर्वरक लगाना' },
-        { en: 'Major landscaping', hi: 'प्रमुख लैंडस्केपिंग' }
-      ]
+      isTrending: true,
+     includedItems: [
+  {
+    en: 'Pruning of existing garden and potted plants',
+    hi: 'मौजूदा बगीचे और गमले के पौधों की छंटाई'
+  },
+  {
+    en: 'Weeding',
+    hi: 'खरपतवार हटाना'
+  },
+  {
+    en: 'Watering plants',
+    hi: 'पौधों को पानी देना'
+  },
+  {
+    en: 'Basic upkeep of existing garden and potted plants for 1 hour',
+    hi: '1 घंटे तक मौजूदा बगीचे और गमले के पौधों की सामान्य देखभाल'
+  }
+],
+     notIncludedItems: [
+  {
+    en: 'Plant, soil or fertilizer cost',
+    hi: 'पौधे, मिट्टी या खाद की लागत'
+  },
+  {
+    en: 'Landscaping or garden redesign',
+    hi: 'लैंडस्केपिंग या बगीचे का पुनः डिज़ाइन'
+  },
+  {
+    en: 'Pest treatment for plants',
+    hi: 'पौधों के लिए कीट उपचार'
+  },
+  {
+    en: 'Work beyond 1 hour',
+    hi: '1 घंटे से अधिक का काम'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1155,19 +1293,41 @@ async function main() {
         hi: 'पूर्ण कार धोने की सेवा',
       },
       basePrice: 199,
-      estimatedTime: '45 mins',
+      estimatedTime: '30 mins(Hatchback)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691769/car_wash_htmjxd.png',
       isTrending: false,
-      includedItems: [
-        { en: 'Exterior washing', hi: 'बाहरी धोना' },
-        { en: 'Interior cleaning', hi: 'आंतरिक सफाई' },
-        { en: 'Dashboard polishing', hi: 'डैशबोर्ड पॉलिशिंग' }
-      ],
+     includedItems: [
+  {
+    en: 'Exterior foam wash',
+    hi: 'बाहरी फोम वॉश'
+  },
+  {
+    en: 'Tyre cleaning',
+    hi: 'टायर की सफाई'
+  },
+  {
+    en: 'Window wipe',
+    hi: 'खिड़कियों की सफाई'
+  }
+],
       notIncludedItems: [
-        { en: 'Engine cleaning', hi: 'इंजन सफाई' },
-        { en: 'Wax polishing', hi: 'वैक्स पॉलिशिंग' },
-        { en: 'Scratch removal', hi: 'खरोंच हटाना' }
-      ]
+  {
+    en: 'Interior vacuuming or detailing',
+    hi: 'इंटीरियर वैक्यूमिंग या डीटेलिंग'
+  },
+  {
+    en: 'Waxing or polishing',
+    hi: 'वैक्सिंग या पॉलिशिंग'
+  },
+  {
+    en: 'Sedan or SUV service',
+    hi: 'सेडान या SUV की सर्विस'
+  },
+  {
+    en: 'Water if unavailable on-site',
+    hi: 'यदि साइट पर पानी उपलब्ध न हो तो पानी की व्यवस्था'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1179,19 +1339,33 @@ async function main() {
         hi: 'दोपहिया वाहन धोने की सेवा',
       },
       basePrice: 99,
-      estimatedTime: '30 mins',
+      estimatedTime: '20 mins(Scooter)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691825/two_wheeler_wash_marazh.png',
       isTrending: false,
-      includedItems: [
-        { en: 'Complete bike washing', hi: 'पूर्ण बाइक धोना' },
-        { en: 'Chain cleaning', hi: 'चेन सफाई' },
-        { en: 'Basic polishing', hi: 'बुनियादी पॉलिशिंग' }
-      ],
-      notIncludedItems: [
-        { en: 'Engine servicing', hi: 'इंजन सर्विसिंग' },
-        { en: 'Oil change', hi: 'ऑयल चेंज' },
-        { en: 'Major repairs', hi: 'प्रमुख मरम्मत' }
-      ]
+     includedItems: [
+  {
+    en: 'Exterior wash and wipe-down',
+    hi: 'बाहरी धुलाई और पोंछाई'
+  },
+  {
+    en: "Customer's water and power access",
+    hi: 'ग्राहक द्वारा पानी और बिजली की सुविधा'
+  }
+],
+     notIncludedItems: [
+  {
+    en: 'Chain lubrication or polishing',
+    hi: 'चेन की लुब्रिकेशन या पॉलिशिंग'
+  },
+  {
+    en: 'Motorcycles above scooter size',
+    hi: 'स्कूटर से बड़े आकार की मोटरसाइकिल'
+  },
+  {
+    en: 'Storage-compartment cleaning',
+    hi: 'स्टोरेज कम्पार्टमेंट की सफाई'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1203,19 +1377,29 @@ async function main() {
         hi: 'प्रति घंटा आधार पर सामान्य घरेलू सहायता',
       },
       basePrice: 299,
-      estimatedTime: '60 mins',
+      estimatedTime: '60 mins(1 hour slab)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786691873/Home_assistance_rutn95.png',
       isTrending: false,
-      includedItems: [
-        { en: 'General household help', hi: 'सामान्य घरेलू सहायता' },
-        { en: 'Errand running', hi: 'काम चलाना' },
-        { en: 'Basic cleaning assistance', hi: 'बुनियादी सफाई सहायता' }
-      ],
+     includedItems: [
+  {
+    en: 'General help with errands and light chores as briefed',
+    hi: 'निर्देश के अनुसार सामान्य कामों और हल्के घरेलू कार्यों में सहायता'
+  },
+  {
+    en: 'Up to 1 hour of service',
+    hi: 'अधिकतम 1 घंटे की सेवा'
+  }
+],
       notIncludedItems: [
-        { en: 'Specialized services', hi: 'विशेषज्ञ सेवाएं' },
-        { en: 'Heavy lifting', hi: 'भारी उठाना' },
-        { en: 'Technical work', hi: 'तकनीकी काम' }
-      ]
+  {
+    en: 'Specialist tasks covered under other categories',
+    hi: 'अन्य श्रेणियों के अंतर्गत आने वाले विशेषज्ञ कार्य'
+  },
+  {
+    en: 'Work beyond 1 hour',
+    hi: '1 घंटे से अधिक का काम'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1226,20 +1410,50 @@ async function main() {
         en: 'Water tank cleaning and maintenance',
         hi: 'पानी की टंकी सफाई और रखरखाव',
       },
-      basePrice: 199,
-      estimatedTime: '60 mins',
+      basePrice:199,
+      estimatedTime: '1 min(Per 10 litre capacity)',
        imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168972/water_tank_overhang_okq13l.png',
       isTrending: false,
       includedItems: [
-        { en: 'Tank interior cleaning', hi: 'टंकी आंतरिक सफाई' },
-        { en: 'Sediment removal', hi: 'तलछट हटाना' },
-        { en: 'Disinfection', hi: 'कीटाणुशोधन' }
-      ],
+  {
+    en: 'Draining the water tank',
+    hi: 'पानी की टंकी खाली करना'
+  },
+  {
+    en: 'Tank scrubbing and cleaning',
+    hi: 'टंकी की रगड़कर सफाई करना'
+  },
+  {
+    en: 'Sediment and sludge removal',
+    hi: 'जमा तलछट और गाद हटाना'
+  },
+  {
+    en: 'Refilling the tank using customer’s water source',
+    hi: 'ग्राहक के पानी के स्रोत का उपयोग करके टंकी को फिर से भरना'
+  }
+],
       notIncludedItems: [
-        { en: 'Tank replacement', hi: 'टंकी प्रतिस्थापन' },
-        { en: 'Plumbing modifications', hi: 'प्लंबिंग संशोधन' },
-        { en: 'Major structural work', hi: 'प्रमुख संरचनात्मक काम' }
-      ]
+  {
+    en: 'Underground tank cleaning',
+    hi: 'भूमिगत टंकी की सफाई'
+  },
+  {
+    en: 'Tanks above 500L capacity',
+    hi: '500 लीटर से अधिक क्षमता वाली टंकियां'
+  },
+  {
+    en: 'Disinfection chemical cost',
+    hi: 'कीटाणुनाशक रसायन की लागत'
+  },
+  {
+    en: 'Plumbing repair',
+    hi: 'प्लंबिंग की मरम्मत'
+  },
+  {
+    en: 'Emptying the tank before the professional arrives',
+    hi: 'प्रोफेशनल के आने से पहले टंकी खाली करना'
+  }
+]
     },
     {
   nameTranslations: {
@@ -1250,21 +1464,42 @@ async function main() {
     en: 'Underground water tank cleaning and maintenance',
     hi: 'भूमिगत पानी की टंकी की सफाई और रखरखाव',
   },
-  basePrice: 399,
-  estimatedTime: '90 mins',
+  basePrice: 199,
+  estimatedTime: '1.25 mins(per 10 litre capacity)',
   imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692040/water_tank_cleaning_ir8u0g.png',
   isTrending: false,
-  includedItems: [
-    { en: 'Tank draining', hi: 'टंकी का पानी निकालना' },
-{ en: 'Tank scrubbing', hi: 'टंकी को रगड़कर साफ करना' },
-{ en: 'Sediment and sludge removal', hi: 'तलछट और गाद हटाना' },
-{ en: 'Tank refilling using customer’s water source', hi: 'ग्राहक के पानी के स्रोत का उपयोग करके टंकी में पानी भरना' },
-{ en: 'Water must be drained before the Houcee Professional arrives', hi: 'Houcee प्रोफेशनल के आने से पहले टंकी का पानी निकालना आवश्यक है' },
-  ],
-  notIncludedItems: [
-   { en: 'Disinfection chemical cost (add-on)', hi: 'कीटाणुशोधन केमिकल की लागत (अतिरिक्त)' },
-{ en: 'Plumbing repair', hi: 'प्लंबिंग की मरम्मत' },
-  ],
+ includedItems: [
+  {
+    en: 'Draining the water tank',
+    hi: 'पानी की टंकी खाली करना'
+  },
+  {
+    en: 'Scrubbing and cleaning the tank',
+    hi: 'टंकी की रगड़कर सफाई करना'
+  },
+  {
+    en: 'Sediment and sludge removal',
+    hi: 'तलछट और गाद हटाना'
+  },
+  {
+    en: 'Refilling using customer’s water source',
+    hi: 'ग्राहक के पानी के स्रोत का उपयोग करके टंकी को फिर से भरना'
+  },
+  {
+    en: 'Water removal before Houcee Professional’s arrival',
+    hi: 'Houcee प्रोफेशनल के आने से पहले पानी निकालना'
+  }
+],
+notIncludedItems: [
+  {
+    en: 'Disinfection chemical cost',
+    hi: 'कीटाणुनाशक रसायन की लागत'
+  },
+  {
+    en: 'Plumbing repair',
+    hi: 'प्लंबिंग की मरम्मत'
+  }
+],
 },
 {
   nameTranslations: {
@@ -1278,7 +1513,7 @@ async function main() {
   basePrice: 1999,
   estimatedTime: '180 mins',
   imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168964/1bhk_g23tdg.png',
-  isTrending: false,
+  isTrending: true,
   includedItems: [
     { en: 'Deep floor mopping', hi: 'फर्श की गहरी सफाई और पोछा' },
 { en: 'Company-supplied detergent and disinfectant', hi: 'कंपनी द्वारा दिया गया डिटर्जेंट और कीटाणुनाशक' },
@@ -1418,19 +1653,33 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर पेंटिंग सेवाएं',
       },
       basePrice: 399,
-      estimatedTime: '60 mins',
+      estimatedTime: '60 mins(1 hour slab)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431905/painting_mef64a.png',
       isTrending: false,
       includedItems: [
-        { en: 'Wall painting', hi: 'दीवार पेंटिंग' },
-        { en: 'Surface preparation', hi: 'सतह तैयारी' },
-        { en: 'Basic tools provided', hi: 'बुनियादी उपकरण प्रदान किए गए' }
-      ],
-      notIncludedItems: [
-        { en: 'Paint purchase', hi: 'पेंट खरीदना' },
-        { en: 'Major surface repairs', hi: 'प्रमुख सतह मरम्मत' },
-        { en: 'Scaffolding', hi: 'स्कैफोल्डिंग' }
-      ]
+  {
+    en: 'Touch-up and painting work as briefed',
+    hi: 'निर्देश के अनुसार टच-अप और पेंटिंग का काम'
+  },
+  {
+    en: "1 hour of professional's time",
+    hi: 'प्रोफेशनल का 1 घंटे का समय'
+  }
+],
+     notIncludedItems: [
+  {
+    en: 'Paint and material cost',
+    hi: 'पेंट और सामग्री की लागत'
+  },
+  {
+    en: 'Scaffolding for high walls',
+    hi: 'ऊंची दीवारों के लिए मचान की व्यवस्था'
+  },
+  {
+    en: 'Work beyond 1 hour',
+    hi: '1 घंटे से अधिक का काम'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1442,19 +1691,29 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर बढ़ई सेवाएं',
       },
       basePrice: 399,
-      estimatedTime: '60 mins',
+      estimatedTime: '60 mins(1 hour slab)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692559/Carpenter_pudiv6.png',
       isTrending: false,
       includedItems: [
-        { en: 'Wood repair work', hi: 'लकड़ी मरम्मत काम' },
-        { en: 'Furniture assembly', hi: 'फर्नीचर असेंबली' },
-        { en: 'Basic tools provided', hi: 'बुनियादी उपकरण प्रदान किए गए' }
-      ],
-      notIncludedItems: [
-        { en: 'Wood purchase', hi: 'लकड़ी खरीदना' },
-        { en: 'Major construction', hi: 'प्रमुख निर्माण' },
-        { en: 'Hardware purchase', hi: 'हार्डवेयर खरीदना' }
-      ]
+  {
+    en: 'Furniture repair, fitting and minor woodwork for 1 hour',
+    hi: '1 घंटे तक फर्नीचर की मरम्मत, फिटिंग और मामूली लकड़ी का काम'
+  }
+],
+     notIncludedItems: [
+  {
+    en: 'Wood and hardware material cost',
+    hi: 'लकड़ी और हार्डवेयर सामग्री की लागत'
+  },
+  {
+    en: 'New furniture fabrication',
+    hi: 'नया फर्नीचर बनवाने की लागत'
+  },
+  {
+    en: 'Work beyond 1 hour',
+    hi: '1 घंटे से अधिक का काम'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1466,19 +1725,29 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर राजमिस्त्री सेवाएं',
       },
       basePrice: 399,
-      estimatedTime: '60 mins',
+      estimatedTime: '60 mins(1 hour slab)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431900/minor-renovation_hwc98l.png',
       isTrending: false,
       includedItems: [
-        { en: 'Minor masonry work', hi: 'मामूली राजमिस्त्री काम' },
-        { en: 'Tile repair', hi: 'टाइल मरम्मत' },
-        { en: 'Basic tools provided', hi: 'बुनियादी उपकरण प्रदान किए गए' }
-      ],
+  {
+    en: 'Minor civil and masonry work such as tile fixing and plaster patching for 1 hour',
+    hi: '1 घंटे तक मामूली सिविल और चिनाई का काम जैसे टाइल लगाना और प्लास्टर पैचिंग'
+  }
+],
       notIncludedItems: [
-        { en: 'Material purchase', hi: 'सामग्री खरीदना' },
-        { en: 'Major construction', hi: 'प्रमुख निर्माण' },
-        { en: 'Structural work', hi: 'संरचनात्मक काम' }
-      ]
+  {
+    en: 'Cement, tile and material cost',
+    hi: 'सीमेंट, टाइल और सामग्री की लागत'
+  },
+  {
+    en: 'Structural work',
+    hi: 'स्ट्रक्चरल काम'
+  },
+  {
+    en: 'Work beyond 1 hour',
+    hi: '1 घंटे से अधिक का काम'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1490,19 +1759,37 @@ async function main() {
         hi: 'पूर्ण कीट नियंत्रण और फ्यूमीगेशन सेवाएं',
       },
       basePrice: 399,
-      estimatedTime: '90 mins',
+      estimatedTime: '30 mins(flat rate)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692511/pest_control_fcpk6p.png',
       isTrending: false,
       includedItems: [
-        { en: 'Pest inspection', hi: 'कीट निरीक्षण' },
-        { en: 'Chemical treatment', hi: 'रासायनिक उपचार' },
-        { en: 'Prevention advice', hi: 'रोकथाम सलाह' }
-      ],
+  {
+    en: 'Standard home pest treatment for cockroaches and general pests',
+    hi: 'कॉकरोच और सामान्य कीटों के लिए मानक घरेलू कीट नियंत्रण उपचार'
+  },
+  {
+    en: 'Treatment for homes up to 1BHK',
+    hi: '1BHK तक के घरों के लिए उपचार'
+  },
+  {
+    en: 'Company-supplied chemical spray',
+    hi: 'कंपनी द्वारा उपलब्ध कराया गया केमिकल स्प्रे'
+  }
+],
       notIncludedItems: [
-        { en: 'Major infestation treatment', hi: 'प्रमुख संक्रमण उपचार' },
-        { en: 'Structural repairs', hi: 'संरचनात्मक मरम्मत' },
-        { en: 'Follow-up treatments', hi: 'फॉलो-अप उपचार' }
-      ]
+  {
+    en: 'Termite or rodent specialist treatment',
+    hi: 'दीमक या चूहों के लिए विशेष कीट नियंत्रण उपचार'
+  },
+  {
+    en: 'Homes above 2BHK',
+    hi: '2BHK से बड़े घर'
+  },
+  {
+    en: 'Furniture or pet relocation during treatment',
+    hi: 'उपचार के दौरान फर्नीचर या पालतू जानवरों को स्थानांतरित करना'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1513,20 +1800,30 @@ async function main() {
         en: 'General labor services on hourly basis',
         hi: 'प्रति घंटा आधार पर सामान्य श्रमिक सेवाएं',
       },
-      basePrice: 399,
-      estimatedTime: '60 mins',
+      basePrice: 299,
+      estimatedTime: '60 mins(1 hour slab)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786431895/labour_ykt5a8.png',
       isTrending: false,
       includedItems: [
-        { en: 'General labor work', hi: 'सामान्य श्रमिक काम' },
-        { en: 'Loading/unloading', hi: 'लोडिंग/अनलोडिंग' },
-        { en: 'Basic tools provided', hi: 'बुनियादी उपकरण प्रदान किए गए' }
-      ],
+  {
+    en: 'Manual help for shifting, loading and basic labour tasks for 1 hour',
+    hi: '1 घंटे तक सामान शिफ्ट करने, लोड करने और सामान्य मजदूरी के कामों में मैनुअल सहायता'
+  }
+],
       notIncludedItems: [
-        { en: 'Specialized equipment', hi: 'विशेष उपकरण' },
-        { en: 'Technical work', hi: 'तकनीकी काम' },
-        { en: 'Heavy machinery operation', hi: 'भारी मशीनरी संचालन' }
-      ]
+  {
+    en: 'Vehicle or transportation cost',
+    hi: 'वाहन या परिवहन की लागत'
+  },
+  {
+    en: 'Work beyond 1 hour',
+    hi: '1 घंटे से अधिक का काम'
+  },
+  {
+    en: 'Heavy machinery operation',
+    hi: 'भारी मशीनरी का संचालन'
+  }
+]
     },
   ];
 
@@ -1582,19 +1879,37 @@ async function main() {
         hi: 'प्रति घंटा आधार पर पेशेवर बेबीसिटिंग सेवाएं',
       },
       basePrice: 599,
-      estimatedTime: '60 mins',
+      estimatedTime: 'Per day(7 hours)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692801/baby_sitting_ltl9x6.png',
       isTrending: false,
       includedItems: [
-        { en: 'Child supervision', hi: 'बच्चे की निगरानी' },
-        { en: 'Feeding assistance', hi: 'खिलाने में सहायता' },
-        { en: 'Basic activities', hi: 'बुनियादी गतिविधियां' }
-      ],
+  {
+    en: 'Supervised childcare as per customer instructions',
+    hi: 'ग्राहक के निर्देशों के अनुसार बच्चों की निगरानी और देखभाल'
+  },
+  {
+    en: 'Feeding and playtime as briefed',
+    hi: 'निर्देश के अनुसार बच्चों को खाना खिलाना और खेलना'
+  },
+  {
+    en: 'Hourly childcare service',
+    hi: 'प्रति घंटे बच्चों की देखभाल की सेवा'
+  }
+],
       notIncludedItems: [
-        { en: 'Medical care', hi: 'चिकित्सा देखभाल' },
-        { en: 'Special needs care', hi: 'विशेष आवश्यकता देखभाल' },
-        { en: 'Overnight care', hi: 'रात्रि देखभाल' }
-      ]
+  {
+    en: 'Medical care or medicine administration',
+    hi: 'चिकित्सीय देखभाल या दवा देना'
+  },
+  {
+    en: 'Outdoor outings without prior approval',
+    hi: 'पूर्व अनुमति के बिना बच्चों को बाहर ले जाना'
+  },
+  {
+    en: 'Bookings under 3 hours',
+    hi: '3 घंटे से कम की बुकिंग'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1606,19 +1921,41 @@ async function main() {
         hi: 'प्रति घंटा आधार पर बुजुर्गों की देखभाल सेवाएं',
       },
       basePrice: 699,
-      estimatedTime: '60 mins',
+      estimatedTime: 'Per day(7 hours)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692784/elders_care_xl5elp.png',
       isTrending: false,
       includedItems: [
-        { en: 'Companionship', hi: 'साथ' },
-        { en: 'Basic assistance', hi: 'बुनियादी सहायता' },
-        { en: 'Meal preparation', hi: 'भोजन तैयारी' }
-      ],
-      notIncludedItems: [
-        { en: 'Medical care', hi: 'चिकित्सा देखभाल' },
-        { en: 'Medication administration', hi: 'दवा प्रशासन' },
-        { en: 'Specialized equipment', hi: 'विशेष उपकरण' }
-      ]
+  {
+    en: 'Companionship and general assistance',
+    hi: 'साथ और सामान्य सहायता'
+  },
+  {
+    en: 'Mobility assistance',
+    hi: 'चलने-फिरने में सहायता'
+  },
+  {
+    en: 'Medicine reminders',
+    hi: 'दवा लेने की याद दिलाना'
+  },
+  {
+    en: 'Hourly elderly care service',
+    hi: 'प्रति घंटे बुजुर्गों की देखभाल की सेवा'
+  }
+],
+     notIncludedItems: [
+  {
+    en: 'Medical or nursing procedures',
+    hi: 'चिकित्सीय या नर्सिंग प्रक्रियाएं'
+  },
+  {
+    en: 'Medicine cost',
+    hi: 'दवाओं की लागत'
+  },
+  {
+    en: 'Bookings under 4 hours',
+    hi: '4 घंटे से कम की बुकिंग'
+  }
+]
     },
     {
       nameTranslations: {
@@ -1630,19 +1967,49 @@ async function main() {
         hi: 'प्रमाणित नर्स द्वारा पेशेवर रोगी देखभाल',
       },
       basePrice: 1199,
-      estimatedTime: '60 mins',
+      estimatedTime: 'Per day(7 hours)',
       imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692913/patient_care_mazaf1.png',
       isTrending: false,
       includedItems: [
-        { en: 'Medical monitoring', hi: 'चिकित्सा निगरानी' },
-        { en: 'Medication assistance', hi: 'दवा सहायता' },
-        { en: 'Basic nursing care', hi: 'बुनियादी नर्सिंग देखभाल' }
-      ],
-      notIncludedItems: [
-        { en: 'Specialized medical procedures', hi: 'विशेष चिकित्सा प्रक्रियाएं' },
-        { en: 'Equipment purchase', hi: 'उपकरण खरीदना' },
-        { en: 'Hospital coordination', hi: 'अस्पताल समन्वय' }
-      ]
+  {
+    en: 'Vitals monitoring by a certified nurse',
+    hi: 'प्रमाणित नर्स द्वारा महत्वपूर्ण संकेतों की निगरानी'
+  },
+  {
+    en: 'Medication administration as prescribed',
+    hi: 'निर्धारित अनुसार दवा देना'
+  },
+  {
+    en: 'Wound dressing',
+    hi: 'घाव की ड्रेसिंग'
+  },
+  {
+    en: 'Mobility support',
+    hi: 'चलने-फिरने में सहायता'
+  },
+  {
+    en: 'Hourly certified nursing care',
+    hi: 'प्रति घंटे प्रमाणित नर्सिंग सेवा'
+  }
+],
+     notIncludedItems: [
+  {
+    en: 'Medicine and medical equipment cost',
+    hi: 'दवाओं और चिकित्सा उपकरणों की लागत'
+  },
+  {
+    en: 'Diagnostic tests',
+    hi: 'नैदानिक जांच'
+  },
+  {
+    en: 'Doctor consultation',
+    hi: 'डॉक्टर से परामर्श'
+  },
+  {
+    en: 'Bookings under 4 hours',
+    hi: '4 घंटे से कम की बुकिंग'
+  }
+]
     },
   ];
 

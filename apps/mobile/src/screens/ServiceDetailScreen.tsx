@@ -63,10 +63,24 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
       if (currentServiceInCart) {
         const cartItem = res.data?.items?.find((item: any) => item.serviceId === service?.id);
         if (cartItem?.duration) {
-          // Calculate current duration from cart
-          const cartTime = Math.round(parseEstimatedTime(cartItem.duration?.label || cartItem.duration));
+          // Parse the duration label to get the time in minutes
+          const durationLabel = cartItem.duration.label;
+          let cartTime = 0;
+          
+          if (typeof durationLabel === 'string') {
+            if (durationLabel.includes('hr')) {
+              const parts = durationLabel.split('hr');
+              const hours = parseInt(parts[0].trim()) || 0;
+              const minsPart = parts[1] || '';
+              const mins = minsPart.includes('min') ? parseInt(minsPart.trim()) || 0 : 0;
+              cartTime = (hours * 60) + mins;
+            } else if (durationLabel.includes('min')) {
+              cartTime = parseInt(durationLabel.trim()) || 0;
+            }
+          }
+          
           const cartBaseTime = Math.round(parseEstimatedTime(service?.estimatedTime));
-          if (cartBaseTime > 0) {
+          if (cartBaseTime > 0 && cartTime > 0) {
             const multiplier = cartTime / cartBaseTime;
             setSelectedDuration(multiplier);
           }
@@ -96,20 +110,12 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
   const basePrice = service?.basePrice || 0;
   const estimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseEstimatedTime, Math.round(currentEstimatedTime)) * quantity);
 
-  // Check if service belongs to plumber or electrical subcategory
-  const subcategoryName = (service?.subcategoryNameEn || '').toLowerCase();
-  const isComingSoon = subcategoryName.includes('plumbing') || 
-                       subcategoryName.includes('plumber') || 
-                       subcategoryName.includes('electrical') || 
-                       subcategoryName.includes('electrician');
+  // Check if service is coming soon based on database field
+  const isComingSoon = service?.isComingSoon || false;
 
   // Helper function to check if a service is coming soon
   const isServiceComingSoon = (serviceItem: any) => {
-    const itemSubcategoryName = (serviceItem?.subcategoryNameEn || '').toLowerCase();
-    return itemSubcategoryName.includes('plumbing') || 
-           itemSubcategoryName.includes('plumber') || 
-           itemSubcategoryName.includes('electrical') || 
-           itemSubcategoryName.includes('electrician');
+    return serviceItem?.isComingSoon || false;
   };
 
   const handleNotifyMe = () => {
@@ -123,7 +129,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
     Linking.openURL(whatsappUrl);
   };
 
-  const handleAddToCart = async (serviceItem: any, bookingTypeParam?: string, quantityParam?: number, currentDuration: number) => {
+  const handleAddToCart = async (serviceItem: any, bookingTypeParam?: string, quantityParam?: number, currentDuration?: number) => {
     try {
       const userId = await AsyncStorage.getItem('user_id');
       if (!userId) {
@@ -132,14 +138,33 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
       }
 
       const itemBaseTime = Math.round(parseEstimatedTime(serviceItem.estimatedTime));
+      const duration = currentDuration || itemBaseTime;
 
       // Check if duration exceeds maximum
-      if (currentDuration > MAX_DURATION_MINS) {
+      if (duration > MAX_DURATION_MINS) {
         Alert.alert(
           'Maximum Duration Reached',
           getMaxDurationMessage()
         );
         return;
+      }
+
+      // Calculate price for the current duration
+      const basePrice = serviceItem.basePrice || 0;
+      const calculatedPrice = Math.round(calculatePriceForDuration(basePrice, itemBaseTime, duration));
+
+      // Format duration label based on the duration
+      let durationLabel: string;
+      if (duration >= 60) {
+        const hours = Math.floor(duration / 60);
+        const mins = duration % 60;
+        if (mins > 0) {
+          durationLabel = `${hours} hr ${mins} min`;
+        } else {
+          durationLabel = `${hours} hr`;
+        }
+      } else {
+        durationLabel = `${duration} min`;
       }
 
       // Backend will calculate price based on duration
@@ -149,7 +174,8 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
         quantity: quantityParam || quantity,
         type: 'service',
         duration: {
-          label: `${currentDuration} mins`
+          label: durationLabel,
+          price: calculatedPrice
         }
       };
 
@@ -177,6 +203,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
 
   const handleBookButton = () => {
     // When user clicks Book, add service with default duration (baseEstimatedTime)
+    // The handleAddToCart function will format the duration label properly
     handleAddToCart(service, 'instant', quantity, baseEstimatedTime);
   };
 
@@ -275,6 +302,12 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, color: Theme.textSecondary, fontWeight: '800', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('service.total_price')}</Text>
                 <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary }}>₹{Math.round(estimatedPrice)}</Text>
+                <Text style={{ fontSize: 14, color: Theme.textSecondary, marginTop: 4 }}>
+                  {t('service.estimated_time')}: {(() => {
+                    const cartItem = cart?.items?.find((i: any) => i.serviceId === service?.id);
+                    return cartItem?.duration?.label || `${Math.round(currentEstimatedTime)} ${t('common.mins')}`;
+                  })()}
+                </Text>
               </View>
             )}
             <View style={{ backgroundColor: Theme.infoLight, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 }}>
@@ -406,6 +439,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
                         <TouchableOpacity
                           onPress={() => isInCart ? handleRemoveFromCart(item.id) : (() => {
                             const itemBaseTime = Math.round(parseEstimatedTime(item.estimatedTime));
+                            // Use the same handleAddToCart function which now properly formats duration
                             handleAddToCart(item, 'instant', 1, itemBaseTime);
                           })()}
                           style={{ position: 'absolute', top: 20, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: isInCart ? '#22C55E' : Theme.primary, justifyContent: 'center', alignItems: 'center', shadowColor: isInCart ? '#22C55E' : Theme.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 }}
@@ -441,7 +475,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
           </View>
         ) : (
           <TouchableOpacity
-            onPress={() => isCurrentServiceInCart ? navigation.navigate('Cart') : handleAddToCart(service)}
+            onPress={() => isCurrentServiceInCart ? navigation.navigate('Cart') : handleAddToCart(service, 'instant', quantity, baseEstimatedTime)}
             style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}
           >
             {isCurrentServiceInCart ? (
