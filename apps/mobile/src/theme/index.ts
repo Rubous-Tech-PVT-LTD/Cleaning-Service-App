@@ -5,7 +5,7 @@ const originalTheme = {
   accent: '#A78BFA',       // Soft Violet / Lavender accent
   surface: '#ffffff',      // White
   background: '#F8FAFC',   // Clean light slate background
-  textPrimary: '#0F172A',  // Dark slate text
+  textPrimary: '#020202ff',  // Dark slate text
   textSecondary: '#475569', // Medium slate text
   border: '#E2E8F0',       // Light slate border
   success: '#8B5CF6',      // Vibrant Violet
@@ -22,7 +22,7 @@ const goldenTheme = {
   accent: '#FCD34D',       // Light Yellow accent
   surface: '#ffffff',
   background: '#FFFBEB',   // Light yellow background
-  textPrimary: '#0F172A',
+  textPrimary: '#000000ff',
   textSecondary: '#475569',
   border: '#FDE68A',
   success: '#F59E0B',      // Amber/Gold
