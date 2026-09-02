@@ -6,16 +6,20 @@ import i18n from './src/i18n';
 import { ProviderNavigation } from './src/navigation';
 import { StatusBar } from 'react-native';
 
+import { BookingProvider } from './src/context/BookingContext';
+
 // Required for @react-navigation/native-stack
 enableScreens();
 
 export default function App() {
   return (
     <I18nextProvider i18n={i18n}>
-      <NavigationContainer>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        <ProviderNavigation />
-      </NavigationContainer>
+      <BookingProvider>
+        <NavigationContainer>
+          <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+          <ProviderNavigation />
+        </NavigationContainer>
+      </BookingProvider>
     </I18nextProvider>
   );
 }

@@ -474,6 +474,7 @@ async function main() {
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
+        durationType: 'FLEXIBLE',
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },
@@ -718,6 +719,7 @@ async function main() {
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
         isComingSoon: true,
+        durationType: 'FLEXIBLE',
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },
@@ -1202,6 +1204,7 @@ async function main() {
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
         isComingSoon: true,
+        durationType: 'FLEXIBLE',
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },
@@ -1414,6 +1417,7 @@ async function main() {
       estimatedTime: '1 min(Per 10 litre capacity)',
        imageUrl:'https://res.cloudinary.com/dcmoseix9/image/upload/v1788168972/water_tank_overhang_okq13l.png',
       isTrending: false,
+      durationType: 'FIXED',
       includedItems: [
   {
     en: 'Draining the water tank',
@@ -1468,6 +1472,7 @@ async function main() {
   estimatedTime: '1.25 mins(per 10 litre capacity)',
   imageUrl: 'https://res.cloudinary.com/dcmoseix9/image/upload/v1786692040/water_tank_cleaning_ir8u0g.png',
   isTrending: false,
+  durationType: 'FIXED',
  includedItems: [
   {
     en: 'Draining the water tank',
@@ -1612,6 +1617,7 @@ notIncludedItems: [
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
+        durationType: (service as any).durationType || 'FLEXIBLE',
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },
@@ -1838,6 +1844,7 @@ notIncludedItems: [
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
+        durationType: (service as any).durationType || 'FLEXIBLE',
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },
@@ -2024,11 +2031,12 @@ notIncludedItems: [
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
+        durationType: 'FIXED',
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },
     });
-    console.log(`  └── ✅ Created service: ${service.nameTranslations.en}`);
+    console.log(`  └── ✅ Created service: ${service.nameTranslations.en} (FIXED duration)`);
   }
 
   // ---------------------------------------------------------
@@ -2093,6 +2101,7 @@ notIncludedItems: [
         imageUrl: service.imageUrl || null,
         status: 'ACTIVE',
         isTrending: service.isTrending || false,
+        durationType: (service as any).durationType || 'FLEXIBLE',
         includedItems: service.includedItems || [],
         notIncludedItems: service.notIncludedItems || [],
       },

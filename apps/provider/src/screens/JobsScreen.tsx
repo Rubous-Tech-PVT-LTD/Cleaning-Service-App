@@ -7,43 +7,29 @@ import { Theme } from '../theme';
 import api from '../api';
 import i18n from '../i18n';
 import { useTranslation } from 'react-i18next';
+import { useBookings } from '../context/BookingContext';
 
 export const JobsScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [completionJobId, setCompletionJobId] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState('');
   const [sosLoadingJobId, setSosLoadingJobId] = useState<string | null>(null);
-
-  const fetchJobs = async () => {
-    try {
-      const res = await api.get('/bookings');
-      // Filter for jobs assigned to this provider that are active
-      const activeJobs = res.data.filter(
-        (b: any) => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS'
-      );
-      setJobs(activeJobs);
-    } catch (e: any) {
-      Alert.alert('Error', 'Failed to fetch jobs: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
+  
+  const { bookings, loading: isFetchingBookings, refreshBookings } = useBookings();
+  const jobs = bookings.filter((b: any) => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS');
+  
+  const [isUpdating, setIsUpdating] = useState(false);
+  const isLoading = isFetchingBookings || isUpdating;
 
   const updateStatus = async (id: string, newStatus: string, otp?: string) => {
     try {
-      setLoading(true);
+      setIsUpdating(true);
       const payload: any = { status: newStatus };
       if (otp) payload.otp = otp;
       
       await api.patch(`/bookings/${id}/status`, payload);
-      await fetchJobs(); // Refresh the list
+      await refreshBookings(); // Refresh the list
       
       // Navigate to tracking if starting the job
       if (newStatus === 'IN_PROGRESS') {
@@ -54,7 +40,8 @@ export const JobsScreen = () => {
       }
     } catch (e: any) {
       Alert.alert('Error', e.response?.data?.message || e.message || 'Failed to update job status');
-      setLoading(false);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -132,9 +119,9 @@ export const JobsScreen = () => {
 
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchJobs} colors={[Theme.primary]} />}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refreshBookings} colors={[Theme.primary]} />}
       >
-        {jobs.length === 0 && !loading ? (
+        {jobs.length === 0 && !isLoading ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>{t('provider.no_active_jobs')}</Text>
             <Text style={styles.emptyStateSub}>{t('provider.accept_new_requests')}</Text>

@@ -13,6 +13,12 @@ export class CartService {
   private async validateServiceId(serviceId: string): Promise<void> {
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
+      select: {
+        id: true,
+        status: true,
+        durationType: true,
+        estimatedTime: true
+      }
     });
 
     if (!service) {

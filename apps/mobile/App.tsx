@@ -4,6 +4,7 @@ import { NavigationContainer, NavigationContainerRef } from '@react-navigation/n
 import { applyWorkarounds } from './src/utils/bootstrap';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { syncDatabase } from './src/db/sync';
+import { database } from './src/db';
 import { io } from 'socket.io-client';
 import { SOCKET_URL } from './src/api';
 import { NotificationService } from './src/services/NotificationService';
@@ -96,6 +97,27 @@ const AppContent = () => {
     socket.on('sync_ping', () => {
       console.log('🔔 [Socket] Received sync_ping, syncing DB...');
       syncDatabase().catch((err) => console.warn('Real-time sync failed:', err));
+    });
+
+    socket.on('booking_status_changed', async (payload: { bookingId: string, status: string, updatedAt?: string }) => {
+      console.log('🔔 [Socket] Received booking_status_changed:', payload);
+      try {
+        const bookingsCollection = database.collections.get('bookings');
+        const booking = await bookingsCollection.find(payload.bookingId);
+        
+        await database.write(async () => {
+          await booking.update((b: any) => {
+            b.status = payload.status;
+            if (payload.updatedAt) {
+              // Using any to bypass strict type checking for the observable model if needed, 
+              // but WatermelonDB supports assignment.
+              b.updatedAt = new Date(payload.updatedAt);
+            }
+          });
+        });
+      } catch (err) {
+        console.warn('Failed to update booking status locally:', err);
+      }
     });
 
     return () => {

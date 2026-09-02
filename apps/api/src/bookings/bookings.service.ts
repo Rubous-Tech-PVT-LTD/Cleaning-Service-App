@@ -368,10 +368,24 @@ export class BookingsService {
     // If a provider accepts the job, notify the client via WebSockets
     if (booking.clientId) {
       this.trackingGateway.notifyUser(booking.clientId, 'sync_ping', { bookingId: booking.id });
+      this.trackingGateway.notifyUser(booking.clientId, 'booking_status_changed', {
+        bookingId: booking.id,
+        status: booking.status,
+        updatedAt: booking.updatedAt
+      });
       
       if (updateStatusDto.status === BookingStatus.ACCEPTED) {
         this.trackingGateway.notifyUser(booking.clientId, 'booking_accepted', booking);
       }
+    }
+
+    // Notify the provider via WebSockets about the status change so their frontend state can update instantly
+    if (booking.providerId) {
+      this.trackingGateway.notifyUser(booking.providerId, 'booking_status_changed', {
+        bookingId: booking.id,
+        status: booking.status,
+        updatedAt: booking.updatedAt
+      });
     }
 
     return booking;

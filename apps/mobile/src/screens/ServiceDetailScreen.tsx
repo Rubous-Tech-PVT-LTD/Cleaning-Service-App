@@ -10,7 +10,7 @@ import { database } from '../db';
 import { Theme } from '../theme';
 import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, DURATION_INCREMENT_MINS, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
+import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
 
 const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }: any) => {
   const { t, i18n } = useTranslation();
@@ -26,6 +26,9 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
 
   const baseEstimatedTime = Math.round(parseEstimatedTime(service?.estimatedTime));
   const currentEstimatedTime = Math.round(baseEstimatedTime * selectedDuration);
+  
+  // Check if service has flexible or fixed duration
+  const isFlexibleDuration = service?.durationType !== 'FIXED';
 
   useEffect(() => {
     fetchCart();
@@ -62,8 +65,8 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
       // Get cart item duration if exists
       if (currentServiceInCart) {
         const cartItem = res.data?.items?.find((item: any) => item.serviceId === service?.id);
-        if (cartItem?.duration) {
-          // Parse the duration label to get the time in minutes
+        if (cartItem?.duration && isFlexibleDuration) {
+          // Parse the duration label to get the time in minutes (only for flexible services)
           const durationLabel = cartItem.duration.label;
           let cartTime = 0;
           
@@ -108,7 +111,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
   
   // Calculate estimated total for display (backend will calculate actual price)
   const basePrice = service?.basePrice || 0;
-  const estimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseEstimatedTime, Math.round(currentEstimatedTime)) * quantity);
+  const estimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseEstimatedTime, isFlexibleDuration ? Math.round(currentEstimatedTime) : baseEstimatedTime) * quantity);
 
   // Check if service is coming soon based on database field
   const isComingSoon = service?.isComingSoon || false;
@@ -138,10 +141,11 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
       }
 
       const itemBaseTime = Math.round(parseEstimatedTime(serviceItem.estimatedTime));
+      const isFlexible = serviceItem.durationType !== 'FIXED';
       const duration = currentDuration || itemBaseTime;
 
-      // Check if duration exceeds maximum
-      if (duration > MAX_DURATION_MINS) {
+      // Check if duration exceeds maximum (only for flexible services)
+      if (isFlexible && duration > MAX_DURATION_MINS) {
         Alert.alert(
           'Maximum Duration Reached',
           getMaxDurationMessage()
@@ -153,18 +157,23 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
       const basePrice = serviceItem.basePrice || 0;
       const calculatedPrice = Math.round(calculatePriceForDuration(basePrice, itemBaseTime, duration));
 
-      // Format duration label based on the duration
+      // Format duration label based on the duration (only for flexible services)
       let durationLabel: string;
-      if (duration >= 60) {
-        const hours = Math.floor(duration / 60);
-        const mins = duration % 60;
-        if (mins > 0) {
-          durationLabel = `${hours} hr ${mins} min`;
+      if (isFlexible) {
+        if (duration >= 60) {
+          const hours = Math.floor(duration / 60);
+          const mins = duration % 60;
+          if (mins > 0) {
+            durationLabel = `${hours} hr ${mins} min`;
+          } else {
+            durationLabel = `${hours} hr`;
+          }
         } else {
-          durationLabel = `${hours} hr`;
+          durationLabel = `${duration} min`;
         }
       } else {
-        durationLabel = `${duration} min`;
+        // For fixed duration services, use the original estimated time string
+        durationLabel = serviceItem.estimatedTime || `${itemBaseTime} min`;
       }
 
       // Backend will calculate price based on duration
@@ -208,7 +217,9 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
   };
 
   const handleIncreaseDuration = () => {
-    const newDuration = getNextDuration(currentEstimatedTime);
+    if (!isFlexibleDuration) return; // Only allow duration changes for flexible services
+    
+    const newDuration = getNextDuration(currentEstimatedTime, baseEstimatedTime);
     if (isDurationAtMaximum(newDuration)) {
       Alert.alert(
         'Maximum Duration Reached',
@@ -223,6 +234,8 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
   };
 
   const handleDecreaseDuration = () => {
+    if (!isFlexibleDuration) return; // Only allow duration changes for flexible services
+    
     // If already at base duration, remove from cart
     if (currentEstimatedTime === baseEstimatedTime) {
       setSelectedDuration(1);
@@ -230,7 +243,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
       return;
     }
     
-    const newDuration = getPrevDuration(currentEstimatedTime, baseEstimatedTime);
+    const newDuration = Math.round(getPrevDuration(currentEstimatedTime, baseEstimatedTime));
     const newMultiplier = Math.round(newDuration / baseEstimatedTime);
     setSelectedDuration(newMultiplier);
     // Update cart with new duration
@@ -269,15 +282,26 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
             {!isComingSoon && (
               <View style={{ marginLeft: 16 }}>
                 {isCurrentServiceInCart ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderRadius: 18, padding: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
-                    <TouchableOpacity onPress={handleDecreaseDuration} style={{ width: 40, height: 40, backgroundColor: '#F1F5F9', borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
+                  isFlexibleDuration ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderRadius: 18, padding: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
+                      <TouchableOpacity onPress={handleDecreaseDuration} style={{ width: 40, height: 40, backgroundColor: '#F1F5F9', borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
+                        <Minus size={20} color={Theme.textPrimary} />
+                      </TouchableOpacity>
+                      <Text style={{ width: 48, textAlign: 'center', fontSize: 16, fontWeight: '900', color: Theme.primary }}>
+                        {isFlexibleDuration ? `${Math.round(currentEstimatedTime)} mins` : service?.estimatedTime}
+                      </Text>
+                      <TouchableOpacity onPress={handleIncreaseDuration} style={{ width: 40, height: 40, backgroundColor: Theme.primary, borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
+                        <Plus size={20} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => handleRemoveFromCart(service.id)}
+                      style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}
+                    >
                       <Minus size={20} color={Theme.textPrimary} />
                     </TouchableOpacity>
-                    <Text style={{ width: 48, textAlign: 'center', fontSize: 16, fontWeight: '900', color: Theme.primary }}>{Math.round(currentEstimatedTime)} mins</Text>
-                    <TouchableOpacity onPress={handleIncreaseDuration} style={{ width: 40, height: 40, backgroundColor: Theme.primary, borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
-                      <Plus size={20} color="white" />
-                    </TouchableOpacity>
-                  </View>
+                  )
                 ) : (
                   <TouchableOpacity
                     onPress={handleBookButton}
@@ -304,8 +328,11 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
                 <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary }}>₹{Math.round(estimatedPrice)}</Text>
                 <Text style={{ fontSize: 14, color: Theme.textSecondary, marginTop: 4 }}>
                   {t('service.estimated_time')}: {(() => {
+                    if (!isFlexibleDuration) {
+                      return service?.estimatedTime || `${baseEstimatedTime} ${t('common.mins')}`;
+                    }
                     const cartItem = cart?.items?.find((i: any) => i.serviceId === service?.id);
-                    return cartItem?.duration?.label || `${Math.round(currentEstimatedTime)} ${t('common.mins')}`;
+                    return cartItem?.duration?.label || service?.estimatedTime || `${Math.round(currentEstimatedTime)} ${t('common.mins')}`;
                   })()}
                 </Text>
               </View>

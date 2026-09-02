@@ -10,7 +10,7 @@ import { Theme } from '../theme';
 import { Skeleton } from '../components/Skeleton';
 import api from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, DURATION_INCREMENT_MINS, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
+import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
 
 const ServiceListScreenBase = ({ route, navigation, services }: any) => {
   const { t, i18n } = useTranslation();
@@ -65,13 +65,14 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
       }
 
       // Backend will calculate price based on duration
+      const isFlexible = serviceItem.durationType !== 'FIXED';
       const itemToAdd = {
         serviceId: serviceItem.id,
         title: i18n.language === 'hi' ? serviceItem.nameHi : serviceItem.nameEn,
         quantity: 1,
         type: 'service',
         duration: {
-          label: `${currentDuration} mins`
+          label: isFlexible ? `${currentDuration} mins` : serviceItem.estimatedTime || `${currentDuration} mins`
         }
       };
 
@@ -179,18 +180,35 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
             const cartItem = cartItemsMap[service.id];
             const isInCart = !!cartItem;
             
+            // Check if service has flexible or fixed duration
+            const isFlexibleDuration = service.durationType !== 'FIXED';
+            
             // Calculate current duration for UI
             const baseTime = Math.round(parseEstimatedTime(service.estimatedTime));
             let currentDuration = baseTime;
-            if (cartItem && cartItem.duration) {
+            
+            // For FIXED duration services, always use the base time
+            // For FLEXIBLE duration services, use cart duration if available
+            if (isFlexibleDuration && cartItem && cartItem.duration) {
               const cartTime = Math.round(parseEstimatedTime(cartItem.duration.label || cartItem.duration));
               if (baseTime > 0) {
                 currentDuration = cartTime;
               }
             }
 
+            // Calculate estimated price for display
+            const basePrice = Number(service.basePrice);
+            const currentEstimatedPrice = isFlexibleDuration 
+              ? Math.round(calculatePriceForDuration(basePrice, baseTime, currentDuration))
+              : basePrice; // FIXED duration services always use base price
+
             const handleIncrease = () => {
-              const newDuration = Math.round(getNextDuration(currentDuration));
+              // Prevent duration changes for FIXED duration services
+              if (!isFlexibleDuration) {
+                return;
+              }
+              
+              const newDuration = Math.round(getNextDuration(currentDuration, baseTime));
               if (isDurationAtMaximum(newDuration)) {
                 Alert.alert(
                   'Maximum Duration Reached',
@@ -202,6 +220,11 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
             };
 
             const handleDecrease = () => {
+              // Prevent duration changes for FIXED duration services
+              if (!isFlexibleDuration) {
+                return;
+              }
+              
               // If already at base duration, remove from cart
               if (currentDuration === baseTime) {
                 handleRemoveFromCart(service.id);
@@ -244,14 +267,10 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
                 ) : (
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                     <Text style={{ fontSize: 14, fontWeight: '800', color: Theme.textPrimary }}>
-                      ₹{isInCart && cartItem?.duration?.price 
-                        ? Math.round(Number(cartItem.duration.price)) 
-                        : Math.round(Number(service.basePrice))}
+                      ₹{currentEstimatedPrice}
                     </Text>
                     <Text style={{ fontSize: 10, color: Theme.textSecondary, textDecorationLine: 'line-through', marginLeft: 4 }}>
-                      ₹{isInCart && cartItem?.duration?.price 
-                        ? Math.round(Number(cartItem.duration.price) * 1.4) 
-                        : Math.round(Number(service.basePrice) * 1.4)}
+                      ₹{Math.round(currentEstimatedPrice * 1.4)}
                     </Text>
                   </View>
                 )}
@@ -261,18 +280,31 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
               {!isComingSoon && (
                 <View style={{ position: 'absolute', right: 8, top: '48%', zIndex: 10 }}>
                   {isInCart ? (
-                    <View style={{ backgroundColor: 'white', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, flexDirection: 'row', alignItems: 'center', minWidth: 70, justifyContent: 'space-between' }}>
-                      <TouchableOpacity onPress={handleDecrease} style={{ padding: 2 }}>
-                        <Minus size={14} color={Theme.primary} />
-                      </TouchableOpacity>
-                      <View style={{ alignItems: 'center', paddingHorizontal: 2 }}>
-                        <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.primary }}>{Math.round(currentDuration)}</Text>
-                        <Text style={{ fontSize: 8, color: Theme.textSecondary, marginTop: -2 }}>Mins</Text>
+                    isFlexibleDuration ? (
+                      <View style={{ backgroundColor: 'white', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, flexDirection: 'row', alignItems: 'center', minWidth: 70, justifyContent: 'space-between' }}>
+                        <TouchableOpacity onPress={handleDecrease} style={{ padding: 2 }}>
+                          <Minus size={14} color={Theme.primary} />
+                        </TouchableOpacity>
+                        <View style={{ alignItems: 'center', paddingHorizontal: 2 }}>
+                          <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.primary }}>
+                            {isFlexibleDuration ? Math.round(currentDuration) : service.estimatedTime}
+                          </Text>
+                          <Text style={{ fontSize: 8, color: Theme.textSecondary, marginTop: -2 }}>
+                            {isFlexibleDuration ? 'Mins' : ''}
+                          </Text>
+                        </View>
+                        <TouchableOpacity onPress={handleIncrease} style={{ padding: 2 }}>
+                          <Plus size={14} color={Theme.primary} />
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity onPress={handleIncrease} style={{ padding: 2 }}>
-                        <Plus size={14} color={Theme.primary} />
+                    ) : (
+                      <TouchableOpacity 
+                        onPress={() => handleRemoveFromCart(service.id)}
+                        style={{ backgroundColor: 'white', borderRadius: 8, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 }}
+                      >
+                        <Minus size={18} color={Theme.primary} />
                       </TouchableOpacity>
-                    </View>
+                    )
                   ) : (
                     <TouchableOpacity 
                       onPress={() => handleAddToCart(service, baseTime)}

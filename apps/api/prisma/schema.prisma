@@ -157,6 +157,7 @@ model Service {
   isComingSoon            Boolean      @default(false)
   includedItems           Json?        @default("[]")
   notIncludedItems        Json?        @default("[]")
+  durationType            DurationType @default(FLEXIBLE)
   bookings                Booking[]
   category                Category     @relation(fields: [categoryId], references: [id])
   subcategory             Subcategory? @relation(fields: [subcategoryId], references: [id])
@@ -313,6 +314,11 @@ enum SosStatus {
 enum SosRole {
   CLIENT
   PROVIDER
+}
+
+enum DurationType {
+  FLEXIBLE
+  FIXED
 }
 
 model Sos {

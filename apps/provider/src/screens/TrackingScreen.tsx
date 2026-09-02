@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } fr
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 import { Theme } from '../theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { SOCKET_URL } from '../api';
+import api from '../api';
 import { useTranslation } from 'react-i18next';
 import { searchPlaces } from '../services/nominatim';
+import { useBookings } from '../context/BookingContext';
 
 // OSRM routing API - free, no API key required
 const fetchRoute = async (startLat: number, startLon: number, endLat: number, endLon: number) => {
@@ -61,6 +62,7 @@ export const TrackingScreen = () => {
   const mapRef = useRef<MapView>(null);
 
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const { socket: sharedSocket } = useBookings();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<any[]>([]);
   const [distance, setDistance] = useState<number>(0);
@@ -136,9 +138,8 @@ export const TrackingScreen = () => {
   useEffect(() => {
     if (!clientDestination) return;
 
-    // Initialize Socket
-    const newSocket = io(SOCKET_URL);
-    setSocket(newSocket);
+    // Use shared Socket
+    setSocket(sharedSocket);
 
     // Request Permissions and Start Tracking
     let locationSubscription: Location.LocationSubscription | null = null;
@@ -178,8 +179,8 @@ export const TrackingScreen = () => {
           setLoadingRoute(false);
 
           // Emit location to backend
-          if (newSocket && providerId && booking.clientId) {
-            newSocket.emit('update_location', {
+          if (sharedSocket && providerId && booking.clientId) {
+            sharedSocket.emit('update_location', {
               providerId: providerId,
               clientId: booking.clientId,
               latitude: loc.coords.latitude,
@@ -196,9 +197,9 @@ export const TrackingScreen = () => {
       if (locationSubscription) {
         locationSubscription.remove();
       }
-      newSocket.disconnect();
+      // Do NOT disconnect the shared socket
     };
-  }, [booking.id, clientDestination]); // Re-run only if booking or destination changes
+  }, [booking.id, clientDestination, sharedSocket]); // Re-run only if booking, destination or socket changes
 
   // Recalculate route when provider location changes
   useEffect(() => {

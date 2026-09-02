@@ -30,7 +30,8 @@ export class PricingService {
         basePrice: true,
         estimatedTime: true,
         id: true,
-        status: true
+        status: true,
+        durationType: true
       },
     });
 
@@ -43,17 +44,25 @@ export class PricingService {
     }
 
     const basePrice = Number(service.basePrice);
-    const baseEstimatedTime = this.parseEstimatedTime(service.estimatedTime);
+    
+    // For FIXED duration services, always use base price regardless of duration
+    if (service.durationType === 'FIXED') {
+      console.log(`Service ${serviceId}: FIXED duration - using base price ₹${basePrice}`);
+      return basePrice;
+    }
 
-    // For regular services with duration, calculate price proportionally based on duration
+    // For FLEXIBLE duration services, calculate price based on duration
+    const baseEstimatedTime = this.parseEstimatedTime(service.estimatedTime);
+    
     if (duration && duration.label) {
       const currentDuration = this.parseDurationMinutes(duration.label);
       const calculatedPrice = Math.round((basePrice / baseEstimatedTime) * currentDuration);
-      console.log(`Service ${serviceId}: Base ₹${basePrice} (${baseEstimatedTime} mins) → ${currentDuration} mins = ₹${calculatedPrice}`);
+      console.log(`Service ${serviceId}: FLEXIBLE duration - Base ₹${basePrice} (${baseEstimatedTime} mins) → ${currentDuration} mins = ₹${calculatedPrice}`);
       return calculatedPrice;
     }
 
-    // Default to base price for services without duration
+    // Default to base price for FLEXIBLE services without duration
+    console.log(`Service ${serviceId}: FLEXIBLE duration - no duration provided, using base price ₹${basePrice}`);
     return basePrice;
   }
 

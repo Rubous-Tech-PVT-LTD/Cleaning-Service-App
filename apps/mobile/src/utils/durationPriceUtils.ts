@@ -1,4 +1,3 @@
-export const DURATION_INCREMENT_MINS = 30;
 export const MAX_DURATION_MINS = 180;
 
 export const parseEstimatedTime = (timeString: string | null | undefined): number => {
@@ -27,12 +26,12 @@ export const calculatePriceForDuration = (basePrice: number, baseDuration: numbe
   return Math.round((basePrice / baseDuration) * currentDuration);
 };
 
-export const getNextDuration = (currentDuration: number): number => {
-  return Math.round(currentDuration + DURATION_INCREMENT_MINS);
+export const getNextDuration = (currentDuration: number, baseDuration: number): number => {
+  return Math.round(currentDuration + baseDuration);
 };
 
 export const getPrevDuration = (currentDuration: number, baseDuration: number): number => {
-  const prev = Math.round(currentDuration - DURATION_INCREMENT_MINS);
+  const prev = Math.round(currentDuration - baseDuration);
   return prev < baseDuration ? baseDuration : prev;
 };
 

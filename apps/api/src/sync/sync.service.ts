@@ -373,6 +373,9 @@ export class SyncService {
         // Include isComingSoon field from database
         is_coming_soon: r.isComingSoon || false,
 
+        // Include duration type from database
+        duration_type: r.durationType || 'FLEXIBLE',
+
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
