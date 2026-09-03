@@ -147,11 +147,11 @@ export class BookingsService {
             const compensatedProvider = suitableProviders.find(p => p.tier === 'COMPENSATED');
             if (compensatedProvider) {
               assignedProviderId = compensatedProvider.provider.id;
-            
+
               // Add a travel compensation fee of ₹150 for distances between 15-25km
               const travelCompensation = 150;
               createBookingDto.totalPrice = Number(createBookingDto.totalPrice) + travelCompensation;
-              
+
               console.log(`[Booking Service] Auto-assigned to compensated provider ${compensatedProvider.provider.id} (${compensatedProvider.distance.toFixed(2)}km). Added ₹${travelCompensation} travel compensation.`);
             }
           }
@@ -216,7 +216,7 @@ export class BookingsService {
         },
       });
       const matchingProviderIds = matchingProviders.map(p => p.id);
-      
+
       if (matchingProviderIds.length > 0) {
         this.trackingGateway.notifyProviders(matchingProviderIds, 'new_booking', booking);
         console.log(`[Booking Service] Broadcast booking to ${matchingProviderIds.length} matching providers`);
@@ -246,7 +246,7 @@ export class BookingsService {
         where: { id: userId },
         include: { profile: true }
       });
-      
+
       const professionIds: string[] = [];
       if (user?.profile?.professionId) {
         professionIds.push(user.profile.professionId);
@@ -259,7 +259,7 @@ export class BookingsService {
         where: {
           OR: [
             { providerId: userId },
-            { 
+            {
               status: 'PENDING',
               serviceId: { in: professionIds }
             }
@@ -367,13 +367,15 @@ export class BookingsService {
 
     // If a provider accepts the job, notify the client via WebSockets
     if (booking.clientId) {
-      this.trackingGateway.notifyUser(booking.clientId, 'sync_ping', { bookingId: booking.id });
+      this.trackingGateway.notifyUser(booking.clientId, 'sync_ping', { bookingId: booking.id, offlineId: booking.offlineId });
       this.trackingGateway.notifyUser(booking.clientId, 'booking_status_changed', {
         bookingId: booking.id,
+        offlineId: booking.offlineId,
         status: booking.status,
+        otp: booking.otp,
         updatedAt: booking.updatedAt
       });
-      
+
       if (updateStatusDto.status === BookingStatus.ACCEPTED) {
         this.trackingGateway.notifyUser(booking.clientId, 'booking_accepted', booking);
       }
@@ -383,7 +385,9 @@ export class BookingsService {
     if (booking.providerId) {
       this.trackingGateway.notifyUser(booking.providerId, 'booking_status_changed', {
         bookingId: booking.id,
+        offlineId: booking.offlineId,
         status: booking.status,
+        otp: booking.otp,
         updatedAt: booking.updatedAt
       });
     }

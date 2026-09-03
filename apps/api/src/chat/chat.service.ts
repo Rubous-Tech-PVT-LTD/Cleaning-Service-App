@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ChatService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getOrCreateChat(bookingId: string, clientId: string, providerId: string) {
     // Validate that the booking exists and get actual participant IDs
@@ -73,12 +73,12 @@ export class ChatService {
       select: { clientId: true, providerId: true },
     });
     if (!booking) return false;
-    
+
     // Handle null providerId (booking not yet assigned)
     const isClient = booking.clientId === userId;
     const isProvider = booking.providerId !== null && booking.providerId === userId;
     const isSystem = userId === 'system';
-    
+
     return isClient || isProvider || isSystem;
   }
 
@@ -88,12 +88,12 @@ export class ChatService {
       select: { clientId: true, providerId: true },
     });
     if (!chat) return false;
-    
+
     // Handle null providerId
     const isClient = chat.clientId === userId;
     const isProvider = chat.providerId !== null && chat.providerId === userId;
     const isSystem = userId === 'system';
-    
+
     return isClient || isProvider || isSystem;
   }
 }

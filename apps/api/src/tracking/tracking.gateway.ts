@@ -18,22 +18,14 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
   @WebSocketServer()
   server!: Server;
 
-  // Track connected users (userId -> socketId)
-  private userSockets = new Map<string, string>();
-
   handleConnection(client: Socket) {
     console.log(`Tracking Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
     console.log(`Tracking Client disconnected: ${client.id}`);
-    // Remove from tracking map
-    for (const [userId, socketId] of this.userSockets.entries()) {
-      if (socketId === client.id) {
-        this.userSockets.delete(userId);
-        break;
-      }
-    }
+    // Socket.IO automatically removes the socket from all rooms on disconnect,
+    // so no manual cleanup is necessary.
   }
 
   @SubscribeMessage('register')
@@ -41,7 +33,8 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
     @MessageBody() data: { userId: string; role: string },
     @ConnectedSocket() client: Socket,
   ) {
-    this.userSockets.set(data.userId, client.id);
+    // Join a personal room for the user to support multiple simultaneous connections
+    client.join(data.userId);
     
     // Join a room based on role (useful for broadcasting to all providers)
     if (data.role === 'PROVIDER') {
@@ -60,10 +53,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   // Method to emit specific updates to a specific user
   notifyUser(userId: string, event: string, data: any) {
-    const socketId = this.userSockets.get(userId);
-    if (socketId) {
-      this.server.to(socketId).emit(event, data);
-    }
+    this.server.to(userId).emit(event, data);
   }
 
   // Method to notify specific providers about available bookings

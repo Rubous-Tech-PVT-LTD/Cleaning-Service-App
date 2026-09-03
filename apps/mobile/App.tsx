@@ -99,15 +99,20 @@ const AppContent = () => {
       syncDatabase().catch((err) => console.warn('Real-time sync failed:', err));
     });
 
-    socket.on('booking_status_changed', async (payload: { bookingId: string, status: string, updatedAt?: string }) => {
+    socket.on('booking_status_changed', async (payload: { bookingId: string, offlineId?: string, status: string, otp?: string, updatedAt?: string }) => {
       console.log('🔔 [Socket] Received booking_status_changed:', payload);
       try {
         const bookingsCollection = database.collections.get('bookings');
-        const booking = await bookingsCollection.find(payload.bookingId);
+        // WatermelonDB uses offlineId as the primary key if the booking was created offline, otherwise the Prisma UUID.
+        const targetId = payload.offlineId || payload.bookingId;
+        const booking = await bookingsCollection.find(targetId);
         
         await database.write(async () => {
           await booking.update((b: any) => {
             b.status = payload.status;
+            if (payload.otp) {
+              b.otp = payload.otp;
+            }
             if (payload.updatedAt) {
               // Using any to bypass strict type checking for the observable model if needed, 
               // but WatermelonDB supports assignment.

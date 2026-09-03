@@ -122,7 +122,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
       // Use a combination of content and timestamp as the primary key for deduplication
       // This handles cases where the same message might have different IDs (local vs server)
       const key = `${m.senderId}-${m.content}-${m.createdAt}`;
-      
+
       if (seen.has(key)) {
         // If we've seen this message before, prefer the one with a proper server ID
         const existing = seen.get(key);
@@ -132,7 +132,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
         }
         return false; // Skip duplicate
       }
-      
+
       seen.set(key, m);
       return true;
     });

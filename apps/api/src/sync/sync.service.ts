@@ -387,7 +387,7 @@ export class SyncService {
         service_id: r.serviceId,
         client_id: r.clientId,
         provider_id: r.providerId,
-        address_id: r.addressId,
+        address_id: (r.address && r.address.offlineId) ? r.address.offlineId : r.addressId,
 
         status: r.status,
 
@@ -472,7 +472,7 @@ export class SyncService {
       const mapMessage = (r: any) => ({
         id: r.offlineId || r.id,
 
-        chat_id: r.chatId,
+        chat_id: (r.chat && r.chat.offlineId) ? r.chat.offlineId : r.chatId,
 
         sender_id: r.senderId,
 

@@ -26,7 +26,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly chatService: ChatService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -35,7 +35,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log(`Client connected without token: ${client.id} - chat features will be restricted`);
         return;
       }
-      
+
       const payload = await this.jwtService.verifyAsync(token);
       client.data.userId = payload.sub;
       console.log(`Client connected: ${client.id} (User: ${payload.sub})`);
