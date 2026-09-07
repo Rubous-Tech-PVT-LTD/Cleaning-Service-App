@@ -125,6 +125,12 @@ const AppContent = () => {
       }
     });
 
+    socket.on('booking_accepted', async (payload: any) => {
+      console.log('🔔 [Socket] Received booking_accepted:', payload);
+      // Trigger immediate sync to pull down the newly created chat record
+      syncDatabase().catch((err) => console.warn('Failed to sync after booking accepted:', err));
+    });
+
     return () => {
       socket.disconnect();
     };

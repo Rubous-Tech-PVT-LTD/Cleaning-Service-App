@@ -123,6 +123,12 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
         );
       });
 
+      newSocket.on('booking_accepted', async (payload: any) => {
+        console.log('🔔 [Socket] Received booking_accepted:', payload);
+        // Trigger immediate refresh to pull down the newly created chat record
+        await fetchBookings();
+      });
+
       // Connect if provider is online
       const isOnline = await AsyncStorage.getItem('provider_online');
       if (isOnline !== 'false') {

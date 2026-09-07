@@ -4,6 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SYNC_URL = 'http://192.168.143.209:3000/v1/sync';
 
+// ─── Sync lock to prevent concurrent synchronization ─────────────────────
+let isSyncing = false;
+let pendingSyncRequested = false;
+
 // ─── Status priority: higher number = "more final" state ─────────────────────
 // Server wins if its status is more advanced than the local status.
 // Example: Server = COMPLETED (4) vs Local = CANCELLED (5) → Local wins (cancellation is intentional)
@@ -69,53 +73,74 @@ function conflictResolver(
 }
 
 export async function syncDatabase() {
-  await synchronize({
-    database,
-    pullChanges: async ({ lastPulledAt }) => {
-      const token = await AsyncStorage.getItem('user_token');
-      const userId = await AsyncStorage.getItem('user_id');
-      const queryParams = new URLSearchParams({ lastPulledAt: (lastPulledAt || 0).toString() });
-      if (userId && userId !== 'null') queryParams.append('userId', userId);
+  // If already syncing, just mark that a sync is pending and return
+  if (isSyncing) {
+    console.log('[Sync] Sync already in progress, marking as pending');
+    pendingSyncRequested = true;
+    return;
+  }
 
-      const response = await fetch(
-        `${SYNC_URL}/pull?${queryParams.toString()}`,
-        {
-          method: 'GET',
+  isSyncing = true;
+  pendingSyncRequested = false;
+
+  try {
+    await synchronize({
+      database,
+      pullChanges: async ({ lastPulledAt }) => {
+        const token = await AsyncStorage.getItem('user_token');
+        const userId = await AsyncStorage.getItem('user_id');
+        const queryParams = new URLSearchParams({ lastPulledAt: (lastPulledAt || 0).toString() });
+        if (userId && userId !== 'null') queryParams.append('userId', userId);
+
+        const response = await fetch(
+          `${SYNC_URL}/pull?${queryParams.toString()}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`[Sync] Pull failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // WatermelonDB's native synchronize() will process the changesets
+        // No manual database.write() needed - let WatermelonDB handle it
+        return { changes: data.changes, timestamp: data.timestamp };
+      },
+
+      pushChanges: async ({ changes, lastPulledAt }) => {
+        const token = await AsyncStorage.getItem('user_token');
+        const response = await fetch(`${SYNC_URL}/push?lastPulledAt=${lastPulledAt || 0}`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-        },
-      );
+          body: JSON.stringify({ changes, lastPulledAt }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`[Sync] Pull failed: ${response.status}`);
-      }
+        if (!response.ok) {
+          throw new Error(`[Sync] Push failed: ${response.status}`);
+        }
+      },
 
-      const data = await response.json();
+      // ── Conflict resolution ─────────────────────────────────────────────────
+      conflictResolver,
+    });
+  } finally {
+    isSyncing = false;
 
-      // WatermelonDB's native synchronize() will process the changesets
-      // No manual database.write() needed - let WatermelonDB handle it
-      return { changes: data.changes, timestamp: data.timestamp };
-    },
-
-    pushChanges: async ({ changes, lastPulledAt }) => {
-      const token = await AsyncStorage.getItem('user_token');
-      const response = await fetch(`${SYNC_URL}/push?lastPulledAt=${lastPulledAt || 0}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ changes, lastPulledAt }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`[Sync] Push failed: ${response.status}`);
-      }
-    },
-
-    // ── Conflict resolution ─────────────────────────────────────────────────
-    conflictResolver,
-  });
+    // If a sync was requested while we were syncing, trigger it now
+    if (pendingSyncRequested) {
+      console.log('[Sync] Pending sync requested, triggering now');
+      pendingSyncRequested = false;
+      syncDatabase().catch(err => console.warn('[Sync] Pending sync failed:', err));
+    }
+  }
 }

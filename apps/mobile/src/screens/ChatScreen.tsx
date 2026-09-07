@@ -38,28 +38,28 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
       } catch (err) {
         console.log('[Chat] Initial sync attempt during mount:', err);
       }
-
-      // DISABLED: Do not create fallback local chats
-      // Chat should only come from server sync to ensure identity consistency
-      if (bookingId) {
-        try {
-          const existingChats = await database.collections.get('chats').query(Q.where('booking_id', bookingId)).fetch();
-
-          if (existingChats.length === 0) {
-            // No chat found, waiting for server sync
-          } else {
-            const localChat = existingChats[0] as any;
-            setLocalChatId(localChat.id);
-            if (localChat.serverId) {
-              setServerChatId(localChat.serverId);
-            }
-          }
-        } catch (e) {
-          console.log('[Chat] Error checking for chat:', e);
-        }
-      }
     };
     ensureChat();
+  }, [bookingId]);
+
+  // Use observable query to reactively detect when chat becomes available
+  useEffect(() => {
+    if (!bookingId) return;
+
+    const subscription = database.collections.get('chats')
+      .query(Q.where('booking_id', bookingId))
+      .observe()
+      .subscribe((chats) => {
+        if (chats.length > 0) {
+          const localChat = chats[0] as any;
+          setLocalChatId(localChat.id);
+          if (localChat.serverId) {
+            setServerChatId(localChat.serverId);
+          }
+        }
+      });
+
+    return () => subscription.unsubscribe();
   }, [bookingId]);
 
   useEffect(() => {

@@ -35,27 +35,27 @@ model Cart {
   items     Json       @default("[]")
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   cartItems CartItem[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("carts")
 }
 
 model CartItem {
-  id            String   @id @default(uuid())
-  cartId        String
-  serviceId     String
-  type          String   // 'regular' or 'hourly'
-  title         String
-  quantity      Int      @default(1)
-  price         Decimal
-  bookingType   String   // 'instant' or 'scheduled'
-  scheduledAt   DateTime?
-  duration      Json?    // For hourly services: { id, label, price, oldPrice, saveAmount }
-  schedule      Json?    // For scheduled bookings: { dateId, dateLabel, dayLabel, dateISO, time }
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  cartId      String
+  serviceId   String
+  type        String
+  title       String
+  quantity    Int       @default(1)
+  price       Decimal
+  bookingType String
+  scheduledAt DateTime?
+  duration    Json?
+  schedule    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  cart        Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
   @@index([cartId])
   @@index([serviceId])
@@ -86,27 +86,27 @@ model Address {
 }
 
 model Profile {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  avatarUrl    String?
-  bio          Json?
-  addressLine1 String?
-  addressLine2 String?
-  city         String?
-  state        String?
-  pincode      String?
-  latitude     Float?
-  longitude    Float?
-  rating       Float    @default(0.0)
-  isVerified   Boolean  @default(false)
-  availability Json?
-  version      Int      @default(1)
-  lastModified DateTime @updatedAt
-  country         String?
-  documents       Json?
-  professionId    String?
-  professionIds   Json?    @default("[]")
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  avatarUrl     String?
+  bio           Json?
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  pincode       String?
+  latitude      Float?
+  longitude     Float?
+  rating        Float    @default(0.0)
+  isVerified    Boolean  @default(false)
+  availability  Json?
+  version       Int      @default(1)
+  lastModified  DateTime @updatedAt
+  country       String?
+  documents     Json?
+  professionId  String?
+  professionIds Json?    @default("[]")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
 }
@@ -154,9 +154,9 @@ model Service {
   subcategoryId           String?
   estimatedTime           String?
   isTrending              Boolean      @default(false)
-  isComingSoon            Boolean      @default(false)
   includedItems           Json?        @default("[]")
   notIncludedItems        Json?        @default("[]")
+  isComingSoon            Boolean      @default(false)
   durationType            DurationType @default(FLEXIBLE)
   bookings                Booking[]
   category                Category     @relation(fields: [categoryId], references: [id])
@@ -189,7 +189,7 @@ model Booking {
   client      User          @relation("ClientBookings", fields: [clientId], references: [id])
   provider    User?         @relation("ProviderBookings", fields: [providerId], references: [id])
   service     Service       @relation(fields: [serviceId], references: [id])
-  chats       Chat[]
+  chats       Chat?
   payment     Payment?
   review      Review?
   sosAlerts   Sos[]
@@ -251,10 +251,11 @@ model Message {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  offlineId String?  @unique
+  offlineId String?
   version   Int      @default(1)
   chat      Chat     @relation(fields: [chatId], references: [id])
 
+  @@unique([offlineId, chatId])
   @@index([chatId])
   @@index([senderId])
   @@index([createdAt])
@@ -276,6 +277,26 @@ model SupportedCity {
   updatedAt DateTime @updatedAt
 
   @@map("supported_cities")
+}
+
+model Sos {
+  id             String    @id @default(uuid())
+  bookingId      String
+  raisedByUserId String
+  raisedByRole   SosRole
+  latitude       Float
+  longitude      Float
+  status         SosStatus @default(ACTIVE)
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+  booking        Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  raisedByUser   User      @relation(fields: [raisedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([raisedByUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("sos")
 }
 
 enum UserRole {
@@ -319,24 +340,4 @@ enum SosRole {
 enum DurationType {
   FLEXIBLE
   FIXED
-}
-
-model Sos {
-  id              String    @id @default(uuid())
-  bookingId       String
-  raisedByUserId  String
-  raisedByRole    SosRole
-  latitude        Float
-  longitude       Float
-  status          SosStatus @default(ACTIVE)
-  createdAt       DateTime  @default(now())
-  resolvedAt      DateTime?
-  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  raisedByUser    User      @relation(fields: [raisedByUserId], references: [id], onDelete: Cascade)
-
-  @@index([bookingId])
-  @@index([raisedByUserId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("sos")
 }

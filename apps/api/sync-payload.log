@@ -1,0 +1,55 @@
+{
+  "categories": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "subcategories": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "services": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "bookings": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "messages": {
+    "created": [
+      {
+        "id": "YlueLK35enhyCrx7",
+        "_status": "created",
+        "_changed": "",
+        "chat_id": "510ea449-ca50-4366-9341-ab81d6e41d14",
+        "sender_id": "d8acf9e4-9f32-4a73-a0b3-4a08d57d631f",
+        "content": "Yes.",
+        "offline_id": "msg_1788778012270_mcv3w4sdx",
+        "server_id": null,
+        "created_at": 1788778012273,
+        "updated_at": 1788778012272
+      }
+    ],
+    "updated": [],
+    "deleted": []
+  },
+  "chats": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "reviews": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "addresses": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  }
+}
