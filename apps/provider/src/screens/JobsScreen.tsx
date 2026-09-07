@@ -218,7 +218,7 @@ export const JobsScreen = () => {
                   )}
                   <TouchableOpacity
                     style={[styles.primaryButton, { backgroundColor: '#F4EDFF', flex: 0, paddingHorizontal: 16 }]}
-                    onPress={() => navigation.navigate('Chat', { bookingId: job.id, clientName: job.client?.fullName, clientId: job.clientId })}
+                    onPress={() => navigation.navigate('Chat', { bookingId: job.serverId || job.id, clientName: job.client?.fullName, clientId: job.clientId })}
                   >
                     <Text style={{ fontSize: 20 }}>💬</Text>
                   </TouchableOpacity>

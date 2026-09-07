@@ -18,7 +18,11 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   const [myId, setMyId] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [localChatId, setLocalChatId] = useState<string>('');
+  const [serverChatId, setServerChatId] = useState<string>('');
   const scrollViewRef = React.useRef<ScrollView>(null);
+
+
 
   useEffect(() => {
     const ensureChat = async () => {
@@ -32,22 +36,23 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
         console.log('[Chat] Initial sync attempt during mount:', err);
       }
 
+      // DISABLED: Do not create fallback local chats
+      // Chat should only come from server sync to ensure identity consistency
       if (bookingId) {
         try {
           const existingChats = await database.collections.get('chats').query(Q.where('booking_id', bookingId)).fetch();
-          if (existingChats.length === 0 && providerId) {
-            console.log('[Chat] Local/Server chat unavailable, creating local fallback for booking', bookingId);
-            await database.write(async () => {
-              await database.get('chats').create((c: any) => {
-                c.bookingId = bookingId;
-                c.clientId = clientId || 'client';
-                c.providerId = providerId;
-              });
-            });
-            await syncDatabase();
+
+          if (existingChats.length === 0) {
+            // No chat found, waiting for server sync
+          } else {
+            const localChat = existingChats[0] as any;
+            setLocalChatId(localChat.id);
+            if (localChat.serverId) {
+              setServerChatId(localChat.serverId);
+            }
           }
         } catch (e) {
-          console.log('[Chat] Error checking or auto-creating chat:', e);
+          console.log('[Chat] Error checking for chat:', e);
         }
       }
     };
@@ -57,55 +62,86 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   useEffect(() => {
     const loadUser = async () => {
       const providerId = await AsyncStorage.getItem('provider_id');
+      const token = await AsyncStorage.getItem('provider_token');
       if (providerId) setMyId(providerId);
 
       const newSocket = io(SOCKET_URL, {
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5,
+        auth: {
+          token: token ? `Bearer ${token}` : undefined,
+        },
       });
       setSocket(newSocket);
 
       newSocket.on('connect', () => {
-        console.log('[Chat] Socket connected');
         newSocket.emit('register', { userId: providerId, role: 'PROVIDER' });
-        newSocket.emit('joinChat', { chatId: chat?.id, bookingId });
-      });
-
-      newSocket.on('disconnect', (reason) => {
-        console.log('[Chat] Socket disconnected:', reason);
       });
 
       newSocket.on('reconnect', (attemptNumber) => {
-        console.log('[Chat] Socket reconnected after', attemptNumber, 'attempts');
         newSocket.emit('register', { userId: providerId, role: 'PROVIDER' });
-        newSocket.emit('joinChat', { chatId: chat?.id, bookingId });
-        // Sync on reconnection to get any missed messages
         syncDatabase().catch(err => console.log('sync error:', err));
       });
 
-      newSocket.on('reconnect_attempt', (attemptNumber) => {
-        console.log('[Chat] Socket reconnection attempt:', attemptNumber);
-      });
+      newSocket.on('newMessage', async (data: any) => {
+        try {
+          // Find the local chat that has this serverId
+          const localChats = await database.collections.get('chats').query(Q.where('server_id', data.chatId)).fetch();
+          if (localChats.length === 0) {
+            return;
+          }
 
-      newSocket.on('reconnect_failed', () => {
-        console.log('[Chat] Socket reconnection failed');
-      });
+          const localChat = localChats[0] as any;
 
-      newSocket.on('newMessage', (data: any) => {
-        console.log('[Chat] Received newMessage via WebSocket:', data);
-        // Trigger sync to get the latest message from server
-        syncDatabase().catch(err => console.log('sync error:', err));
+          // Check if message already exists by serverId or offlineId
+          let existingMessage = null;
+
+          // First check by serverId (for messages that were already synced)
+          if (data.id) {
+            const existingByServerId = await database.collections.get('messages').query(
+              Q.where('server_id', data.id),
+              Q.where('chat_id', localChat.id)
+            ).fetch();
+            if (existingByServerId.length > 0) {
+              existingMessage = existingByServerId[0];
+            }
+          }
+
+          // If not found by serverId, check by offlineId (for optimistic local messages)
+          if (!existingMessage && data.offlineId) {
+            const existingByOfflineId = await database.collections.get('messages').query(
+              Q.where('offline_id', data.offlineId),
+              Q.where('chat_id', localChat.id)
+            ).fetch();
+            if (existingByOfflineId.length > 0) {
+              existingMessage = existingByOfflineId[0];
+            }
+          }
+
+          if (existingMessage) {
+            return; // Message already exists, skip
+          }
+
+          // Create new message if not found
+          await database.write(async () => {
+            await database.get('messages').create((m: any) => {
+              m.chatId = localChat.id;
+              m.serverId = data.id;
+              m.offlineId = data.offlineId;
+              m.senderId = data.senderId;
+              m.content = data.content;
+              m.createdAt = new Date(data.createdAt).getTime();
+            });
+          });
+        } catch (e) {
+          // If write fails (e.g., duplicate), ignore - message already exists
+        }
       });
 
       newSocket.on('sync_ping', (data: any) => {
         if (data?.senderId && data.senderId === providerId) return;
-        console.log('[Chat] Received sync_ping, syncing DB...');
         syncDatabase().catch(err => console.log('sync error:', err));
-      });
-
-      newSocket.on('error', (data: any) => {
-        console.log('[Chat] Socket error:', data?.message || 'Unknown error');
       });
 
       return () => {
@@ -113,26 +149,54 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
       };
     };
     loadUser();
-  }, [chat?.id, bookingId]);
+  }, []); // Only create socket once on mount
 
-  // Deduplicate messages by id/content+timestamp to prevent duplicate rendering
+  // Join chat room when serverChatId becomes available
+  useEffect(() => {
+    if (socket && socket.connected && serverChatId) {
+      socket.emit('joinChat', { chatId: serverChatId, bookingId });
+    }
+  }, [socket?.connected, serverChatId, bookingId]);
+
+  // Deduplicate messages by server_id/offline_id to prevent duplicate rendering
   const uniqueMessages = React.useMemo(() => {
     const seen = new Map<string, any>(); // Use Map to track original message objects
     return (messages || []).filter((m: any) => {
-      // Use a combination of content and timestamp as the primary key for deduplication
-      // This handles cases where the same message might have different IDs (local vs server)
-      const key = `${m.senderId}-${m.content}-${m.createdAt}`;
-
-      if (seen.has(key)) {
-        // If we've seen this message before, prefer the one with a proper server ID
-        const existing = seen.get(key);
-        if (m.id && !existing.id) {
-          seen.set(key, m); // Replace with server version
-          return true;
+      // Use server_id for deduplication (most reliable)
+      if (m.serverId) {
+        const key = `server_${m.serverId}`;
+        if (seen.has(key)) {
+          return false; // Skip duplicate
         }
-        return false; // Skip duplicate
+        seen.set(key, m);
+        return true;
       }
 
+      // Use offline_id as fallback
+      if (m.offlineId) {
+        const key = `offline_${m.offlineId}`;
+        if (seen.has(key)) {
+          return false; // Skip duplicate
+        }
+        seen.set(key, m);
+        return true;
+      }
+
+      // Use local id as last resort
+      if (m.id) {
+        const key = `local_${m.id}`;
+        if (seen.has(key)) {
+          return false; // Skip duplicate
+        }
+        seen.set(key, m);
+        return true;
+      }
+
+      // If no IDs available, use content+sender+time as fallback
+      const key = `${m.senderId}-${m.content}-${m.createdAt}`;
+      if (seen.has(key)) {
+        return false; // Skip duplicate
+      }
       seen.set(key, m);
       return true;
     });
@@ -152,6 +216,11 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
     setText('');
 
     try {
+      // Must have serverChatId to send
+      if (!serverChatId) {
+        return;
+      }
+
       let targetChat = chat;
       if (!targetChat && bookingId) {
         try {
@@ -159,34 +228,34 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
           if (existing.length > 0) {
             targetChat = existing[0];
           } else {
-            await database.write(async () => {
-              targetChat = await database.get('chats').create((c: any) => {
-                c.bookingId = bookingId;
-                c.clientId = clientId || 'client';
-                c.providerId = myId;
-              });
-            });
+            return;
           }
         } catch (e) {
           console.log('Error locating chat object', e);
+          return;
         }
       }
 
-      if (!targetChat) return;
+      if (!targetChat) {
+        return;
+      }
 
+      // Generate a unique offlineId for this message
+      const offlineId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Add sender's own message to local DB immediately for instant UI feedback
       await database.write(async () => {
         await database.get('messages').create((m: any) => {
           m.chatId = targetChat.id;
           m.senderId = myId;
           m.content = messageContent;
+          m.offlineId = offlineId;
           m.createdAt = Date.now();
         });
       });
 
-      await syncDatabase();
-
       if (socket) {
-        socket.emit('send_sync_ping', { chatId: targetChat.id, bookingId, senderId: myId });
+        socket.emit('sendMessage', { chatId: serverChatId, content: messageContent, offlineId });
       }
     } catch (e) {
       console.log('Failed to send message', e);

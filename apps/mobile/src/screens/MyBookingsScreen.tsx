@@ -67,7 +67,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
         <View style={{ flexDirection: 'row' }}>
           {isChatEnabled && (
             <TouchableOpacity
-              onPress={() => navigation.navigate('Chat', { bookingId: booking.id, serviceName: primaryServiceTitle, providerId: booking.providerId, clientId: booking.clientId })}
+              onPress={() => navigation.navigate('Chat', { bookingId: booking.serverId || booking.id, serviceName: primaryServiceTitle, providerId: booking.providerId, clientId: booking.clientId })}
               style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F4EDFF', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}
             >
               <MessageCircle size={20} color={Theme.primary} />
@@ -83,7 +83,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
           )}
           {booking.status === 'COMPLETED' && (
             <TouchableOpacity
-              onPress={() => navigation.navigate('Review', { bookingId: booking.id, serviceName: primaryServiceTitle })}
+              onPress={() => navigation.navigate('Review', { bookingId: booking.serverId || booking.offlineId || booking.id, serviceName: primaryServiceTitle })}
               style={{ backgroundColor: Theme.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, justifyContent: 'center' }}
             >
               <Text style={{ fontSize: 12, fontWeight: '900', color: 'white' }}>{t('common.rate_service').toUpperCase()}</Text>

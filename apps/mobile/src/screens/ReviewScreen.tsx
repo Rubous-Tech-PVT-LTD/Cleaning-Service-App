@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react-native';
-import { database } from '../db';
+import api from '../api';
 import { Theme } from '../theme';
 
 export const ReviewScreen = ({ route, navigation }: any) => {
@@ -14,21 +14,32 @@ export const ReviewScreen = ({ route, navigation }: any) => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+    if (!bookingId) {
+      Alert.alert('Error', 'Booking ID is missing');
+      return;
+    }
+
+    if (rating < 1 || rating > 5) {
+      Alert.alert('Error', 'Rating must be between 1 and 5');
+      return;
+    }
+
     setLoading(true);
     try {
-      await database.write(async () => {
-        await database.get('reviews').create((r: any) => {
-          r.bookingId = bookingId;
-          r.rating = rating;
-          r.comment = comment;
-          r.createdAt = Date.now();
-        });
+      console.log('Submitting review:', { bookingId, rating, comment });
+      const response = await api.post('/reviews', {
+        bookingId,
+        rating: Number(rating),
+        comment: comment || undefined,
       });
+      console.log('Review submission response:', response);
       
       Alert.alert('Success', 'Thank you for your feedback!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (error: any) {
-      console.error(error);
-      Alert.alert('Error', 'Could not submit review');
+      console.error('Review submission error:', error);
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.message || error.message || 'Could not submit review';
+      Alert.alert('Error', errorMessage);
     } finally { setLoading(false); }
   };
 

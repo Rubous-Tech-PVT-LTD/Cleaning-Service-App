@@ -12,6 +12,7 @@ import { UseGuards } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { WsJwtGuard } from '../auth/strategies/ws-jwt.guard';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../prisma/prisma.service';
 
 @WebSocketGateway({
   cors: {
@@ -21,32 +22,30 @@ import { JwtService } from '@nestjs/jwt';
 @UseGuards(WsJwtGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   constructor(
     private readonly chatService: ChatService,
     private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
   ) { }
 
   async handleConnection(client: Socket) {
     try {
       const token = this.extractTokenFromHeader(client);
       if (!token) {
-        console.log(`Client connected without token: ${client.id} - chat features will be restricted`);
         return;
       }
 
       const payload = await this.jwtService.verifyAsync(token);
       client.data.userId = payload.sub;
-      console.log(`Client connected: ${client.id} (User: ${payload.sub})`);
     } catch (error) {
-      console.log(`Client connection token invalid: ${client.id} - ${error.message} - chat features will be restricted`);
       // We don't disconnect because they might be connecting for TrackingGateway
     }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    // Silent disconnect
   }
 
   @SubscribeMessage('joinChat')
@@ -63,14 +62,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (data.bookingId) {
       const isAuthorized = await this.chatService.verifyBookingAccess(data.bookingId, userId);
       if (!isAuthorized) {
-        console.warn(`[Socket] Unauthorized joinChat attempt by user ${userId} for booking ${data.bookingId}`);
         client.emit('error', { message: 'You are not authorized to access this booking' });
         return;
       }
     } else if (data.chatId) {
       const isParticipant = await this.chatService.isParticipant(data.chatId, userId);
       if (!isParticipant) {
-        console.warn(`[Socket] Unauthorized joinChat attempt by user ${userId} for chat ${data.chatId}`);
         client.emit('error', { message: 'You are not a participant in this chat' });
         return;
       }
@@ -85,12 +82,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (data.bookingId) {
       client.join(`booking:${data.bookingId}`);
     }
-    console.log(`Client ${client.id} joined rooms for chat:${data.chatId || ''} booking:${data.bookingId || ''}`);
   }
 
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
-    @MessageBody() data: { chatId: string; content: string },
+    @MessageBody() data: { chatId: string; content: string; offlineId?: string },
     @ConnectedSocket() client: Socket,
   ) {
     const senderId = client.data?.userId;
@@ -110,6 +106,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    // Check if chat exists, if not try to create it using booking-based lookup
+    const chat = await this.prisma.chat.findUnique({
+      where: { id: data.chatId },
+      select: { id: true, clientId: true, providerId: true, bookingId: true },
+    });
+
+    if (!chat) {
+      client.emit('error', { message: 'Chat not found' });
+      return;
+    }
+
     const isParticipant = await this.chatService.isParticipant(data.chatId, senderId);
     if (!isParticipant) {
       console.warn(`[Socket] Unauthorized sendMessage attempt by user ${senderId} for chat ${data.chatId}`);
@@ -123,8 +130,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       data.content.trim(),
     );
 
-    // Broadcast to the chat room
-    this.server.to(`chat:${data.chatId}`).emit('newMessage', message);
+    // Include offlineId in the broadcast for deduplication
+    const messageWithOfflineId = {
+      ...message,
+      offlineId: data.offlineId,
+    };
+
+    this.server.to(`chat:${data.chatId}`).emit('newMessage', messageWithOfflineId);
   }
 
   @SubscribeMessage('send_sync_ping')
@@ -141,7 +153,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } else if (data.chatId) {
       client.to(`chat:${data.chatId}`).emit('sync_ping', { senderId, chatId: data.chatId });
     }
-    console.log(`Broadcasted sync_ping for booking:${data.bookingId || ''} chat:${data.chatId || ''}`);
   }
 
   private extractTokenFromHeader(client: Socket): string | undefined {

@@ -22,10 +22,14 @@ async function request(method: string, endpoint: string, data?: any) {
     options.body = JSON.stringify(data);
   }
 
+  console.log(`API Request: ${method} ${BASE_URL}${endpoint}`, { token: token ? 'exists' : 'missing', data });
+
   const response = await fetch(`${BASE_URL}${endpoint}`, options);
   const text = await response.text();
   let responseData: any = text;
   try { responseData = JSON.parse(text); } catch (e) {}
+
+  console.log(`API Response: ${response.status}`, responseData);
 
   if (!response.ok) {
     const error: any = new Error('Request failed');

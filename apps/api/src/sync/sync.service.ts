@@ -125,6 +125,7 @@ export class SyncService {
 
       if (userId) {
         let isProvider = role === 'PROVIDER';
+        const isInitialSync = !lastPulledAt || lastPulledAt === 0;
 
         // Fetch user role if role was not explicitly provided
         if (!isProvider && userId !== '1') {
@@ -158,22 +159,22 @@ export class SyncService {
             professionIds.push(...(providerUser.profile.professionIds as string[]));
           }
 
+          // CRITICAL FIX: For initial sync, don't filter by updatedAt for user-specific data
+          const providerBookingWhere = isInitialSync ? {
+            OR: [
+              { providerId: userId },
+              { status: 'PENDING', serviceId: { in: professionIds } }
+            ]
+          } : {
+            OR: [
+              { providerId: userId },
+              { status: 'PENDING', serviceId: { in: professionIds } }
+            ],
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
+
           bookings = await (this.prisma as any).booking.findMany({
-            where: {
-              OR: [
-                {
-                  providerId: userId,
-                },
-                {
-                  status: 'PENDING',
-                  serviceId: { in: professionIds }
-                },
-              ],
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: providerBookingWhere,
             include: {
               address: true,
               service: true,
@@ -185,51 +186,62 @@ export class SyncService {
             .map((booking: any) => booking.addressId)
             .filter(Boolean);
 
+          // CRITICAL FIX: For initial sync, don't filter by updatedAt for user-specific data
+          const providerAddressWhere = isInitialSync ? {
+            OR: [
+              { userId },
+              { id: { in: bookingAddressIds } }
+            ]
+          } : {
+            OR: [
+              { userId },
+              { id: { in: bookingAddressIds } }
+            ],
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
+
           addresses = await (this.prisma as any).address.findMany({
-            where: {
-              OR: [
-                {
-                  userId,
-                },
-                {
-                  id: {
-                    in: bookingAddressIds,
-                  },
-                },
-              ],
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: providerAddressWhere,
           });
+
+          // CRITICAL FIX: For initial sync, don't filter by updatedAt for user-specific data
+          const providerChatWhere = isInitialSync ? {
+            OR: [
+              { providerId: userId },
+              { booking: { providerId: userId } }
+            ]
+          } : {
+            OR: [
+              { providerId: userId },
+              { booking: { providerId: userId } }
+            ],
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
 
           chats = await (this.prisma as any).chat.findMany({
-            where: {
-              OR: [
-                { providerId: userId },
-                { booking: { providerId: userId } },
-              ],
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: providerChatWhere,
           });
 
-          messages = await (this.prisma as any).message.findMany({
-            where: {
-              chat: {
-                OR: [
-                  { providerId: userId },
-                  { booking: { providerId: userId } },
-                ],
-              },
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
+          // CRITICAL FIX: For initial sync, don't filter by updatedAt for user-specific data
+          const providerMessageWhere = isInitialSync ? {
+            chat: {
+              OR: [
+                { providerId: userId },
+                { booking: { providerId: userId } }
+              ]
+            }
+          } : {
+            chat: {
+              OR: [
+                { providerId: userId },
+                { booking: { providerId: userId } }
+              ]
             },
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
+
+          messages = await (this.prisma as any).message.findMany({
+            where: providerMessageWhere,
             include: {
               chat: true,
             },
@@ -241,62 +253,92 @@ export class SyncService {
         // ========================================================
 
         else {
+          // CRITICAL FIX: For initial sync, don't filter by updatedAt for user-specific data
+          const clientBookingWhere = isInitialSync ? {
+            clientId: userId
+          } : {
+            clientId: userId,
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
+
           bookings = await (this.prisma as any).booking.findMany({
-            where: {
-              clientId: userId,
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: clientBookingWhere,
             include: {
               address: true,
               service: true,
             },
           });
 
+          // CRITICAL FIX: For initial sync, don't filter by updatedAt for user-specific data
+          const clientAddressWhere = isInitialSync ? {
+            userId
+          } : {
+            userId,
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
+
           addresses = await (this.prisma as any).address.findMany({
-            where: {
-              userId,
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: clientAddressWhere,
           });
+
+          // CRITICAL FIX: For initial sync, don't filter by updatedAt for user-specific data
+          const clientChatWhere = isInitialSync ? {
+            OR: [
+              { clientId: userId },
+              { booking: { clientId: userId } }
+            ]
+          } : {
+            OR: [
+              { clientId: userId },
+              { booking: { clientId: userId } }
+            ],
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
 
           chats = await (this.prisma as any).chat.findMany({
-            where: {
-              OR: [
-                { clientId: userId },
-                { booking: { clientId: userId } },
-              ],
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: clientChatWhere,
           });
 
-          messages = await (this.prisma as any).message.findMany({
-            where: {
-              chat: {
-                OR: [
-                  { clientId: userId },
-                  { booking: { clientId: userId } },
-                ],
-              },
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
+          // CRITICAL FIX: For initial sync, don't filter by updatedAt for user-specific data
+          const clientMessageWhere = isInitialSync ? {
+            chat: {
+              OR: [
+                { clientId: userId },
+                { booking: { clientId: userId } }
+              ]
+            }
+          } : {
+            chat: {
+              OR: [
+                { clientId: userId },
+                { booking: { clientId: userId } }
+              ]
             },
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
+
+          messages = await (this.prisma as any).message.findMany({
+            where: clientMessageWhere,
             include: {
               chat: true,
             },
           });
         }
       }
+
+      // ==========================================================
+      // BUILD CHAT ID MAPPING
+      // ==========================================================
+      
+      // Create mapping from server chat ID to local chat ID for message relationships
+      // For server records, the ID is the server ID, and we need to map to the offlineId
+      const chatIdMapping = new Map<string, string>();
+      chats.forEach((chat: any) => {
+        // chat.id is the server ID (from database), chat.offlineId is the local ID
+        if (chat.id && chat.offlineId) {
+          chatIdMapping.set(chat.id, chat.offlineId);
+        }
+      });
 
       // ==========================================================
       // DATA MAPPERS
@@ -384,6 +426,9 @@ export class SyncService {
       const mapBooking = (r: any) => ({
         id: r.offlineId || r.id,
 
+        // Include actual server ID for API calls
+        server_id: r.id,
+
         service_id: r.serviceId,
         client_id: r.clientId,
         provider_id: r.providerId,
@@ -464,23 +509,33 @@ export class SyncService {
         client_id: r.clientId,
         provider_id: r.providerId,
 
+        server_id: r.id,
+
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
 
       // Message mapper
-      const mapMessage = (r: any) => ({
-        id: r.offlineId || r.id,
+      const mapMessage = (r: any) => {
+        // Map server chat ID to local chat ID using the mapping we built
+        const localChatId = chatIdMapping.get(r.chatId) || r.chatId;
+        
+        return {
+          id: r.offlineId || r.id,
 
-        chat_id: (r.chat && r.chat.offlineId) ? r.chat.offlineId : r.chatId,
+          // Use local chat ID for WatermelonDB relationship
+          chat_id: localChatId,
 
-        sender_id: r.senderId,
+          sender_id: r.senderId,
 
-        content: r.content,
+          content: r.content,
 
-        created_at: r.createdAt.getTime(),
-        updated_at: r.updatedAt.getTime(),
-      });
+          server_id: r.id,
+
+          created_at: r.createdAt.getTime(),
+          updated_at: r.updatedAt.getTime(),
+        };
+      };
 
       // ==========================================================
       // FINAL CHANGESET
@@ -793,6 +848,23 @@ export class SyncService {
               },
             });
 
+          // Automatically create chat for new booking
+          const existingChat = await (this.prisma as any).chat.findFirst({
+            where: { bookingId: newBooking.id },
+          });
+
+          if (!existingChat) {
+            await (this.prisma as any).chat.create({
+              data: {
+                booking: {
+                  connect: { id: newBooking.id },
+                },
+                clientId: newBooking.clientId,
+                providerId: newBooking.providerId || 'system', // Use 'system' as fallback for unassigned bookings
+              },
+            });
+          }
+
           // Broadcast pending booking to matching providers
           if (
             newBooking.status ===
@@ -1056,7 +1128,9 @@ export class SyncService {
               await (this.prisma as any).chat.create({
                 data: {
                   offlineId: chat.offlineId || chat.id,
-                  bookingId: booking.id,
+                  booking: {
+                    connect: { id: booking.id },
+                  },
                   clientId: chat.client_id || chat.clientId,
                   providerId: authoritativeProviderId,
                 },
@@ -1109,6 +1183,7 @@ export class SyncService {
 
               update: {
                 content: msg.content,
+                chatId: chat.id,
                 version: {
                   increment: 1,
                 },

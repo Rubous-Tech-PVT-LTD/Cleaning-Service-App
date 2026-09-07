@@ -23,9 +23,11 @@ export class ChatService {
     if (!chat) {
       chat = await this.prisma.chat.create({
         data: {
-          bookingId,
-          clientId: booking.clientId, // Always use actual booking client ID
-          providerId: booking.providerId || providerId, // Use actual provider ID or provided fallback
+          booking: {
+            connect: { id: bookingId },
+          },
+          clientId: booking.clientId,
+          providerId: booking.providerId || 'system', // Use 'system' as fallback for unassigned bookings
         },
       });
     }
@@ -87,7 +89,9 @@ export class ChatService {
       where: { id: chatId },
       select: { clientId: true, providerId: true },
     });
-    if (!chat) return false;
+    if (!chat) {
+      return false;
+    }
 
     // Handle null providerId
     const isClient = chat.clientId === userId;
