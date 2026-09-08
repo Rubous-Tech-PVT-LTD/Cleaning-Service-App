@@ -1172,14 +1172,17 @@ export class SyncService {
             });
 
           if (chat) {
+            const messageOfflineId = msg.offlineId || msg.id;
+            
+            // Use compound unique constraint if offlineId exists, otherwise use id
+            const whereClause = messageOfflineId
+              ? { offlineId_chatId: { offlineId: messageOfflineId, chatId: chat.id } }
+              : { id: msg.id };
+
             await (
               this.prisma as any
             ).message.upsert({
-              where: {
-                offlineId:
-                  msg.offlineId ||
-                  msg.id,
-              },
+              where: whereClause,
 
               update: {
                 content: msg.content,
@@ -1190,9 +1193,7 @@ export class SyncService {
               },
 
               create: {
-                offlineId:
-                  msg.offlineId ||
-                  msg.id,
+                offlineId: messageOfflineId,
 
                 chatId:
                   chat.id,
