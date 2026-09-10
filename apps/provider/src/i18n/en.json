@@ -168,6 +168,7 @@
   "provider": {
     "welcome_back": "WELCOME BACK",
     "provider": "Provider",
+    "maintenance_message": "App under maintenance. We're making a few improvements.",
     "online": "ONLINE",
     "offline": "OFFLINE",
     "pending_jobs": "PENDING JOBS",

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Animated, TextInput, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, ChevronDown, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow, Plus, Minus } from 'lucide-react-native';
+import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, ChevronDown, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow, Plus, Minus, Wrench } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import NetInfo from '@react-native-community/netinfo';
@@ -657,6 +657,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           </View>
         </View>
       </Animated.ScrollView>
+      <MaintenanceBanner />
      <BottomNav
         active="home"
         onTabPress={(tab: string) => {
@@ -674,6 +675,49 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
   );
 };
 
+
+const MaintenanceBanner = () => {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const translateX = useRef(new Animated.Value(-Dimensions.get('window').width)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: Dimensions.get('window').width,
+        duration: 15000,
+        useNativeDriver: true,
+      })
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [translateX]);
+
+  return (
+    <View style={{
+      position: 'absolute',
+      bottom: 65 + insets.bottom,
+      left: 0,
+      right: 0,
+      height: 34,
+      backgroundColor: Theme.primaryDark,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      zIndex: 998,
+      overflow: 'hidden',
+    }}>
+      <Animated.View style={{ position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, transform: [{ translateX }] }}>
+        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: Theme.accent, justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+          <Wrench size={12} color={Theme.primaryDark} />
+        </View>
+        <Text style={{ color: 'white', fontFamily: 'Poppins_500Medium', fontSize: 11 }} numberOfLines={1}>
+          {t('home.maintenance_message')}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+};
 
 const OfferCard = ({ title, subtitle, code, codePrefix, label }: any) => (
   <TouchableOpacity style={{ width: 300, height: 160, borderRadius: 32, marginRight: 20, overflow: 'hidden' }}>

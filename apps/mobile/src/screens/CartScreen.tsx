@@ -154,13 +154,6 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
       if (cartItems.length === 0) return;
 
       const primaryItem = cartItems[0];
-      const scheduledItem = cartItems.find(
-        (item: any) => item.bookingType === 'scheduled' && item.scheduledAt,
-      );
-
-      const scheduledAt = scheduledItem?.scheduledAt
-        ? new Date(scheduledItem.scheduledAt).getTime()
-        : new Date().getTime();
 
       // Use saved address if activeLocation has savedAddressId, otherwise use userAddress
       const bookingAddress = activeLocation.savedAddressId
@@ -172,31 +165,36 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
         return;
       }
 
-      // Create booking locally in WatermelonDB
-      // Store only service IDs, not translated titles
-      const itemsForStorage = cartItems.map((item: any) => ({
-        serviceId: item.serviceId,
-        price: Math.round(item.duration?.price || item.price),
-        quantity: item.quantity || 1,
-      }));
-
       const newBookingId = await database.write(async () => {
-        const nb = await database.get('bookings').create((booking: any) => {
-          booking.serviceId = primaryItem.serviceId;
-          booking.clientId = userId;
-          booking.addressId = bookingAddress.id;
-          booking.status = 'PENDING';
-          booking.scheduledAt = scheduledAt;
-          booking.totalPrice = Math.round(getFinalAmount());
-          booking.items = JSON.stringify(itemsForStorage);
-        });
+        let firstBookingId = '';
 
-        await database.get('chats').create((chat: any) => {
-          chat.bookingId = nb.id;
-          chat.clientId = userId;
-          chat.providerId = 'system';
-        });
-        return nb.id;
+        for (const item of cartItems) {
+          const itemPrice = Math.round(item.duration?.price || item.price);
+          const quantity = item.quantity || 1;
+          const scheduledAt = item.bookingType === 'scheduled' && item.scheduledAt
+            ? new Date(item.scheduledAt).getTime()
+            : new Date().getTime();
+
+          const booking = await database.get('bookings').create((localBooking: any) => {
+            localBooking.serviceId = item.serviceId;
+            localBooking.clientId = userId;
+            localBooking.addressId = bookingAddress.id;
+            localBooking.status = 'PENDING';
+            localBooking.scheduledAt = scheduledAt;
+            localBooking.totalPrice = itemPrice * quantity;
+            localBooking.items = JSON.stringify([{ serviceId: item.serviceId, price: itemPrice, quantity }]);
+          });
+
+          if (!firstBookingId) firstBookingId = booking.id;
+
+          await database.get('chats').create((chat: any) => {
+            chat.bookingId = booking.id;
+            chat.clientId = userId;
+            chat.providerId = 'system';
+          });
+        }
+
+        return firstBookingId;
       });
 
       // Trigger sync immediately to push booking to server
@@ -222,7 +220,9 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
       navigation.navigate('BookingSuccess', {
         bookingId: newBookingId,
         totalPrice: Math.round(getFinalAmount()),
-        date: scheduledAt,
+        date: primaryItem.scheduledAt
+          ? new Date(primaryItem.scheduledAt).getTime()
+          : new Date().getTime(),
         addressLabel: bookingAddress.label,
         addressLine1: bookingAddress.addressLine1,
         addressCity: bookingAddress.city

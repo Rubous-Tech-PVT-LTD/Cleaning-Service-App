@@ -2,12 +2,65 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TrackingGateway } from '../tracking/tracking.gateway';
 
+const calculateDistance = (
+  latitude1: number,
+  longitude1: number,
+  latitude2: number,
+  longitude2: number,
+): number => {
+  const earthRadiusKm = 6371;
+  const latitudeDelta = (latitude2 - latitude1) * (Math.PI / 180);
+  const longitudeDelta = (longitude2 - longitude1) * (Math.PI / 180);
+  const a =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(latitude1 * (Math.PI / 180)) *
+      Math.cos(latitude2 * (Math.PI / 180)) *
+      Math.sin(longitudeDelta / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 @Injectable()
 export class SyncService {
   constructor(
     private prisma: PrismaService,
     private trackingGateway: TrackingGateway,
   ) { }
+
+  private async findProviderForBooking(serviceId: string, address: any) {
+    if (!serviceId || address?.latitude == null || address?.longitude == null) {
+      return null;
+    }
+
+    const providers = await (this.prisma as any).user.findMany({
+      where: {
+        role: 'PROVIDER',
+        profile: {
+          isVerified: true,
+          latitude: { not: null },
+          longitude: { not: null },
+          OR: [
+            { professionIds: { array_contains: serviceId } },
+            { professionId: serviceId },
+          ],
+        },
+      },
+      include: { profile: true },
+    });
+
+    return providers
+      .map((provider: any) => ({
+        provider,
+        distance: calculateDistance(
+          address.latitude,
+          address.longitude,
+          provider.profile.latitude,
+          provider.profile.longitude,
+        ),
+      }))
+      .filter((candidate: any) => candidate.distance <= 25)
+      .sort((left: any, right: any) => left.distance - right.distance)[0]
+      ?.provider || null;
+  }
 
   // ============================================================
   // PULL CHANGES
@@ -780,6 +833,11 @@ export class SyncService {
               })
               : null;
 
+          const assignedProvider = await this.findProviderForBooking(
+            serviceId,
+            bookingAddress,
+          );
+
           const newBooking =
             await (this.prisma as any).booking.upsert({
               where: {
@@ -822,6 +880,10 @@ export class SyncService {
                       },
                     },
                   }
+                  : {}),
+
+                ...(assignedProvider?.id
+                  ? { providerId: assignedProvider.id }
                   : {}),
 
                 scheduledAt: new Date(

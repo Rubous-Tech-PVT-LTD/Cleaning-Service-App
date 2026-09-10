@@ -2,7 +2,7 @@ import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SYNC_URL = 'http://192.168.143.209:3000/v1/sync';
+const SYNC_URL = 'http://192.168.116.209:3000/v1/sync';
 
 // ─── Sync lock to prevent concurrent synchronization ─────────────────────
 let isSyncing = false;

@@ -1,7 +1,8 @@
-import React from 'react';
-import { Text } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Dimensions, Text, View } from 'react-native';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { Wrench } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { JobsScreen } from '../screens/JobsScreen';
@@ -11,6 +12,36 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { Theme } from '../theme';
 
 const Tab = createBottomTabNavigator();
+
+const ProviderMaintenanceBanner = () => {
+  const { t } = useTranslation();
+  const translateX = useRef(new Animated.Value(-Dimensions.get('window').width)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: Dimensions.get('window').width,
+        duration: 15000,
+        useNativeDriver: true,
+      })
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [translateX]);
+
+  return (
+    <View style={{ height: 34, backgroundColor: Theme.primaryDark, overflow: 'hidden' }}>
+      <Animated.View style={{ position: 'absolute', left: 0, right: 0, height: 34, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, transform: [{ translateX }] }}>
+        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: Theme.accent, justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+          <Wrench size={12} color={Theme.primaryDark} />
+        </View>
+        <Text style={{ color: Theme.white, fontWeight: '600', fontSize: 11 }} numberOfLines={1}>
+          {t('provider.maintenance_message')}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+};
 
 const TabBarLabel = ({ routeName }: { routeName: string }) => {
   const { t } = useTranslation();
@@ -67,6 +98,12 @@ export const TabNavigator = () => {
         },
         tabBarLabel: () => <TabBarLabel routeName={route.name} />,
       })}
+        tabBar={(props) => (
+          <View>
+            <ProviderMaintenanceBanner />
+            <BottomTabBar {...props} />
+          </View>
+        )}
     >
       <Tab.Screen name="Home" component={DashboardScreen} />
       <Tab.Screen name="Jobs" component={JobsScreen} />

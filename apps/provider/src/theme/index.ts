@@ -1,13 +1,13 @@
 // ─── Shared Theme — must match apps/mobile/src/theme/index.ts exactly ────────
 export const Theme = {
   // Brand Colors
-  primary: '#33135C',       // Exact Dark Purple
-  primaryDark: '#1E0A3C',   // Deeper Purple for gradients
-  accent: '#A78BFA',        // Soft Violet / Lavender accent
+  primary: '#F9C935',       // Golden Yellow
+  primaryDark: '#D4A520',   // Darker Golden
+  accent: '#FCD34D',        // Light Yellow accent
 
   // Surface & Background
   surface: '#ffffff',       // White
-  background: '#F8FAFC',    // Clean light slate background
+  background: '#FFFBEB',    // Light yellow background
   white: '#FFFFFF',
   muted: '#F1F5F9',         // Light Grey Background
 
@@ -16,13 +16,13 @@ export const Theme = {
   textSecondary: '#475569', // Medium slate text
 
   // Border
-  border: '#E2E8F0',        // Light slate border
+  border: '#FDE68A',        // Light yellow border
 
   // Semantic Colors
-  success: '#059669',       // Dark Green
-  successLight: '#D1FAE5',  // Light Green
+  success: '#F59E0B',       // Amber/Gold
+  successLight: '#FEF3C7',  // Light Amber
   error: '#EF4444',         // Red
   errorLight: '#FEF2F2',    // Light Red
   info: '#3B82F6',          // Blue
-  infoLight: '#EFF6FF',     // Light Blue Background
+  infoLight: '#FEF3C7',     // Light Amber Background
 };
