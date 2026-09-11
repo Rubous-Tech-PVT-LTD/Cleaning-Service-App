@@ -10,41 +10,32 @@ import api from '../api';
 import { useTranslation } from 'react-i18next';
 import { searchPlaces } from '../services/nominatim';
 import { useBookings } from '../context/BookingContext';
-
-// OSRM routing API - free, no API key required
 const fetchRoute = async (startLat: number, startLon: number, endLat: number, endLon: number) => {
   try {
     const url = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`;
     const response = await fetch(url);
     const data = await response.json();
-    
     if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
       const route = data.routes[0];
-      const distance = route.distance / 1000; // Convert meters to km
-      const duration = route.duration / 60; // Convert seconds to minutes
-      
-      // Convert GeoJSON coordinates to MapView format
+      const distance = route.distance / 1000;
+      const duration = route.duration / 60;
       const coordinates = route.geometry.coordinates.map((coord: number[]) => ({
         latitude: coord[1],
         longitude: coord[0],
       }));
-      
       return { coordinates, distance, duration };
     }
     return null;
   } catch (error) {
-    console.error('Error fetching route:', error);
     return null;
   }
 };
-
 const formatDistance = (distanceKm: number): string => {
   if (distanceKm < 1) {
     return `${Math.round(distanceKm * 1000)}m away`;
   }
   return `${distanceKm.toFixed(1)}km away`;
 };
-
 const formatDuration = (minutes: number): string => {
   if (minutes < 60) {
     return `${Math.round(minutes)} min`;
@@ -53,14 +44,12 @@ const formatDuration = (minutes: number): string => {
   const mins = Math.round(minutes % 60);
   return `${hours}h ${mins}m`;
 };
-
 export const TrackingScreen = () => {
   const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation<any>();
   const { booking } = route.params as { booking: any };
   const mapRef = useRef<MapView>(null);
-
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const { socket: sharedSocket } = useBookings();
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -70,39 +59,29 @@ export const TrackingScreen = () => {
   const [loadingRoute, setLoadingRoute] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [sosLoading, setSosLoading] = useState<boolean>(false);
-  const [clientDestination, setClientDestination] = useState<{latitude: number, longitude: number} | null>(null);
+  const [clientDestination, setClientDestination] = useState<{ latitude: number, longitude: number } | null>(null);
   const [geocoding, setGeocoding] = useState<boolean>(false);
-
   useEffect(() => {
     const resolveDestination = async () => {
-      console.log('=== BOOKING ADDRESS VALIDATION ===');
       if (!booking.address) {
         setError('Booking address is missing');
         return;
       }
-
       const { latitude, longitude, addressLine1, addressLine2, city, state, pincode } = booking.address;
-
       if (latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined && !isNaN(latitude) && !isNaN(longitude)) {
-         setClientDestination({ latitude, longitude });
-         return;
+        setClientDestination({ latitude, longitude });
+        return;
       }
-
-      console.log('Coordinates missing, attempting geocoding...');
       setGeocoding(true);
       try {
         const fullQuery = `${addressLine1 || ''} ${addressLine2 || ''} ${city || ''} ${state || ''} ${pincode || ''}`.trim();
         const streetQuery = `${addressLine2 || ''} ${city || ''} ${state || ''} ${pincode || ''}`.trim();
         const cityQuery = `${city || ''} ${state || ''} ${pincode || ''}`.trim();
-
         const queriesToTry = [fullQuery, streetQuery, cityQuery].filter(q => q.length > 5);
-
         let found = false;
         for (const query of queriesToTry) {
-          console.log('Geocoding attempt with query:', query);
           const results = await searchPlaces(query, 1);
           if (results && results.length > 0) {
-            console.log('Geocoding successful:', results[0].lat, results[0].lon);
             setClientDestination({
               latitude: parseFloat(results[0].lat),
               longitude: parseFloat(results[0].lon)
@@ -111,20 +90,16 @@ export const TrackingScreen = () => {
             break;
           }
         }
-
         if (!found) {
           setError('Service address could not be found on the map.');
         }
       } catch (err) {
-        console.error('Geocoding error:', err);
         setError('Geocoding service is unavailable.');
       }
       setGeocoding(false);
     };
-
     resolveDestination();
   }, [booking.address]);
-
   useEffect(() => {
     if (error) {
       Alert.alert(
@@ -134,25 +109,17 @@ export const TrackingScreen = () => {
       );
     }
   }, [error, navigation]);
-
   useEffect(() => {
     if (!clientDestination) return;
-
-    // Use shared Socket
     setSocket(sharedSocket);
-
-    // Request Permissions and Start Tracking
     let locationSubscription: Location.LocationSubscription | null = null;
-
     const startTracking = async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission to access location was denied');
         return;
       }
-
       const providerId = await AsyncStorage.getItem('provider_id');
-
       locationSubscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
@@ -161,8 +128,6 @@ export const TrackingScreen = () => {
         },
         async (loc) => {
           setLocation(loc);
-
-          // Fetch route using OSRM
           setLoadingRoute(true);
           const routeData = await fetchRoute(
             loc.coords.latitude,
@@ -170,15 +135,12 @@ export const TrackingScreen = () => {
             clientDestination.latitude,
             clientDestination.longitude
           );
-
           if (routeData) {
             setRouteCoordinates(routeData.coordinates);
             setDistance(routeData.distance);
             setDuration(routeData.duration);
           }
           setLoadingRoute(false);
-
-          // Emit location to backend
           if (sharedSocket && providerId && booking.clientId) {
             sharedSocket.emit('update_location', {
               providerId: providerId,
@@ -190,22 +152,16 @@ export const TrackingScreen = () => {
         }
       );
     };
-
     startTracking();
-
     return () => {
       if (locationSubscription) {
         locationSubscription.remove();
       }
-      // Do NOT disconnect the shared socket
     };
-  }, [booking.id, clientDestination, sharedSocket]); // Re-run only if booking, destination or socket changes
-
-  // Recalculate route when provider location changes
+  }, [booking.id, clientDestination, sharedSocket]);
   useEffect(() => {
     if (location && clientDestination) {
       const recalculateRoute = async () => {
-        console.log('Recalculating route to booking destination:', clientDestination);
         setLoadingRoute(true);
         const routeData = await fetchRoute(
           location.coords.latitude,
@@ -213,7 +169,6 @@ export const TrackingScreen = () => {
           clientDestination.latitude,
           clientDestination.longitude
         );
-
         if (routeData) {
           setRouteCoordinates(routeData.coordinates);
           setDistance(routeData.distance);
@@ -221,11 +176,9 @@ export const TrackingScreen = () => {
         }
         setLoadingRoute(false);
       };
-
       recalculateRoute();
     }
   }, [location?.coords.latitude, location?.coords.longitude, clientDestination]);
-
   const markArrived = async () => {
     try {
       await api.patch(`/bookings/${booking.id}/status`, { status: 'IN_PROGRESS' });
@@ -235,10 +188,8 @@ export const TrackingScreen = () => {
       Alert.alert('Error', e.message);
     }
   };
-
   const handleTriggerSos = async () => {
     if (sosLoading) return;
-
     Alert.alert(
       t('provider.sos_alert'),
       t('provider.sos_confirm'),
@@ -250,10 +201,8 @@ export const TrackingScreen = () => {
           onPress: async () => {
             try {
               setSosLoading(true);
-
               let lat: number;
               let lng: number;
-
               if (location) {
                 lat = location.coords.latitude;
                 lng = location.coords.longitude;
@@ -269,15 +218,12 @@ export const TrackingScreen = () => {
                 lat = freshLoc.coords.latitude;
                 lng = freshLoc.coords.longitude;
               }
-
               const payload = {
                 bookingId: booking.id,
                 latitude: lat,
                 longitude: lng,
               };
-
               await api.post('/sos', payload);
-
               Alert.alert(
                 t('provider.sos_sent'),
                 t('provider.sos_sent_message')
@@ -293,8 +239,6 @@ export const TrackingScreen = () => {
       ]
     );
   };
-
-  // Get map region that fits both points
   const getMapRegion = () => {
     if (!clientDestination) {
       return {
@@ -304,7 +248,6 @@ export const TrackingScreen = () => {
         longitudeDelta: 0.05,
       };
     }
-
     if (!location) {
       return {
         latitude: clientDestination.latitude,
@@ -313,12 +256,10 @@ export const TrackingScreen = () => {
         longitudeDelta: 0.05,
       };
     }
-
     const lat = (location.coords.latitude + clientDestination.latitude) / 2;
     const lon = (location.coords.longitude + clientDestination.longitude) / 2;
     const latDelta = Math.abs(location.coords.latitude - clientDestination.latitude) * 2 + 0.01;
     const lonDelta = Math.abs(location.coords.longitude - clientDestination.longitude) * 2 + 0.01;
-
     return {
       latitude: lat,
       longitude: lon,
@@ -326,7 +267,6 @@ export const TrackingScreen = () => {
       longitudeDelta: Math.max(lonDelta, 0.02),
     };
   };
-
   return (
     <View style={styles.container}>
       {geocoding ? (
@@ -359,8 +299,6 @@ export const TrackingScreen = () => {
               description={t('provider.navigate_here')}
               pinColor={Theme.primary}
             />
-
-            {/* Draw road route polyline */}
             {routeCoordinates.length > 0 && (
               <Polyline
                 coordinates={routeCoordinates}
@@ -371,7 +309,6 @@ export const TrackingScreen = () => {
               />
             )}
           </MapView>
-
           <View style={styles.bottomCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoBadge}>
@@ -383,14 +320,11 @@ export const TrackingScreen = () => {
                 <Text style={styles.infoValue}>{formatDuration(duration)}</Text>
               </View>
             </View>
-
             <Text style={styles.title}>{t('provider.navigating_to_client')}</Text>
             <Text style={styles.subtitle}>Job #{booking.id.slice(-6).toUpperCase()}</Text>
-
             <Text style={styles.debugInfo}>
               📍 {t('provider.destination')}: {booking.address?.city || 'Unknown City'} ({clientDestination.latitude.toFixed(4)}, {clientDestination.longitude.toFixed(4)})
             </Text>
-
             {loadingRoute ? (
               <Text style={styles.status}>🗺️ {t('provider.calculating_route')}</Text>
             ) : location ? (
@@ -398,7 +332,6 @@ export const TrackingScreen = () => {
             ) : (
               <Text style={styles.status}>{t('provider.locating')}</Text>
             )}
-
             <TouchableOpacity
               onPress={handleTriggerSos}
               disabled={sosLoading}
@@ -413,7 +346,6 @@ export const TrackingScreen = () => {
                 </>
               )}
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.completeButton} onPress={markArrived}>
               <Text style={styles.buttonText}>{t('provider.arrived')}</Text>
             </TouchableOpacity>
@@ -423,7 +355,6 @@ export const TrackingScreen = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },

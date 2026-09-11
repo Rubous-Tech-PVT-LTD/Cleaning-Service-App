@@ -20,20 +20,7 @@
     "deleted": []
   },
   "messages": {
-    "created": [
-      {
-        "id": "YlueLK35enhyCrx7",
-        "_status": "created",
-        "_changed": "",
-        "chat_id": "510ea449-ca50-4366-9341-ab81d6e41d14",
-        "sender_id": "d8acf9e4-9f32-4a73-a0b3-4a08d57d631f",
-        "content": "Yes.",
-        "offline_id": "msg_1788778012270_mcv3w4sdx",
-        "server_id": null,
-        "created_at": 1788778012273,
-        "updated_at": 1788778012272
-      }
-    ],
+    "created": [],
     "updated": [],
     "deleted": []
   },
@@ -48,7 +35,26 @@
     "deleted": []
   },
   "addresses": {
-    "created": [],
+    "created": [
+      {
+        "id": "GF2EhPRGzpf2cazc",
+        "_status": "created",
+        "_changed": "",
+        "user_id": "3abc8b48-39b2-454f-9cff-2af0f4ceab7f",
+        "label": "Home",
+        "address_line1": "P826+VW",
+        "address_line2": "Gwalior Division",
+        "city": "Nehgawan",
+        "state": "Madhya Pradesh",
+        "pincode": "473113",
+        "is_default": false,
+        "latitude": 24.700182968622723,
+        "longitude": 77.31298891827464,
+        "offline_id": null,
+        "created_at": 1789108773083,
+        "updated_at": 1789108773083
+      }
+    ],
     "updated": [],
     "deleted": []
   }

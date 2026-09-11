@@ -39,7 +39,6 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
       }
       setCartItemsMap(itemsMap);
     } catch (error) {
-      console.error('Error fetching cart:', error);
     }
   };
 
@@ -55,7 +54,6 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
       
       const itemBaseTime = Math.round(parseEstimatedTime(serviceItem.estimatedTime));
 
-      // Check if duration exceeds maximum
       if (currentDuration > MAX_DURATION_MINS) {
         Alert.alert(
           'Maximum Duration Reached',
@@ -64,7 +62,6 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
         return;
       }
 
-      // Backend will calculate price based on duration
       const isFlexible = serviceItem.durationType !== 'FIXED';
       const itemToAdd = {
         serviceId: serviceItem.id,
@@ -82,7 +79,6 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
       });
       await fetchCart();
     } catch (error) {
-      console.error('Error adding to cart:', error);
     }
   };
 
@@ -91,7 +87,6 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
       await api.delete('/cart', { serviceId });
       await fetchCart();
     } catch (error) {
-      console.error('Error removing from cart:', error);
     }
   };
 
@@ -106,15 +101,11 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
     return list;
   }, [services, activeSort]);
 
-  // Check if service is coming soon based on database field
   const isComingSoonService = (service: any) => {
     return service?.isComingSoon || false;
   };
 
   const handleNotifyMe = (service: any) => {
-    // Handle notify me action
-    console.log('Notify me for:', service.nameEn);
-    // You can implement notification logic here
   };
 
   const handleWhatsApp = (service: any) => {
@@ -136,7 +127,6 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
           </View>
         </View>
 
-        {/* Filter Pills */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}>
           {[
             { id: 'popular', label: '🔥 Popular' },
@@ -179,16 +169,12 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
             const isComingSoon = isComingSoonService(service);
             const cartItem = cartItemsMap[service.id];
             const isInCart = !!cartItem;
-            
-            // Check if service has flexible or fixed duration
+
             const isFlexibleDuration = service.durationType !== 'FIXED';
-            
-            // Calculate current duration for UI
+
             const baseTime = Math.round(parseEstimatedTime(service.estimatedTime));
             let currentDuration = baseTime;
-            
-            // For FIXED duration services, always use the base time
-            // For FLEXIBLE duration services, use cart duration if available
+
             if (isFlexibleDuration && cartItem && cartItem.duration) {
               const cartTime = Math.round(parseEstimatedTime(cartItem.duration.label || cartItem.duration));
               if (baseTime > 0) {
@@ -196,14 +182,12 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
               }
             }
 
-            // Calculate estimated price for display
             const basePrice = Number(service.basePrice);
             const currentEstimatedPrice = isFlexibleDuration 
               ? Math.round(calculatePriceForDuration(basePrice, baseTime, currentDuration))
-              : basePrice; // FIXED duration services always use base price
+              : basePrice;
 
             const handleIncrease = () => {
-              // Prevent duration changes for FIXED duration services
               if (!isFlexibleDuration) {
                 return;
               }
@@ -220,12 +204,10 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
             };
 
             const handleDecrease = () => {
-              // Prevent duration changes for FIXED duration services
               if (!isFlexibleDuration) {
                 return;
               }
-              
-              // If already at base duration, remove from cart
+
               if (currentDuration === baseTime) {
                 handleRemoveFromCart(service.id);
                 return;
@@ -276,7 +258,6 @@ const ServiceListScreenBase = ({ route, navigation, services }: any) => {
                 )}
               </View>
               
-              {/* Plus Button / Increment Decrement */}
               {!isComingSoon && (
                 <View style={{ position: 'absolute', right: 8, top: '48%', zIndex: 10 }}>
                   {isInCart ? (

@@ -3,14 +3,12 @@ import { SosService } from './sos.service';
 import { CreateSosDto } from './dto/create-sos.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-
 @ApiTags('SOS')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('sos')
 export class SosController {
   constructor(private readonly sosService: SosService) {}
-
   @Post()
   @ApiOperation({ summary: 'Trigger an SOS emergency alert for an active booking' })
   @ApiBody({ type: CreateSosDto })

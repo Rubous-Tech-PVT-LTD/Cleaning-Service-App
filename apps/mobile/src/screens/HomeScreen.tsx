@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Animated, TextInput, RefreshControl, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Animated, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, ChevronDown, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow, Plus, Minus, Wrench } from 'lucide-react-native';
+import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow, Plus, Minus, Wrench } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import NetInfo from '@react-native-community/netinfo';
@@ -61,7 +61,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       }
       setCartItemsMap(itemsMap);
     } catch (error) {
-      console.error('Error fetching cart:', error);
     }
   };
 
@@ -75,7 +74,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       
       const itemBaseTime = Math.round(parseEstimatedTime(serviceItem.estimatedTime));
 
-      // Check if duration exceeds maximum
       if (currentDuration > MAX_DURATION_MINS) {
         Alert.alert(
           'Maximum Duration Reached',
@@ -84,7 +82,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
         return;
       }
 
-      // Backend will calculate price based on duration
       const isFlexible = serviceItem.durationType !== 'FIXED';
       const itemToAdd = {
         serviceId: serviceItem.id,
@@ -102,7 +99,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       });
       await fetchCart();
     } catch (error) {
-      console.error('Error adding to cart:', error);
     }
   };
 
@@ -111,7 +107,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       await api.delete('/cart', { serviceId });
       await fetchCart();
     } catch (error) {
-      console.error('Error removing from cart:', error);
     }
   };
 
@@ -121,7 +116,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       await syncDatabase();
       await fetchCart();
     } catch (e) {
-      console.error('Manual sync failed:', e);
     } finally {
       setRefreshing(false);
     }
@@ -137,7 +131,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       const response = await api.get('/services/trending');
       setTrendingServices(response.data);
     } catch (error) {
-      console.error('Failed to fetch trending services:', error);
     }
   };
 
@@ -182,7 +175,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           resizeMode="cover"
         />
     )}
-      {/* ===== PURPLE STICKY HEADER ===== */}
       <Animated.View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 999,
         opacity: stickyOpacity,
@@ -246,7 +238,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           />
         }
       >
-        {/* Header */}
         <View style={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <TouchableOpacity
             onPress={() => navigation.navigate('SearchLocation')}
@@ -358,7 +349,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           </View>
         )}
 
-        {/* Bottom Section */}
         <View style={{ backgroundColor: 'white', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: 40, paddingTop: 24, minHeight: height * 0.6 }}>
           <View style={{ paddingHorizontal: 16, paddingBottom: 20 }}>
             <View style={{ marginBottom: 20, paddingHorizontal: 8 }}>
@@ -385,10 +375,9 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                     const cartItem = cartItemsMap[service.id];
                     const isInCart = !!cartItem;
                     
-                    // Check if service has flexible or fixed duration
+
                     const isFlexibleDuration = service.durationType !== 'FIXED';
-                    
-                    // Calculate current duration for UI
+
                     const baseTime = Math.round(parseEstimatedTime(service.estimatedTime));
                     let currentDuration = baseTime;
                     if (cartItem && cartItem.duration) {
@@ -398,7 +387,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                       }
                     }
 
-                    // Calculate estimated price for display
                     const basePrice = Number(service.basePrice);
                     const currentEstimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseTime, currentDuration));
 
@@ -415,7 +403,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                     };
 
                     const handleDecrease = () => {
-                      // If already at base duration, remove from cart
                       if (currentDuration === baseTime) {
                         handleRemoveFromCart(service.id);
                         return;

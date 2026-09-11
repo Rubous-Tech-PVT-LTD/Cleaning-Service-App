@@ -49,7 +49,6 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
 
-        {/* Animated Checkmark Circle */}
         <Animated.View style={[{
           width: 100,
           height: 100,

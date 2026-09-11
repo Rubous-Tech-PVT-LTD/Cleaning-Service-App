@@ -55,7 +55,6 @@ export const PromoCodeScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-      {/* Header */}
       <LinearGradient colors={[Theme.primary, '#7C3AED']} style={{ paddingBottom: 28 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 }}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' }}>
@@ -64,7 +63,6 @@ export const PromoCodeScreen = ({ navigation }: any) => {
           <Text style={{ flex: 1, fontSize: 22, fontWeight: '900', color: 'white', marginLeft: 16 }}>Promo Codes</Text>
         </View>
 
-        {/* Wallet Balance */}
         <View style={{ marginHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
             <Wallet size={24} color="white" />
@@ -82,7 +80,6 @@ export const PromoCodeScreen = ({ navigation }: any) => {
       </LinearGradient>
 
       <ScrollView contentContainerStyle={{ padding: 24 }} style={{ marginTop: -8 }}>
-        {/* Code Input */}
         <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 24, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12 }}>
           <Text style={{ fontSize: 15, fontWeight: '800', color: Theme.textPrimary, marginBottom: 14 }}>Enter Promo Code</Text>
           <Animated.View style={{ flexDirection: 'row', gap: 12, transform: [{ translateX: shakeAnim }] }}>

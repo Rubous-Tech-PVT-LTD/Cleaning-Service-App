@@ -27,20 +27,19 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
   const [updating, setUpdating] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [userPhone, setUserPhone] = useState('');
-  const [userAddress, setUserAddress] = useState<any>(null);
   const [activeLocation, setActiveLocation] = useState<ActiveLocation | null>(null);
   const insets = useSafeAreaInsets();
 
-  // Helper function to get translated service name by ID
+
   const getServiceTitle = (item: any) => {
-    // Always try to translate based on service ID when available
+
     if (item.serviceId) {
       const service = services ? services.find((s: any) => s.id === item.serviceId) : null;
       if (service) {
         return i18n.language === 'hi' ? service.nameHi : service.nameEn;
       }
     }
-    // Fallback to stored title only if service ID is not available or service not found
+
     return item.title || 'Service';
   };
 
@@ -56,15 +55,10 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
   };
 
   useEffect(() => {
-    if (addresses?.length > 0) {
-      setUserAddress(addresses.find((a: any) => a.isDefault) || addresses[0]);
-    }
-  }, [addresses]);
-
-  useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchCart();
       fetchUserData();
+      loadLocation();
     });
     return unsubscribe;
   }, [navigation]);
@@ -79,14 +73,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
         const phone = await AsyncStorage.getItem('user_phone');
         setUserPhone(phone || '+91 99999 00000');
       }
-
-      const defaultAddress =
-        addresses?.length > 0
-          ? addresses.find((a: any) => a.isDefault) || addresses[0]
-          : null;
-      setUserAddress(defaultAddress);
     } catch (e) {
-      console.error('Error fetching user data:', e);
     }
   };
 
@@ -96,7 +83,6 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
       const res = await api.get('/cart');
       setCart(res.data);
     } catch (e) {
-      console.error('Error fetching cart:', e);
       Alert.alert(t('common.error'), t('cart.error_loading_cart'));
     } finally {
       setLoading(false);
@@ -109,7 +95,6 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
       await api.delete('/cart', { serviceId });
       await fetchCart();
     } catch (e) {
-      console.error('Error removing item:', e);
       Alert.alert(t('common.error'), t('cart.error_removing_item'));
     } finally {
       setUpdating(false);
@@ -120,7 +105,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
     if (!cart?.items) return 0;
     return cart.items.reduce(
       (total: number, item: any) => {
-        // Use the dynamic price from duration object if available, otherwise use item.price
+
         const itemPrice = Math.round(item.duration?.price || item.price);
         return total + itemPrice * (item.quantity || 1);
       },
@@ -145,20 +130,20 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
         return;
       }
 
-      if (!activeLocation) {
-        Alert.alert(t('cart.location_required'), t('cart.location_required_message'));
-        return;
-      }
-
       const cartItems = cart?.items || [];
       if (cartItems.length === 0) return;
 
       const primaryItem = cartItems[0];
 
-      // Use saved address if activeLocation has savedAddressId, otherwise use userAddress
-      const bookingAddress = activeLocation.savedAddressId
-        ? addresses.find((a: any) => a.id === activeLocation.savedAddressId) || userAddress
-        : userAddress;
+
+      const defaultAddress = addresses?.length > 0
+        ? addresses.find((a: any) => a.isDefault) || addresses[0]
+        : null;
+
+
+      const bookingAddress = activeLocation?.savedAddressId
+        ? addresses.find((a: any) => a.id === activeLocation.savedAddressId) || defaultAddress
+        : defaultAddress;
 
       if (!bookingAddress) {
         Alert.alert(t('cart.address_required'), t('cart.address_required_message'));
@@ -197,16 +182,15 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
         return firstBookingId;
       });
 
-      // Trigger sync immediately to push booking to server
+
       syncDatabase().catch(err => {
-        console.error('Booking Sync Error:', err);
         Alert.alert(t('cart.sync_error'), err.message);
       });
 
-      // Clear cart after successful booking
+
       await api.delete('/cart/clear');
 
-      // Send local notification
+
       const itemTitle = getServiceTitle(primaryItem);
       
       NotificationService.sendLocalNotification(
@@ -216,7 +200,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
           : `Your booking for ${itemTitle} has been received successfully.`
       );
 
-      // Navigate to success screen
+
       navigation.navigate('BookingSuccess', {
         bookingId: newBookingId,
         totalPrice: Math.round(getFinalAmount()),
@@ -228,7 +212,6 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
         addressCity: bookingAddress.city
       });
     } catch (e) {
-      console.error('Error confirming booking:', e);
       Alert.alert(t('common.error'), t('cart.error_confirming_booking'));
     } finally {
       setConfirming(false);
@@ -317,7 +300,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
               </Text>
               {items.map((item: any, index: number) => {
                 const title = getServiceTitle(item);
-                // Use dynamic price from duration object if available, otherwise use item.price
+
                 const itemPrice = Math.round(item.duration?.price || item.price);
                 
                 return (
@@ -436,50 +419,84 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
                 </TouchableOpacity>
               </View>
 
-              {activeLocation ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                  <View
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      backgroundColor: '#F0FDF4',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginRight: 12,
-                    }}
-                  >
-                    <Text style={{ fontSize: 10, fontWeight: '900', color: Theme.primary }}>
-                      {/* {activeLocation.label?.toUpperCase() || 'HOME'} */}
-                      <MapPin />
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
-                      {activeLocation.address}
-                    </Text>
-                    <Text style={{ fontSize: 13, color: Theme.textSecondary, marginTop: 2 }}>
-                      {activeLocation.city}, {activeLocation.state}
-                    </Text>
-                  </View>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('AddressPicker')}
-                  style={{
-                    backgroundColor: '#F8FAFC',
-                    padding: 20,
-                    borderRadius: 24,
-                    borderStyle: 'dashed',
-                    borderWidth: 2,
-                    borderColor: '#E2E8F0',
-                    alignItems: 'center',
-                    marginBottom: 12,
-                  }}
-                >
-                  <Text style={{ color: Theme.primary, fontWeight: '800' }}>{t('cart.add_address')}</Text>
-                </TouchableOpacity>
-              )}
+              {(() => {
+
+                const defaultAddress = addresses?.length > 0
+                  ? addresses.find((a: any) => a.isDefault) || addresses[0]
+                  : null;
+
+                if (activeLocation) {
+                  return (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 12,
+                          backgroundColor: '#F0FDF4',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          marginRight: 12,
+                        }}
+                      >
+                        <MapPin size={20} color={Theme.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
+                          {activeLocation.address}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: Theme.textSecondary, marginTop: 2 }}>
+                          {activeLocation.city}, {activeLocation.state}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                } else if (defaultAddress) {
+                  return (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 12,
+                          backgroundColor: '#F0FDF4',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          marginRight: 12,
+                        }}
+                      >
+                        <MapPin size={20} color={Theme.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}>
+                          {defaultAddress.addressLine1}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: Theme.textSecondary, marginTop: 2 }}>
+                          {defaultAddress.city}, {defaultAddress.state}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                } else {
+                  return (
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('AddressPicker')}
+                      style={{
+                        backgroundColor: '#F8FAFC',
+                        padding: 20,
+                        borderRadius: 24,
+                        borderStyle: 'dashed',
+                        borderWidth: 2,
+                        borderColor: '#E2E8F0',
+                        alignItems: 'center',
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Text style={{ color: Theme.primary, fontWeight: '800' }}>{t('cart.add_address')}</Text>
+                    </TouchableOpacity>
+                  );
+                }
+              })()}
 
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View
@@ -597,40 +614,52 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
             borderTopColor: '#E5E7EB',
           }}
         >
-          {activeLocation && !activeLocation.isSupported ? (
-            <View style={{ alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                <AlertCircle size={24} color={Theme.error} style={{ marginRight: 8 }} />
-                <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>{t('cart.not_serviceable')}</Text>
-              </View>
-              <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 16, textAlign: 'center' }}>{t('cart.location_out_of_service')}</Text>
+          {(() => {
+
+            const defaultAddress = addresses?.length > 0
+              ? addresses.find((a: any) => a.isDefault) || addresses[0]
+              : null;
+
+
+            if (activeLocation && !activeLocation.isSupported) {
+              return (
+                <View style={{ alignItems: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <AlertCircle size={24} color={Theme.error} style={{ marginRight: 8 }} />
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>{t('cart.not_serviceable')}</Text>
+                  </View>
+                  <Text style={{ fontSize: 13, color: Theme.textSecondary, marginBottom: 16, textAlign: 'center' }}>{t('cart.location_out_of_service')}</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('SearchLocation')}
+                    style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', width: '100%', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}
+                  >
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>{t('cart.change_location')}</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            }
+
+            return (
               <TouchableOpacity
-                onPress={() => navigation.navigate('SearchLocation')}
-                style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', width: '100%', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}
+                style={{
+                  backgroundColor: Theme.primary,
+                  paddingVertical: 16,
+                  borderRadius: 20,
+                  alignItems: 'center',
+                }}
+                onPress={handleConfirmBooking}
+                disabled={confirming || updating}
               >
-                <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>{t('cart.change_location')}</Text>
+                {confirming ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
+                    {t('cart.confirm_booking')} • ₹{Math.round(finalAmount)}
+                  </Text>
+                )}
               </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={{
-                backgroundColor: Theme.primary,
-                paddingVertical: 16,
-                borderRadius: 20,
-                alignItems: 'center',
-              }}
-              onPress={handleConfirmBooking}
-              disabled={confirming || updating}
-            >
-              {confirming ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
-                  {t('cart.confirm_booking')} • ₹{Math.round(finalAmount)}
-                </Text>
-              )}
-            </TouchableOpacity>
-          )}
+            );
+          })()}
         </View>
       )}
     </View>

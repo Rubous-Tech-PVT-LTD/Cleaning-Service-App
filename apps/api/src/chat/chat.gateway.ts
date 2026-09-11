@@ -13,7 +13,6 @@ import { ChatService } from './chat.service';
 import { WsJwtGuard } from '../auth/strategies/ws-jwt.guard';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -23,31 +22,24 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
-
   constructor(
     private readonly chatService: ChatService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) { }
-
   async handleConnection(client: Socket) {
     try {
       const token = this.extractTokenFromHeader(client);
       if (!token) {
         return;
       }
-
       const payload = await this.jwtService.verifyAsync(token);
       client.data.userId = payload.sub;
     } catch (error) {
-      // We don't disconnect because they might be connecting for TrackingGateway
     }
   }
-
   handleDisconnect(client: Socket) {
-    // Silent disconnect
   }
-
   @SubscribeMessage('joinChat')
   async handleJoinChat(
     @MessageBody() data: { chatId?: string; bookingId?: string },
@@ -58,7 +50,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Authentication required' });
       return;
     }
-
     if (data.bookingId) {
       const isAuthorized = await this.chatService.verifyBookingAccess(data.bookingId, userId);
       if (!isAuthorized) {
@@ -73,9 +64,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     } else {
       client.emit('error', { message: 'Either chatId or bookingId must be provided' });
-      return; // Neither provided
+      return;
     }
-
     if (data.chatId) {
       client.join(`chat:${data.chatId}`);
     }
@@ -83,7 +73,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.join(`booking:${data.bookingId}`);
     }
   }
-
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @MessageBody() data: { chatId: string; content: string; offlineId?: string },
@@ -94,51 +83,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Authentication required' });
       return;
     }
-
-    // Validate message content
     if (!data.content || typeof data.content !== 'string' || !data.content.trim()) {
       client.emit('error', { message: 'Message content cannot be empty' });
       return;
     }
-
     if (data.content.trim().length > 5000) {
       client.emit('error', { message: 'Message content too long (max 5000 characters)' });
       return;
     }
-
-    // Check if chat exists, if not try to create it using booking-based lookup
     const chat = await this.prisma.chat.findUnique({
       where: { id: data.chatId },
       select: { id: true, clientId: true, providerId: true, bookingId: true },
     });
-
     if (!chat) {
       client.emit('error', { message: 'Chat not found' });
       return;
     }
-
     const isParticipant = await this.chatService.isParticipant(data.chatId, senderId);
     if (!isParticipant) {
-      console.warn(`[Socket] Unauthorized sendMessage attempt by user ${senderId} for chat ${data.chatId}`);
       client.emit('error', { message: 'You are not authorized to send messages in this chat' });
       return;
     }
-
     const message = await this.chatService.saveMessage(
       data.chatId,
       senderId,
       data.content.trim(),
     );
-
-    // Include offlineId in the broadcast for deduplication
     const messageWithOfflineId = {
       ...message,
       offlineId: data.offlineId,
     };
-
     this.server.to(`chat:${data.chatId}`).emit('newMessage', messageWithOfflineId);
   }
-
   @SubscribeMessage('send_sync_ping')
   async handleSyncPing(
     @MessageBody() data: { chatId?: string; bookingId?: string },
@@ -146,15 +122,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const senderId = client.data?.userId;
     if (!senderId) return;
-
-    // Broadcast primarily through booking room to avoid duplicate events
     if (data.bookingId) {
       client.to(`booking:${data.bookingId}`).emit('sync_ping', { senderId, bookingId: data.bookingId });
     } else if (data.chatId) {
       client.to(`chat:${data.chatId}`).emit('sync_ping', { senderId, chatId: data.chatId });
     }
   }
-
   private extractTokenFromHeader(client: Socket): string | undefined {
     const tokenFromAuth = client.handshake.auth?.token;
     if (tokenFromAuth) {
@@ -162,7 +135,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (type === 'Bearer' && token) return token;
       return typeof tokenFromAuth === 'string' ? tokenFromAuth : undefined;
     }
-
     const authHeader = client.handshake.headers?.authorization;
     if (authHeader) {
       const [type, token] = authHeader.split(' ');

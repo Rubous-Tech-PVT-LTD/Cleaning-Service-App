@@ -5,12 +5,10 @@ import { MapPin, Navigation, Building2 } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-
 export const LocationPromptScreen = ({ navigation }: any) => {
   const { width } = Dimensions.get('window');
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-
   const handleUseCurrentLocation = async () => {
     setLoading(true);
     try {
@@ -19,23 +17,19 @@ export const LocationPromptScreen = ({ navigation }: any) => {
         Alert.alert(t('address.permission_denied', 'Permission Denied'), t('address.permission_msg', 'Please allow location access to use this feature.'));
         return;
       }
-
       const location = await Location.getCurrentPositionAsync({});
       await AsyncStorage.setItem('provider_latitude', String(location.coords.latitude));
       await AsyncStorage.setItem('provider_longitude', String(location.coords.longitude));
       navigation.navigate('Dashboard');
     } catch (error) {
-      console.error('Error getting location:', error);
       Alert.alert(t('common.error', 'Error'), t('address.location_error', 'Failed to get your location. Please try again or enter manually.'));
     } finally {
       setLoading(false);
     }
   };
-
   const handleEnterManually = () => {
     navigation.navigate('SearchLocation');
   };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top', 'bottom']}>
       <View style={{ flex: 1, padding: 24, justifyContent: 'space-between' }}>
@@ -47,14 +41,12 @@ export const LocationPromptScreen = ({ navigation }: any) => {
             {t('address.location_reason', 'We need your location to show you our serviceable hubs.')}
           </Text>
         </View>
-
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ width: width * 0.75, height: width * 0.75, backgroundColor: '#ECFDF5', borderRadius: width * 0.375, justifyContent: 'center', alignItems: 'center' }}>
             <Building2 size={80} color="#34D399" opacity={0.6} />
             <MapPin size={48} color="#10B981" style={{ position: 'absolute', bottom: '25%', right: '25%' }} />
           </View>
         </View>
-
         <View style={{ paddingBottom: 10 }}>
           <TouchableOpacity
             onPress={handleUseCurrentLocation}
@@ -73,7 +65,6 @@ export const LocationPromptScreen = ({ navigation }: any) => {
               </>
             )}
           </TouchableOpacity>
-
           <TouchableOpacity
             onPress={handleEnterManually}
             activeOpacity={0.8}

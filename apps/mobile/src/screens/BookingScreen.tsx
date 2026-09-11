@@ -28,14 +28,12 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
     time: '10:00 AM'
   });
 
-  // Manage multiple items
   const [items, setItems] = useState<any[]>([
     { serviceId, price: Number(price), quantity: 1 }
   ]);
 
   const [activeLocation, setActiveLocation] = useState<ActiveLocation | null>(null);
 
-  // Use saved address if activeLocation has savedAddressId, otherwise use default address
   const defaultAddress = activeLocation?.savedAddressId
     ? addresses.find((a: any) => a.id === activeLocation.savedAddressId) || addresses.find((a: any) => a.isDefault) || addresses[0]
     : addresses.find((a: any) => a.isDefault) || addresses[0];
@@ -92,12 +90,10 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
         return;
       }
 
-      // Use the address from active location if available, otherwise use default address
       const bookingAddress = activeLocation?.savedAddressId
         ? addresses.find((a: any) => a.id === activeLocation.savedAddressId) || defaultAddress
         : defaultAddress;
 
-      // Store only service IDs, not translated titles
       const itemsForStorage = items.map((item: any) => ({
         serviceId: item.serviceId,
         price: item.price,
@@ -123,9 +119,7 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
         return nb.id;
       });
 
-      // Trigger sync immediately to push booking to server
       syncDatabase().catch(err => {
-        console.error('Booking Sync Error:', err);
         Alert.alert('Sync Error', err.message);
       });
 
@@ -146,7 +140,6 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
         addressCity: bookingAddress.city
       });
     } catch (error: any) {
-      console.error('Booking Error:', error);
       Alert.alert('Error', 'Could not place booking.');
     } finally { setLoading(false); }
   };
@@ -162,7 +155,6 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
       
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         <View style={{ padding: 24 }}>
-          {/* Selected Items List */}
           <View style={{ backgroundColor: 'white', padding: 24, borderRadius: 28, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, elevation: 5, marginBottom: 24 }}>
             <Text style={{ fontSize: 13, color: Theme.textSecondary, fontWeight: '800', marginBottom: 16, textTransform: 'uppercase' }}>{t('booking.selected_services')}</Text>
             {items.map((item, idx) => {
@@ -192,7 +184,6 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
             </View>
           </View>
 
-          {/* Add More Items Section */}
           <View style={{ marginBottom: 24 }}>
             <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary, marginBottom: 16 }}>{t('booking.frequently_added')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
@@ -217,7 +208,6 @@ const BookingScreenBase = ({ route, navigation, relatedServices, addresses }: an
             </ScrollView>
           </View>
 
-          {/* Address Selection Section */}
           <View style={{ marginBottom: 24 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary }}>{t('booking.service_address')}</Text>

@@ -1,28 +1,25 @@
 export const MAX_DURATION_MINS = 180;
 
 export const parseEstimatedTime = (timeString: string | null | undefined): number => {
-  if (!timeString) return 30; // Default fallback if not available
-  
-  // Handle hour-based formats (e.g., "1 hr", "2 hrs", "1.5 hrs")
+  if (!timeString) return 30;
+
   const hourMatch = timeString.match(/(\d+\.?\d*)\s*hrs?/i);
   if (hourMatch) {
-    return Math.round(parseFloat(hourMatch[1]) * 60); // Convert hours to minutes
+    return Math.round(parseFloat(hourMatch[1]) * 60);
   }
-  
-  // Handle minute-based formats (e.g., "30 mins", "60 min")
+
   const minsMatch = timeString.match(/(\d+)\s*mins?/i);
   if (minsMatch) return parseInt(minsMatch[1], 10);
-  
-  // Fallback to extracting any number
+
   const numericMatch = timeString.match(/(\d+)/);
   if (numericMatch) return parseInt(numericMatch[1], 10);
-  
+
   return 30;
 };
 
 export const calculatePriceForDuration = (basePrice: number, baseDuration: number, currentDuration: number): number => {
   if (baseDuration <= 0) return basePrice;
-  // Calculate price proportionally based on duration
+
   return Math.round((basePrice / baseDuration) * currentDuration);
 };
 

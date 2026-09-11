@@ -97,7 +97,6 @@ export const TermsScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-      {/* Header */}
       <LinearGradient colors={[Theme.primary, '#7C3AED']} style={{ paddingBottom: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 }}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' }}>
@@ -106,7 +105,6 @@ export const TermsScreen = ({ navigation }: any) => {
           <Text style={{ flex: 1, fontSize: 22, fontWeight: '900', color: 'white', marginLeft: 16 }}>Legal</Text>
         </View>
 
-        {/* Tab toggle */}
         <View style={{ marginHorizontal: 20, flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 4 }}>
           <TouchableOpacity
             onPress={() => setActiveTab('terms')}

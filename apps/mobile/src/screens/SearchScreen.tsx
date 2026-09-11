@@ -17,16 +17,14 @@ export const SearchScreen = ({ navigation }: any) => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [activeFilter, setActiveFilter] = useState('all'); // all, top_rated, lowest_price
+  const [activeFilter, setActiveFilter] = useState('all');
 
-  // ── Load persisted recent searches on mount ──────────────────────────────
   useEffect(() => {
     AsyncStorage.getItem(RECENT_SEARCHES_KEY).then((stored) => {
       if (stored) setRecentSearches(JSON.parse(stored));
     });
   }, []);
 
-  // ── Search whenever query changes ─────────────────────────────────────────
   useEffect(() => {
     if (query.length > 2) {
       searchServices(query);
@@ -35,7 +33,6 @@ export const SearchScreen = ({ navigation }: any) => {
     }
   }, [query]);
 
-  // ── Persist a new search term ──────────────────────────────────────────────
   const addRecentSearch = useCallback(async (term: string) => {
     const trimmed = term.trim();
     if (!trimmed) return;
@@ -44,14 +41,12 @@ export const SearchScreen = ({ navigation }: any) => {
     await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
   }, [recentSearches]);
 
-  // ── Remove a single recent search ──────────────────────────────────────────
   const removeRecentSearch = async (term: string) => {
     const updated = recentSearches.filter((s) => s !== term);
     setRecentSearches(updated);
     await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
   };
 
-  // ── Clear all recent searches ──────────────────────────────────────────────
   const clearAllRecent = async () => {
     setRecentSearches([]);
     await AsyncStorage.removeItem(RECENT_SEARCHES_KEY);
@@ -66,16 +61,14 @@ export const SearchScreen = ({ navigation }: any) => {
 
       let services = await queryRef.fetch();
 
-      // Client-side sorting/filtering for "Premium" feel
       if (filterType === 'top_rated') {
-        services = services.sort(() => Math.random() - 0.5); // Mock rating sort
+        services = services.sort(() => Math.random() - 0.5);
       } else if (filterType === 'lowest_price') {
-        services = services.sort((a, b) => Number(a.basePrice) - Number(b.basePrice));
+        services = services.sort((a: any, b: any) => Number(a.basePrice) - Number(b.basePrice));
       }
 
       setResults(services);
     } catch (error) {
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -130,7 +123,6 @@ export const SearchScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
-      {/* Header with Search Input */}
       <View style={{ backgroundColor: 'white', paddingBottom: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.muted, justifyContent: 'center', alignItems: 'center' }}>
@@ -193,7 +185,6 @@ export const SearchScreen = ({ navigation }: any) => {
         )}
       </View>
 
-      {/* Content */}
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={Theme.primary} />
@@ -214,7 +205,6 @@ export const SearchScreen = ({ navigation }: any) => {
         />
       ) : (
         <View style={{ padding: 24 }}>
-          {/* Recent Searches */}
           {recentSearches.length > 0 && (
             <>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -242,7 +232,6 @@ export const SearchScreen = ({ navigation }: any) => {
             </>
           )}
 
-          {/* Trending Searches */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
             <TrendingUp size={18} color={Theme.primary} style={{ marginRight: 8 }} />
             <Text style={{ fontSize: 18, fontWeight: '800', color: Theme.textPrimary }}>{t('search.trending')}</Text>

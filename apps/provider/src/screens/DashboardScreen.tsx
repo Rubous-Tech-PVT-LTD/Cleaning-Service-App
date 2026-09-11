@@ -8,24 +8,19 @@ import { Switch } from 'react-native';
 import i18n from '../i18n';
 import { useTranslation } from 'react-i18next';
 import { useBookings } from '../context/BookingContext';
-
 export const DashboardScreen = () => {
   const { t } = useTranslation();
   const [isOnline, setIsOnline] = useState(true);
-  
   const { bookings, loading, refreshBookings, socket } = useBookings();
-  
   const pendingBookings = bookings.filter((b: any) => b.status === 'PENDING');
   const completedBookings = bookings.filter((b: any) => b.status === 'COMPLETED');
   const totalEarnings = completedBookings.reduce((sum: number, job: any) => sum + Number(job.totalPrice || job.total_price || 0), 0);
-
   const loadOnlineStatus = async () => {
     const saved = await AsyncStorage.getItem('provider_online');
     if (saved !== null) {
       setIsOnline(saved === 'true');
     }
   };
-
   const toggleOnline = async (val: boolean) => {
     setIsOnline(val);
     await AsyncStorage.setItem('provider_online', String(val));
@@ -35,11 +30,9 @@ export const DashboardScreen = () => {
       socket.disconnect();
     }
   };
-
   useEffect(() => {
     loadOnlineStatus();
   }, []);
-
   const handleAccept = async (booking: any) => {
     try {
       await api.patch(`/bookings/${booking.id}/status`, { status: 'ACCEPTED' });
@@ -49,12 +42,9 @@ export const DashboardScreen = () => {
       Alert.alert('Error', 'Could not accept booking: ' + e.message);
     }
   };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
       <StatusBar barStyle="dark-content" backgroundColor={Theme.background} />
-
-      {/* Header with Online Toggle */}
       <View style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 16, backgroundColor: Theme.background, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View>
           <Text style={{ fontSize: 14, fontWeight: '800', color: Theme.textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>{t('provider.welcome_back')},</Text>
@@ -64,23 +54,21 @@ export const DashboardScreen = () => {
           <Text style={{ fontSize: 12, fontWeight: '800', color: isOnline ? Theme.success : Theme.textSecondary, marginBottom: 4 }}>
             {isOnline ? t('provider.online') : t('provider.offline')}
           </Text>
-          <Switch 
-            value={isOnline} 
-            onValueChange={toggleOnline} 
+          <Switch
+            value={isOnline}
+            onValueChange={toggleOnline}
             trackColor={{ false: '#d1d5db', true: Theme.success + '80' }}
             thumbColor={isOnline ? Theme.success : '#f3f4f6'}
           />
         </View>
       </View>
-
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 24, paddingTop: 8 }}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={refreshBookings} colors={[Theme.primary]} />
         }
       >
-        {/* Stats */}
         <View style={{ flexDirection: 'row', gap: 16, marginBottom: 32 }}>
           <View style={{ flex: 1, backgroundColor: Theme.white, padding: 24, borderRadius: 24, elevation: 4, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
             <Text style={{ fontSize: 13, fontWeight: '800', color: Theme.textSecondary, marginBottom: 8 }}>{t('provider.pending_jobs')}</Text>
@@ -91,10 +79,7 @@ export const DashboardScreen = () => {
             <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.white }}>₹{totalEarnings.toLocaleString()}</Text>
           </View>
         </View>
-
-        {/* Bookings Header */}
         <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 16 }}>{t('provider.new_requests')}</Text>
-
         {pendingBookings.length === 0 ? (
           <View style={{ padding: 40, alignItems: 'center', backgroundColor: Theme.white, borderRadius: 24, borderStyle: 'dashed', borderWidth: 2, borderColor: Theme.border, marginTop: 16 }}>
             <Text style={{ color: Theme.textSecondary, fontWeight: '700', textAlign: 'center', fontSize: 16 }}>{t('provider.no_pending_requests')}</Text>
@@ -102,32 +87,23 @@ export const DashboardScreen = () => {
           </View>
         ) : (
           pendingBookings.map((item: any) => {
-            const bookingDate = item.scheduledAt ? new Date(item.scheduledAt).toLocaleDateString() : 
-                               item.scheduled_at ? new Date(item.scheduled_at).toLocaleDateString() : 'Today';
-            const bookingTime = item.scheduledAt ? new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
-                                item.scheduled_at ? new Date(item.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            
-            // Handle service name from different possible data structures
+            const bookingDate = item.scheduledAt ? new Date(item.scheduledAt).toLocaleDateString() :
+              item.scheduled_at ? new Date(item.scheduled_at).toLocaleDateString() : 'Today';
+            const bookingTime = item.scheduledAt ? new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+              item.scheduled_at ? new Date(item.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
             let serviceName = 'Service Request';
-            
-            // Check language preference for Hindi
             const isHindi = i18n.language === 'hi';
-            
-            // First try to get from service object with language support
             if (item.service) {
-              // Try sync API format first (snake_case)
               if (isHindi && item.service.name_hi) {
                 serviceName = item.service.name_hi;
               } else if (item.service.name_en) {
                 serviceName = item.service.name_en;
               }
-              // Try regular API format (camelCase with JSON object)
               else if (typeof item.service.nameTranslations === 'object' && item.service.nameTranslations.hi && isHindi) {
                 serviceName = item.service.nameTranslations.hi;
               } else if (typeof item.service.nameTranslations === 'object' && item.service.nameTranslations.en) {
                 serviceName = item.service.nameTranslations.en;
               }
-              // Try if nameTranslations is a stringified JSON
               else if (typeof item.service.nameTranslations === 'string') {
                 try {
                   const parsed = JSON.parse(item.service.nameTranslations);
@@ -140,22 +116,18 @@ export const DashboardScreen = () => {
                   serviceName = item.service.nameTranslations;
                 }
               }
-              // Fallback to name field
               else if (item.service.name) {
                 serviceName = item.service.name;
               }
             }
-            // Then try to get from items array (this is what the API currently returns)
             else if (item.items && Array.isArray(item.items) && item.items.length > 0) {
               const firstItem = item.items[0];
               if (firstItem.title) {
                 serviceName = firstItem.title;
               }
             }
-            
             const clientName = item.client?.fullName || item.client?.full_name || 'Client';
             const price = item.totalPrice || item.total_price || 0;
-            
             return (
               <View key={item.id} style={{ backgroundColor: Theme.white, padding: 20, borderRadius: 24, marginBottom: 16, elevation: 3, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

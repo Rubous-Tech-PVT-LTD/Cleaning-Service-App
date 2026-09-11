@@ -25,24 +25,19 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   const [serverChatId, setServerChatId] = useState<string>('');
   const scrollViewRef = React.useRef<ScrollView>(null);
 
-
-
   useEffect(() => {
     const ensureChat = async () => {
       const userId = await AsyncStorage.getItem('user_id');
       if (userId) setMyId(userId);
 
-      // Attempt to sync first to pull authoritative server chat
       try {
         await syncDatabase();
       } catch (err) {
-        console.log('[Chat] Initial sync attempt during mount:', err);
       }
     };
     ensureChat();
   }, [bookingId]);
 
-  // Use observable query to reactively detect when chat becomes available
   useEffect(() => {
     if (!bookingId) return;
 
@@ -84,12 +79,11 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
 
       newSocket.on('reconnect', (attemptNumber) => {
         newSocket.emit('register', { userId, role: 'CLIENT' });
-        syncDatabase().catch(err => console.log('sync error:', err));
+        syncDatabase().catch(err => {});
       });
 
       newSocket.on('newMessage', async (data: any) => {
         try {
-          // Find the local chat that has this serverId
           const localChats = await database.collections.get('chats').query(Q.where('server_id', data.chatId)).fetch();
           if (localChats.length === 0) {
             return;
@@ -97,10 +91,8 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
 
           const localChat = localChats[0] as any;
 
-          // Check if message already exists by serverId or offlineId
           let existingMessage = null;
 
-          // First check by serverId (for messages that were already synced)
           if (data.id) {
             const existingByServerId = await database.collections.get('messages').query(
               Q.where('server_id', data.id),
@@ -111,7 +103,6 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
             }
           }
 
-          // If not found by serverId, check by offlineId (for optimistic local messages)
           if (!existingMessage && data.offlineId) {
             const existingByOfflineId = await database.collections.get('messages').query(
               Q.where('offline_id', data.offlineId),
@@ -123,10 +114,9 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
           }
 
           if (existingMessage) {
-            return; // Message already exists, skip
+            return;
           }
 
-          // Create new message if not found
           await database.write(async () => {
             await database.get('messages').create((m: any) => {
               m.chatId = localChat.id;
@@ -138,13 +128,12 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
             });
           });
         } catch (e) {
-          // If write fails (e.g., duplicate), ignore - message already exists
         }
       });
 
       newSocket.on('sync_ping', (data: any) => {
         if (data?.senderId && data.senderId === userId) return;
-        syncDatabase().catch(err => console.log('sync error:', err));
+        syncDatabase().catch(err => {});
       });
 
       return () => {
@@ -152,53 +141,47 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
       };
     };
     loadUser();
-  }, []); // Only create socket once on mount
+  }, []);
 
-  // Join chat room when serverChatId becomes available
   useEffect(() => {
     if (socket && socket.connected && serverChatId) {
       socket.emit('joinChat', { chatId: serverChatId, bookingId });
     }
   }, [socket?.connected, serverChatId, bookingId]);
 
-  // Deduplicate messages by server_id/offline_id to prevent duplicate rendering
   const uniqueMessages = React.useMemo(() => {
-    const seen = new Map<string, any>(); // Use Map to track original message objects
+    const seen = new Map<string, any>();
     return (messages || []).filter((m: any) => {
-      // Use server_id for deduplication (most reliable)
       if (m.serverId) {
         const key = `server_${m.serverId}`;
         if (seen.has(key)) {
-          return false; // Skip duplicate
+          return false;
         }
         seen.set(key, m);
         return true;
       }
 
-      // Use offline_id as fallback
       if (m.offlineId) {
         const key = `offline_${m.offlineId}`;
         if (seen.has(key)) {
-          return false; // Skip duplicate
+          return false;
         }
         seen.set(key, m);
         return true;
       }
 
-      // Use local id as last resort
       if (m.id) {
         const key = `local_${m.id}`;
         if (seen.has(key)) {
-          return false; // Skip duplicate
+          return false;
         }
         seen.set(key, m);
         return true;
       }
 
-      // If no IDs available, use content+sender+time as fallback
       const key = `${m.senderId}-${m.content}-${m.createdAt}`;
       if (seen.has(key)) {
-        return false; // Skip duplicate
+        return false;
       }
       seen.set(key, m);
       return true;
@@ -219,7 +202,6 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
     setText('');
 
     try {
-      // Must have serverChatId to send
       if (!serverChatId) {
         return;
       }
@@ -234,7 +216,6 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
             return;
           }
         } catch (e) {
-          console.log('Error locating chat object', e);
           return;
         }
       }
@@ -243,10 +224,8 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
         return;
       }
 
-      // Generate a unique offlineId for this message
       const offlineId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Add sender's own message to local DB immediately for instant UI feedback
       await database.write(async () => {
         await database.get('messages').create((m: any) => {
           m.chatId = targetChat.id;
@@ -261,7 +240,6 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
         socket.emit('sendMessage', { chatId: serverChatId, content: messageContent, offlineId });
       }
     } catch (e) {
-      console.log('Failed to send message', e);
     } finally {
       setIsSending(false);
     }

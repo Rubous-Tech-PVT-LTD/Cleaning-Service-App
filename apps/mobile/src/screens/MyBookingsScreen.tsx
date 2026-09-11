@@ -18,17 +18,14 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
   }
 
   const primaryServiceTitle = service ? (i18n.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
-  
-  // Translate item titles based on current language
+
   const getItemTitle = (item: any) => {
-    // Always try to translate based on service ID when available
     if (item.serviceId) {
       const itemService = services ? services.find((s: any) => s.id === item.serviceId) : null;
       if (itemService) {
         return i18n.language === 'hi' ? itemService.nameHi : itemService.nameEn;
       }
     }
-    // Fallback to stored title only if service ID is not available or service not found
     return item.title || 'Service';
   };
   
@@ -111,13 +108,11 @@ const MyBookingsScreenBase = ({ navigation, bookings }: any) => {
     try {
       await syncDatabase();
     } catch (error) {
-      console.warn('Sync failed', error);
     } finally {
       setRefreshing(false);
     }
   }, []);
 
-  // Guest mode UI
   if (isGuest) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>

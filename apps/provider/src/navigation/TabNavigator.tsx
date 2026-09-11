@@ -1,115 +1,1 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, Text, View } from 'react-native';
-import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { Wrench } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
-import { DashboardScreen } from '../screens/DashboardScreen';
-import { JobsScreen } from '../screens/JobsScreen';
-import { ReviewsScreen } from '../screens/ReviewsScreen';
-import { WalletScreen } from '../screens/WalletScreen';
-import { ProfileScreen } from '../screens/ProfileScreen';
-import { Theme } from '../theme';
-
-const Tab = createBottomTabNavigator();
-
-const ProviderMaintenanceBanner = () => {
-  const { t } = useTranslation();
-  const translateX = useRef(new Animated.Value(-Dimensions.get('window').width)).current;
-
-  useEffect(() => {
-    const animation = Animated.loop(
-      Animated.timing(translateX, {
-        toValue: Dimensions.get('window').width,
-        duration: 15000,
-        useNativeDriver: true,
-      })
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [translateX]);
-
-  return (
-    <View style={{ height: 34, backgroundColor: Theme.primaryDark, overflow: 'hidden' }}>
-      <Animated.View style={{ position: 'absolute', left: 0, right: 0, height: 34, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, transform: [{ translateX }] }}>
-        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: Theme.accent, justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
-          <Wrench size={12} color={Theme.primaryDark} />
-        </View>
-        <Text style={{ color: Theme.white, fontWeight: '600', fontSize: 11 }} numberOfLines={1}>
-          {t('provider.maintenance_message')}
-        </Text>
-      </Animated.View>
-    </View>
-  );
-};
-
-const TabBarLabel = ({ routeName }: { routeName: string }) => {
-  const { t } = useTranslation();
-  
-  let label: string;
-  if (routeName === 'Home') label = t('provider.nav_home');
-  else if (routeName === 'Jobs') label = t('provider.nav_jobs');
-  else if (routeName === 'Reviews') label = t('provider.nav_reviews');
-  else if (routeName === 'Wallet') label = t('provider.nav_wallet');
-  else if (routeName === 'Profile') label = t('provider.nav_profile');
-  else label = routeName;
-  
-  return <Text style={{ fontWeight: '700', fontSize: 12 }}>{label}</Text>;
-};
-
-export const TabNavigator = () => {
-  return (
-    <Tab.Navigator
-      id="ProviderTabs"
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Jobs') {
-            iconName = focused ? 'briefcase' : 'briefcase-outline';
-          } else if (route.name === 'Reviews') {
-            iconName = focused ? 'star' : 'star-outline';
-          } else if (route.name === 'Wallet') {
-            iconName = focused ? 'wallet' : 'wallet-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          } else {
-            iconName = 'help-circle-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: Theme.primary,
-        tabBarInactiveTintColor: Theme.textSecondary,
-        tabBarStyle: {
-          backgroundColor: Theme.white,
-          borderTopWidth: 1,
-          borderTopColor: Theme.border,
-          paddingTop: 5,
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOpacity: 0.1,
-          shadowRadius: 10,
-          height: 100,
-         paddingBottom: 60,
-        },
-        tabBarLabel: () => <TabBarLabel routeName={route.name} />,
-      })}
-        tabBar={(props) => (
-          <View>
-            <ProviderMaintenanceBanner />
-            <BottomTabBar {...props} />
-          </View>
-        )}
-    >
-      <Tab.Screen name="Home" component={DashboardScreen} />
-      <Tab.Screen name="Jobs" component={JobsScreen} />
-      <Tab.Screen name="Reviews" component={ReviewsScreen} />
-      <Tab.Screen name="Wallet" component={WalletScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
-    </Tab.Navigator>
-  );
-};
+import React, { useEffect, useRef } from 'react';import { Animated, Dimensions, Text, View } from 'react-native';import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';import { Ionicons } from '@expo/vector-icons';import { Wrench } from 'lucide-react-native';import { useTranslation } from 'react-i18next';import { DashboardScreen } from '../screens/DashboardScreen';import { JobsScreen } from '../screens/JobsScreen';import { ReviewsScreen } from '../screens/ReviewsScreen';import { WalletScreen } from '../screens/WalletScreen';import { ProfileScreen } from '../screens/ProfileScreen';import { Theme } from '../theme';const Tab = createBottomTabNavigator();const ProviderMaintenanceBanner = () => {  const { t } = useTranslation();  const translateX = useRef(new Animated.Value(-Dimensions.get('window').width)).current;  useEffect(() => {    const animation = Animated.loop(      Animated.timing(translateX, {        toValue: Dimensions.get('window').width,        duration: 15000,        useNativeDriver: true,      })    );    animation.start();    return () => animation.stop();  }, [translateX]);  return (    <View style={{ height: 34, backgroundColor: Theme.primaryDark, overflow: 'hidden' }}>      <Animated.View style={{ position: 'absolute', left: 0, right: 0, height: 34, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, transform: [{ translateX }] }}>        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: Theme.accent, justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>          <Wrench size={12} color={Theme.primaryDark} />        </View>        <Text style={{ color: Theme.white, fontWeight: '600', fontSize: 11 }} numberOfLines={1}>          {t('provider.maintenance_message')}        </Text>      </Animated.View>    </View>  );};const TabBarLabel = ({ routeName }: { routeName: string }) => {  const { t } = useTranslation();  let label: string;  if (routeName === 'Home') label = t('provider.nav_home');  else if (routeName === 'Jobs') label = t('provider.nav_jobs');  else if (routeName === 'Reviews') label = t('provider.nav_reviews');  else if (routeName === 'Wallet') label = t('provider.nav_wallet');  else if (routeName === 'Profile') label = t('provider.nav_profile');  else label = routeName;  return <Text style={{ fontWeight: '700', fontSize: 12 }}>{label}</Text>;};export const TabNavigator = () => {  return (    <Tab.Navigator      id="ProviderTabs"      screenOptions={({ route }) => ({        headerShown: false,        tabBarIcon: ({ focused, color, size }) => {          let iconName: keyof typeof Ionicons.glyphMap;          if (route.name === 'Home') {            iconName = focused ? 'home' : 'home-outline';          } else if (route.name === 'Jobs') {            iconName = focused ? 'briefcase' : 'briefcase-outline';          } else if (route.name === 'Reviews') {            iconName = focused ? 'star' : 'star-outline';          } else if (route.name === 'Wallet') {            iconName = focused ? 'wallet' : 'wallet-outline';          } else if (route.name === 'Profile') {            iconName = focused ? 'person' : 'person-outline';          } else {            iconName = 'help-circle-outline';          }          return <Ionicons name={iconName} size={size} color={color} />;        },        tabBarActiveTintColor: Theme.primary,        tabBarInactiveTintColor: Theme.textSecondary,        tabBarStyle: {          backgroundColor: Theme.white,          borderTopWidth: 1,          borderTopColor: Theme.border,          paddingTop: 5,          elevation: 10,          shadowColor: '#000',          shadowOpacity: 0.1,          shadowRadius: 10,          height: 100,         paddingBottom: 60,        },        tabBarLabel: () => <TabBarLabel routeName={route.name} />,      })}        tabBar={(props) => (          <View>            <ProviderMaintenanceBanner />            <BottomTabBar {...props} />          </View>        )}    >      <Tab.Screen name="Home" component={DashboardScreen} />      <Tab.Screen name="Jobs" component={JobsScreen} />      <Tab.Screen name="Reviews" component={ReviewsScreen} />      <Tab.Screen name="Wallet" component={WalletScreen} />      <Tab.Screen name="Profile" component={ProfileScreen} />    </Tab.Navigator>  );};

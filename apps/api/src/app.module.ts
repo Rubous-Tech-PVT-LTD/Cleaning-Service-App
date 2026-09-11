@@ -21,7 +21,6 @@ import { TrackingModule } from './tracking/tracking.module';
 import { CartModule } from './cart/cart.module';
 import { CitiesModule } from './cities/cities.module';
 import { SosModule } from './sos/sos.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,8 +29,8 @@ import { SosModule } from './sos/sos.module';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60000, // 1 minute
-        limit: 100, // requests per minute
+        ttl: 60000,
+        limit: 100,
       },
     ]),
     PrismaModule,
@@ -56,7 +55,6 @@ import { SosModule } from './sos/sos.module';
 })
 export class AppModule implements NestModule {
   private readonly logger = new Logger('HTTP');
-
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req: any, res: any, next: () => void) => {

@@ -61,18 +61,14 @@ export const InstantServiceScreen = ({ navigation }: any) => {
       }
 
       const res = await api.get('/cart');
-      console.log('Cart response:', res.data);
-      
-      // Handle both old JSON format and new CartItem table format
+
       let items = res.data.items || [];
-      
-      // If items is empty, check if cartItems array exists (new format)
+
       if (!items || items.length === 0) {
         items = res.data.cartItems || [];
       }
       
       const hourlyItem = items.find((item: any) => item.type === 'hourly');
-      console.log('Hourly item found:', hourlyItem);
 
       if (hourlyItem && hourlyItem.bookingType !== 'scheduled') {
         setCartItem(hourlyItem);
@@ -82,7 +78,6 @@ export const InstantServiceScreen = ({ navigation }: any) => {
         setSelectedDuration(null);
       }
     } catch (e) {
-      console.error('Error fetching cart:', e);
       setCartItem(null);
       setSelectedDuration(null);
     }
@@ -117,12 +112,8 @@ export const InstantServiceScreen = ({ navigation }: any) => {
         bookingType: 'instant',
       });
 
-      console.log('Cart add response:', res.data);
-      
-      // Handle both old JSON format and new CartItem table format
       let items = res.data?.items || [];
-      
-      // If items is empty, check if cartItems array exists (new format)
+
       if (!items || items.length === 0) {
         items = res.data?.cartItems || [];
       }
@@ -132,11 +123,9 @@ export const InstantServiceScreen = ({ navigation }: any) => {
         bookingType: 'instant',
       };
 
-      console.log('Setting cart item:', hourlyItem);
       setCartItem(hourlyItem);
       setSelectedDuration(durationId);
     } catch (e) {
-      console.error('Error adding to cart:', e);
       Alert.alert('Error', 'Failed to add to cart');
     } finally {
       setCartLoading(false);
@@ -154,7 +143,6 @@ export const InstantServiceScreen = ({ navigation }: any) => {
       await api.delete('/cart', { serviceId: 'hourly-service' });
       await fetchCartData();
     } catch (e) {
-      console.error('Error removing from cart:', e);
       Alert.alert('Error', 'Failed to remove from cart');
       await fetchCartData();
     } finally {
@@ -168,7 +156,6 @@ export const InstantServiceScreen = ({ navigation }: any) => {
       const res = await api.get('/services/hourly');
       setData(res.data);
     } catch (e) {
-      console.error('Error fetching hourly services:', e);
     } finally {
       setLoading(false);
     }

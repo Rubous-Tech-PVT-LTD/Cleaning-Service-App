@@ -5,44 +5,37 @@ import { Theme } from '../theme';
 import api from '../api';
 import i18n from '../i18n';
 import { useTranslation } from 'react-i18next';
-
 export const ReviewsScreen = () => {
   const { t } = useTranslation();
   const [data, setData] = useState<{ reviews: any[], averageRating: number, totalReviews: number } | null>(null);
   const [loading, setLoading] = useState(true);
-
   const fetchReviews = async () => {
     try {
       setLoading(true);
       const res = await api.get('/reviews/me');
       setData(res.data);
     } catch (e) {
-      console.log('Failed to fetch reviews', e);
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchReviews();
   }, []);
-
   const renderStars = (rating: number) => {
     return '★'.repeat(rating) + '☆'.repeat(5 - rating);
   };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('provider.my_reviews')}</Text>
         <Text style={styles.headerSubtitle}>{t('provider.see_what_clients_say')}</Text>
       </View>
-
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchReviews} colors={[Theme.primary]} />}
       >
-        {/* Summary Card */}
+        { }
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>{t('provider.average_rating')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
@@ -51,9 +44,7 @@ export const ReviewsScreen = () => {
           </View>
           <Text style={styles.totalReviews}>{t('provider.based_on_reviews')} {data?.totalReviews || 0} {t('provider.reviews')}</Text>
         </View>
-
         <Text style={styles.sectionTitle}>{t('provider.recent_feedback')}</Text>
-
         {(!data?.reviews || data.reviews.length === 0) && !loading ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>{t('provider.no_reviews_yet')}</Text>
@@ -63,25 +54,19 @@ export const ReviewsScreen = () => {
           data?.reviews.map((review: any) => {
             const date = new Date(review.createdAt).toLocaleDateString();
             const clientName = review.booking?.client?.fullName || 'Anonymous Client';
-            
-            // Handle service name with language support
             let serviceName = 'Service';
             const isHindi = i18n.language === 'hi';
-            
             if (review.booking?.service) {
-              // Try sync API format first (snake_case)
               if (isHindi && review.booking.service.name_hi) {
                 serviceName = review.booking.service.name_hi;
               } else if (review.booking.service.name_en) {
                 serviceName = review.booking.service.name_en;
               }
-              // Try regular API format (camelCase with JSON object)
               else if (typeof review.booking.service.nameTranslations === 'object' && review.booking.service.nameTranslations.hi && isHindi) {
                 serviceName = review.booking.service.nameTranslations.hi;
               } else if (typeof review.booking.service.nameTranslations === 'object' && review.booking.service.nameTranslations.en) {
                 serviceName = review.booking.service.nameTranslations.en;
               }
-              // Try if nameTranslations is a stringified JSON
               else if (typeof review.booking.service.nameTranslations === 'string') {
                 try {
                   const parsed = JSON.parse(review.booking.service.nameTranslations);
@@ -94,12 +79,10 @@ export const ReviewsScreen = () => {
                   serviceName = review.booking.service.nameTranslations;
                 }
               }
-              // Fallback to name field
               else if (review.booking.service.name) {
                 serviceName = review.booking.service.name;
               }
             }
-
             return (
               <View key={review.id} style={styles.reviewCard}>
                 <View style={styles.reviewHeader}>
@@ -119,7 +102,6 @@ export const ReviewsScreen = () => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.background },
   header: { padding: 24, backgroundColor: Theme.background },

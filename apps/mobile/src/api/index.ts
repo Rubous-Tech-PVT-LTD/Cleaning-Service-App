@@ -1,8 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.116.209:3000/v1';
-export const SOCKET_URL = 'http://192.168.116.209:3000';
-console.log('📡 [API] Using Fetch API Wrapper to bypass Axios Event.NONE bug');
+const BASE_URL = 'http://192.168.234.209:3000/v1';
+export const SOCKET_URL = 'http://192.168.234.209:3000';
 
 async function request(method: string, endpoint: string, data?: any) {
   const token = await AsyncStorage.getItem('user_token');
@@ -22,14 +21,10 @@ async function request(method: string, endpoint: string, data?: any) {
     options.body = JSON.stringify(data);
   }
 
-  console.log(`API Request: ${method} ${BASE_URL}${endpoint}`, { token: token ? 'exists' : 'missing', data });
-
   const response = await fetch(`${BASE_URL}${endpoint}`, options);
   const text = await response.text();
   let responseData: any = text;
   try { responseData = JSON.parse(text); } catch (e) {}
-
-  console.log(`API Response: ${response.status}`, responseData);
 
   if (!response.ok) {
     const error: any = new Error('Request failed');
@@ -45,11 +40,8 @@ const api = {
   post: (endpoint: string, data?: any) => request('POST', endpoint, data),
   put: (endpoint: string, data?: any) => request('PUT', endpoint, data),
   delete: (endpoint: string, data?: any) => request('DELETE', endpoint, data),
-  // For backwards compatibility where `api.interceptors` is accessed, return a dummy object
-  interceptors: { request: { use: () => {} } }
 };
 
-// Category and Subcategory API helpers
 export const categoryApi = {
   getSubcategories: (categoryId: string) => 
     api.get(`/categories/${categoryId}/subcategories`),

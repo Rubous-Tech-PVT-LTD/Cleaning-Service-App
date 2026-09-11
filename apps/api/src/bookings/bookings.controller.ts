@@ -7,14 +7,12 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-
 @ApiTags('Bookings')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
-
+  constructor(private readonly bookingsService: BookingsService) { }
   @Post()
   @Roles(UserRole.CLIENT)
   @ApiOperation({ summary: 'Create a new booking' })
@@ -22,19 +20,16 @@ export class BookingsController {
   create(@Request() req: any, @Body() createBookingDto: CreateBookingDto) {
     return this.bookingsService.create(req.user.id, createBookingDto);
   }
-
   @Get()
   @ApiOperation({ summary: 'Get all bookings for the current user' })
   findAll(@Request() req: any) {
     return this.bookingsService.findAll(req.user.id, req.user.role);
   }
-
   @Get(':id')
   @ApiOperation({ summary: 'Get details of a specific booking' })
   findOne(@Param('id') id: string) {
     return this.bookingsService.findOne(id);
   }
-
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update the status of a booking' })
   updateStatus(@Request() req: any, @Param('id') id: string, @Body() updateStatusDto: UpdateBookingStatusDto) {

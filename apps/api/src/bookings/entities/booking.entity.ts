@@ -1,1 +1,1 @@
-export class Booking {}
+export class Booking {}

@@ -1,13 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// ✅ Direct local IP — no tunnel needed (same WiFi)
-export const BASE_URL = 'http://192.168.116.209:3000/v1';
-export const SOCKET_URL = 'http://192.168.116.209:3000';
-
-/**
- * XHR-based request - avoids the Hermes Event.NONE crash that fetch() triggers
- * on physical Android devices.
- */
+export const BASE_URL = 'http://192.168.234.209:3000/v1';
+export const SOCKET_URL = 'http://192.168.234.209:3000';
 function xhrRequest(
   method: string,
   url: string,
@@ -30,7 +23,6 @@ function xhrRequest(
     xhr.send(body || null);
   });
 }
-
 async function request(method: string, endpoint: string, data?: any) {
   const token = await AsyncStorage.getItem('provider_token');
   const headers: Record<string, string> = {
@@ -41,10 +33,7 @@ async function request(method: string, endpoint: string, data?: any) {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-
   const fullUrl = `${BASE_URL}${endpoint}`;
-  console.log(`📡 [API Request] ${method} ${fullUrl}`);
-
   try {
     const response = await xhrRequest(
       method,
@@ -52,37 +41,28 @@ async function request(method: string, endpoint: string, data?: any) {
       headers,
       data ? JSON.stringify(data) : undefined,
     );
-
     let responseData: any = response.text;
     try {
       responseData = JSON.parse(response.text);
-    } catch (e) {}
-
+    } catch {}
     if (!response.ok) {
       const error: any = new Error('Request failed');
       error.response = { data: responseData, status: response.status };
       throw error;
     }
-
     return { data: responseData, status: response.status };
   } catch (err: any) {
-    // Hermes Event.NONE bug: the request may have succeeded on the server
-    // but threw during internal event cleanup. Re-throw a user-friendly message.
     if (err?.message?.includes('NONE') || err?.message?.includes('read-only')) {
-      console.warn('[API] Caught Hermes NONE bug during XHR — request may have succeeded.');
       throw new Error('Connection interrupted (Hermes bug). Please try again.');
     }
     throw err;
   }
 }
-
 const api = {
   get: (endpoint: string) => request('GET', endpoint),
   post: (endpoint: string, data?: any) => request('POST', endpoint, data),
   put: (endpoint: string, data?: any) => request('PUT', endpoint, data),
   patch: (endpoint: string, data?: any) => request('PATCH', endpoint, data),
   delete: (endpoint: string) => request('DELETE', endpoint),
-  interceptors: { request: { use: () => {} } },
 };
-
 export default api;

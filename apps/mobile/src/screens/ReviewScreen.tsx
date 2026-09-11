@@ -26,18 +26,14 @@ export const ReviewScreen = ({ route, navigation }: any) => {
 
     setLoading(true);
     try {
-      console.log('Submitting review:', { bookingId, rating, comment });
       const response = await api.post('/reviews', {
         bookingId,
         rating: Number(rating),
         comment: comment || undefined,
       });
-      console.log('Review submission response:', response);
       
       Alert.alert('Success', 'Thank you for your feedback!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (error: any) {
-      console.error('Review submission error:', error);
-      console.error('Error response:', error.response);
       const errorMessage = error.response?.data?.message || error.message || 'Could not submit review';
       Alert.alert('Error', errorMessage);
     } finally { setLoading(false); }

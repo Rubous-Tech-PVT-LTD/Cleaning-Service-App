@@ -46,7 +46,7 @@ export const ProfileEditScreen = ({ navigation }: any) => {
         navigation.goBack();
       }, 1200);
     } catch (e) {
-      // Even if API fails, save locally
+
       await AsyncStorage.setItem('user_name', fullName);
       setSaved(true);
       setTimeout(() => {
@@ -61,7 +61,6 @@ export const ProfileEditScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: Theme.surface, elevation: 2 }}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.muted, justifyContent: 'center', alignItems: 'center' }}>
             <ChevronLeft size={22} color={Theme.textPrimary} />
@@ -80,7 +79,6 @@ export const ProfileEditScreen = ({ navigation }: any) => {
         </View>
 
         <ScrollView contentContainerStyle={{ padding: 24 }}>
-          {/* Avatar */}
           <View style={{ alignItems: 'center', marginBottom: 36 }}>
             <View style={{ position: 'relative' }}>
               <LinearGradient
@@ -103,7 +101,6 @@ export const ProfileEditScreen = ({ navigation }: any) => {
             <Text style={{ marginTop: 12, fontSize: 13, color: Theme.textSecondary, fontWeight: '600' }}>{t('profile.tap_to_change')}</Text>
           </View>
 
-          {/* Fields */}
           <View style={{ gap: 20 }}>
             <View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: Theme.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('profile.full_name')}</Text>
@@ -136,7 +133,6 @@ export const ProfileEditScreen = ({ navigation }: any) => {
             </View>
           </View>
 
-          {/* Info box */}
           <View style={{ marginTop: 32, backgroundColor: Theme.infoLight, borderRadius: 16, padding: 16, flexDirection: 'row' }}>
             <Info size={20} color={Theme.info} />
             <Text style={{ flex: 1, marginLeft: 12, fontSize: 13, color: Theme.info, lineHeight: 20, fontWeight: '600' }}>

@@ -9,18 +9,15 @@ import api from '../api';
 import { Theme } from '../theme';
 import i18n from '../i18n';
 import { useTranslation } from 'react-i18next';
-
 export const ManageServicesScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [services, setServices] = useState<any[]>([]);
   const [selectedProfessionIds, setSelectedProfessionIds] = useState<string[]>([]);
-
   useEffect(() => {
     fetchData();
   }, []);
-
   const fetchData = async () => {
     try {
       const [servicesRes, profileRes] = await Promise.all([
@@ -31,23 +28,19 @@ export const ManageServicesScreen = ({ navigation }: any) => {
       if (profileRes.data?.profile?.professionIds) {
         setSelectedProfessionIds(profileRes.data.profile.professionIds);
       } else if (profileRes.data?.profile?.professionId) {
-        // For backward compatibility, load single professionId into array
         setSelectedProfessionIds([profileRes.data.profile.professionId]);
       }
     } catch (err) {
-      console.log('Failed to fetch data', err);
       Alert.alert('Error', 'Failed to load data');
     } finally {
       setLoading(false);
     }
   };
-
   const handleSave = async () => {
     if (selectedProfessionIds.length === 0) {
       Alert.alert('Error', 'Please select at least one service');
       return;
     }
-    
     setSaving(true);
     try {
       await api.patch('/users/profile', { professionIds: selectedProfessionIds });
@@ -55,30 +48,23 @@ export const ManageServicesScreen = ({ navigation }: any) => {
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error: any) {
-      console.log('Update Error', error);
       Alert.alert('Error', 'Failed to update services');
     } finally {
       setSaving(false);
     }
   };
-
   const handleServiceToggle = (serviceId: string, serviceName: string) => {
-    const isKitchen = serviceName.toLowerCase().includes('kitchen') || 
-                      serviceName.includes('रसोईघर') || 
-                      serviceName.includes('रसोई');
-    const isBathroom = serviceName.toLowerCase().includes('bathroom') || 
-                       serviceName.includes('बाथरूम');
-    
+    const isKitchen = serviceName.toLowerCase().includes('kitchen') ||
+      serviceName.includes('रसोईघर') ||
+      serviceName.includes('रसोई');
+    const isBathroom = serviceName.toLowerCase().includes('bathroom') ||
+      serviceName.includes('बाथरूम');
     setSelectedProfessionIds(prev => {
       const isSelected = prev.includes(serviceId);
-      
       if (isSelected) {
-        // Deselect the service
         return prev.filter(id => id !== serviceId);
       } else {
-        // Check for conflicts before selecting
         if (isKitchen) {
-          // Check if any bathroom service is already selected
           const bathroomServices = services.filter(s => {
             const enName = s.nameTranslations?.en?.toLowerCase() || '';
             const hiName = s.nameTranslations?.hi || '';
@@ -86,18 +72,16 @@ export const ManageServicesScreen = ({ navigation }: any) => {
           });
           const bathroomIds = bathroomServices.map(s => s.id);
           const hasBathroomSelected = prev.some(id => bathroomIds.includes(id));
-          
           if (hasBathroomSelected) {
             Alert.alert(
               t('provider.kitchen_bathroom_conflict'),
               t('provider.kitchen_conflict'),
               [{ text: t('common.ok') }]
             );
-            return prev; // Don't add kitchen service
+            return prev;
           }
           return [...prev, serviceId];
         } else if (isBathroom) {
-          // Check if any kitchen service is already selected
           const kitchenServices = services.filter(s => {
             const enName = s.nameTranslations?.en?.toLowerCase() || '';
             const hiName = s.nameTranslations?.hi || '';
@@ -105,24 +89,21 @@ export const ManageServicesScreen = ({ navigation }: any) => {
           });
           const kitchenIds = kitchenServices.map(s => s.id);
           const hasKitchenSelected = prev.some(id => kitchenIds.includes(id));
-          
           if (hasKitchenSelected) {
             Alert.alert(
               t('provider.kitchen_bathroom_conflict'),
               t('provider.bathroom_conflict'),
               [{ text: t('common.ok') }]
             );
-            return prev; // Don't add bathroom service
+            return prev;
           }
           return [...prev, serviceId];
         } else {
-          // For other services, just add to selection
           return [...prev, serviceId];
         }
       }
     });
   };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -130,42 +111,34 @@ export const ManageServicesScreen = ({ navigation }: any) => {
       </View>
     );
   }
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="transparent" barStyle="dark-content" translucent />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ArrowLeft size={24} color={Theme.textPrimary}/>
+          <ArrowLeft size={24} color={Theme.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('provider.manage_services_title')}</Text>
       </View>
-
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.sectionTitle}>{t('provider.your_profession')}</Text>
         <Text style={styles.sectionSubtitle}>
           {t('provider.select_services_note')}
         </Text>
-
         <View style={styles.servicesContainer}>
           {services.map((service) => {
-            // Handle service name with language support
             let serviceName = 'Service';
             const isHindi = i18n.language === 'hi';
-            
-            // Try sync API format first (snake_case)
             if (isHindi && service.name_hi) {
               serviceName = service.name_hi;
             } else if (service.name_en) {
               serviceName = service.name_en;
             }
-            // Try regular API format (camelCase with JSON object)
             else if (typeof service.nameTranslations === 'object' && service.nameTranslations.hi && isHindi) {
               serviceName = service.nameTranslations.hi;
             } else if (typeof service.nameTranslations === 'object' && service.nameTranslations.en) {
               serviceName = service.nameTranslations.en;
             }
-            // Try if nameTranslations is a stringified JSON
             else if (typeof service.nameTranslations === 'string') {
               try {
                 const parsed = JSON.parse(service.nameTranslations);
@@ -178,13 +151,10 @@ export const ManageServicesScreen = ({ navigation }: any) => {
                 serviceName = service.nameTranslations;
               }
             }
-            // Fallback to name field
             else if (service.name) {
               serviceName = service.name;
             }
-            
             const isSelected = selectedProfessionIds.includes(service.id);
-            
             return (
               <TouchableOpacity
                 key={service.id}
@@ -215,7 +185,6 @@ export const ManageServicesScreen = ({ navigation }: any) => {
             <Text style={styles.emptyText}>{t('provider.no_services_available')}</Text>
           )}
         </View>
-
         <TouchableOpacity
           onPress={handleSave}
           disabled={saving}
@@ -231,7 +200,6 @@ export const ManageServicesScreen = ({ navigation }: any) => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

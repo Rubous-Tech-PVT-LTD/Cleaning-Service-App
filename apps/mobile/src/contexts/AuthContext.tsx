@@ -43,14 +43,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else if (token && userId) {
         setIsAuthenticated(true);
         setIsGuest(false);
-        setUser({ id: userId, phone: '' }); // Phone can be loaded if needed
+        setUser({ id: userId, phone: '' });
       } else {
         setIsAuthenticated(false);
         setIsGuest(false);
         setUser(null);
       }
     } catch (error) {
-      console.error('Error loading auth state:', error);
     } finally {
       setIsLoading(false);
     }
@@ -61,12 +60,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await AsyncStorage.setItem('user_token', token);
       await AsyncStorage.setItem('user_id', userData.id);
       await AsyncStorage.removeItem('guest_mode');
-      
+
       setIsAuthenticated(true);
       setIsGuest(false);
       setUser(userData);
     } catch (error) {
-      console.error('Error during login:', error);
       throw error;
     }
   };
@@ -76,12 +74,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await AsyncStorage.removeItem('user_token');
       await AsyncStorage.removeItem('user_id');
       await AsyncStorage.removeItem('guest_mode');
-      
+
       setIsAuthenticated(false);
       setIsGuest(false);
       setUser(null);
     } catch (error) {
-      console.error('Error during logout:', error);
       throw error;
     }
   };
@@ -91,12 +88,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await AsyncStorage.setItem('guest_mode', 'true');
       await AsyncStorage.removeItem('user_token');
       await AsyncStorage.removeItem('user_id');
-      
+
       setIsGuest(true);
       setIsAuthenticated(false);
       setUser(null);
     } catch (error) {
-      console.error('Error entering guest mode:', error);
       throw error;
     }
   };
@@ -104,12 +100,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const exitGuestMode = async () => {
     try {
       await AsyncStorage.removeItem('guest_mode');
-      
+
       setIsGuest(false);
       setIsAuthenticated(false);
       setUser(null);
     } catch (error) {
-      console.error('Error exiting guest mode:', error);
       throw error;
     }
   };

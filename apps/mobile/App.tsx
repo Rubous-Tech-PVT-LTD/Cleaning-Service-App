@@ -21,7 +21,6 @@ import './src/i18n';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { fetchSupportedCities } from './src/services/locationService';
 
-// Apply critical React Native 0.81 bug fixes
 applyWorkarounds();
 
 const AppContent = () => {
@@ -59,24 +58,18 @@ const AppContent = () => {
 
   useEffect(() => {
     fetchSupportedCities().catch((error) => {
-      console.warn('[Location] Could not prefetch supported cities:', error?.message);
     });
   }, []);
 
   useEffect(() => {
     const startSync = async () => {
       try {
-        console.log('📡 [Sync] Starting Background Sync...');
         await syncDatabase();
-        console.log('✅ [Sync] Sync Complete!');
       } catch (error: any) {
-        console.warn('⚠️ [Sync] Skipped:', error?.message);
       }
     };
 
-    // Initial sync delay
     const initialDelay = setTimeout(startSync, 3000);
-    // Periodic sync every minute
     const interval = setInterval(startSync, 60000);
 
     return () => {
@@ -85,7 +78,6 @@ const AppContent = () => {
     };
   }, []);
 
-  // 🔌 Global WebSocket connection for real-time sync
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
 
@@ -95,15 +87,12 @@ const AppContent = () => {
     });
 
     socket.on('sync_ping', () => {
-      console.log('🔔 [Socket] Received sync_ping, syncing DB...');
-      syncDatabase().catch((err) => console.warn('Real-time sync failed:', err));
+      syncDatabase().catch((err) => {});
     });
 
     socket.on('booking_status_changed', async (payload: { bookingId: string, offlineId?: string, status: string, otp?: string, updatedAt?: string }) => {
-      console.log('🔔 [Socket] Received booking_status_changed:', payload);
       try {
         const bookingsCollection = database.collections.get('bookings');
-        // WatermelonDB uses offlineId as the primary key if the booking was created offline, otherwise the Prisma UUID.
         const targetId = payload.offlineId || payload.bookingId;
         const booking = await bookingsCollection.find(targetId);
         
@@ -114,21 +103,16 @@ const AppContent = () => {
               b.otp = payload.otp;
             }
             if (payload.updatedAt) {
-              // Using any to bypass strict type checking for the observable model if needed, 
-              // but WatermelonDB supports assignment.
               b.updatedAt = new Date(payload.updatedAt);
             }
           });
         });
       } catch (err) {
-        console.warn('Failed to update booking status locally:', err);
       }
     });
 
     socket.on('booking_accepted', async (payload: any) => {
-      console.log('🔔 [Socket] Received booking_accepted:', payload);
-      // Trigger immediate sync to pull down the newly created chat record
-      syncDatabase().catch((err) => console.warn('Failed to sync after booking accepted:', err));
+      syncDatabase().catch((err) => {});
     });
 
     return () => {
@@ -136,13 +120,11 @@ const AppContent = () => {
     };
   }, [isAuthenticated, user?.id]);
 
-  // 🔔 Global: handle tap on push notification (works from background + killed state)
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const data = response.notification.request.content.data as any;
         if (data?.bookingId && navigationRef.current) {
-          // Small delay to ensure navigation container is ready
           setTimeout(() => {
             navigationRef.current?.navigate('BookingDetail', {
               bookingId: data.bookingId,
@@ -154,7 +136,6 @@ const AppContent = () => {
     return () => subscription.remove();
   }, []);
 
-  // Wait until we know the initial route and fonts are loaded
   if (!initialRoute || !fontsLoaded) return null;
 
   return (
