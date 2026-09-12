@@ -71,7 +71,6 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-      {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: 'white', elevation: 2 }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
           <ChevronLeft size={22} color={Theme.textPrimary} />
@@ -80,7 +79,6 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 24 }}>
-        {/* Booking Card */}
         <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 24, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12 }}>
           <Text style={{ fontSize: 18, fontWeight: '900', color: Theme.textPrimary, marginBottom: 12 }}>
             {bookingTitle || 'Home Cleaning'}
@@ -97,7 +95,6 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
           </View>
         </View>
 
-        {/* Mode Toggle */}
         <View style={{ flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 16, padding: 4, marginBottom: 28 }}>
           {(['cancel', 'reschedule'] as const).map((m) => (
             <TouchableOpacity
@@ -130,7 +127,6 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
               ))}
             </View>
 
-            {/* Policy note */}
             <View style={{ backgroundColor: '#FEF3C7', borderRadius: 16, padding: 16, marginBottom: 28 }}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400E' }}>{t('manage_booking.cancellation_policy')}</Text>
               <Text style={{ fontSize: 13, color: '#92400E', marginTop: 6, lineHeight: 20 }}>
@@ -198,7 +194,7 @@ export const CancellationScreen = withObservables(['route'], ({ route }: any) =>
   return {
     booking,
     service: booking.pipe(
-      // @ts-ignore
+
       switchMap(b => b.service.observe())
     )
   };

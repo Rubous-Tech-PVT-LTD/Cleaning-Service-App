@@ -56,7 +56,6 @@ export const OnboardingScreen = ({ navigation }: any) => {
 
   const renderSlide = ({ item }: { item: typeof SLIDES[0] }) => (
     <LinearGradient colors={item.gradient} style={{ width, height, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
-      {/* Big emoji */}
       <View style={{ width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: 48 }}>
         <Text style={{ fontSize: 80 }}>{item.emoji}</Text>
       </View>
@@ -91,14 +90,12 @@ export const OnboardingScreen = ({ navigation }: any) => {
         }}
       />
 
-      {/* Bottom controls */}
       <LinearGradient
         colors={[slide.gradient[0] + '00', slide.gradient[1]]}
         style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 32, paddingBottom: 56, paddingTop: 32 }}
         pointerEvents="none"
       />
       <View style={{ position: 'absolute', bottom: 56, left: 32, right: 32 }}>
-        {/* Dots */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 40, gap: 8 }}>
           {SLIDES.map((_, i) => (
             <Animated.View
@@ -113,7 +110,7 @@ export const OnboardingScreen = ({ navigation }: any) => {
           ))}
         </View>
 
-        {/* Buttons */}
+       
         <TouchableOpacity
           onPress={handleNext}
           style={{ backgroundColor: 'white', borderRadius: 20, paddingVertical: 18, alignItems: 'center', marginBottom: 16 }}

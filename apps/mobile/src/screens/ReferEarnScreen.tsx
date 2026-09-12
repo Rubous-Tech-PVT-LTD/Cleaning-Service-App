@@ -23,7 +23,6 @@ export const ReferEarnScreen = ({ navigation }: any) => {
         message: `Join Cleanyo and get ₹100 off on your first home service! Use my code: ${referralCode} \nDownload now: https://cleanyo.app/download`,
       });
     } catch (error: any) {
-      console.error(error.message);
     }
   };
 
@@ -49,21 +48,19 @@ export const ReferEarnScreen = ({ navigation }: any) => {
             Share your code with friends. When they complete their first service, you both get ₹100 in your wallet.
           </Text>
 
-          {/* Referral Code Box */}
           <View style={{ width: '100%', backgroundColor: '#F8FAFC', borderRadius: 28, padding: 32, marginTop: 40, borderStyle: 'dashed', borderWidth: 2, borderColor: Theme.primary, alignItems: 'center' }}>
             <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '800', letterSpacing: 2, marginBottom: 12 }}>YOUR REFERRAL CODE</Text>
             <Text style={{ fontSize: 36, fontWeight: '900', color: Theme.primary, letterSpacing: 4 }}>{referralCode}</Text>
             
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 14, elevation: 2 }}
-              onPress={() => {}} // Add copy to clipboard logic here
+              onPress={() => {}}
             >
               <Copy size={16} color={Theme.primary} />
               <Text style={{ marginLeft: 8, fontWeight: '800', color: Theme.primary }}>COPY CODE</Text>
             </TouchableOpacity>
           </View>
 
-          {/* How it works */}
           <View style={{ width: '100%', marginTop: 48 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 24 }}>How it works</Text>
             

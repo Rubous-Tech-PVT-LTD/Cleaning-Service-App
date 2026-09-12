@@ -28,7 +28,7 @@ export const ProfileScreen = ({ navigation }: any) => {
     const loadUser = async () => {
       const storedPhone = await AsyncStorage.getItem('user_phone');
       if (storedPhone) setPhone(storedPhone);
-      // In a real app, we would fetch user name from the database
+
     };
     loadUser();
   }, []);
@@ -55,7 +55,7 @@ export const ProfileScreen = ({ navigation }: any) => {
     navigation.navigate('Login');
   };
 
-  // Guest mode UI
+
   if (isGuest) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
@@ -81,7 +81,6 @@ export const ProfileScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
         <View style={{ backgroundColor: 'white', padding: 24, alignItems: 'center', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 5 }}>
           <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: Theme.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
             <User size={50} color="white" />
@@ -95,7 +94,6 @@ export const ProfileScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {/* Action List */}
         <View style={{ padding: 24 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: Theme.textPrimary, marginTop: 32, marginBottom: 16 }}>{t('profile.support_settings', 'Support & Settings')}</Text>
           <View style={{ backgroundColor: 'white', borderRadius: 24, overflow: 'hidden' }}>
@@ -140,7 +138,6 @@ export const ProfileScreen = ({ navigation }: any) => {
             />
           </View>
 
-          {/* Logout */}
           <TouchableOpacity 
             onPress={handleLogout}
             style={{ marginTop: 40, marginBottom: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#FEE2E2', borderRadius: 24 }}

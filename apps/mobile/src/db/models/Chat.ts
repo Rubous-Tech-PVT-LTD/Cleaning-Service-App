@@ -12,6 +12,7 @@ export default class Chat extends Model {
   @field('client_id') clientId!: string;
   @field('provider_id') providerId!: string;
   @field('offline_id') offlineId?: string;
+  @field('server_id') serverId?: string;
 
   @children('messages') messages!: any;
 

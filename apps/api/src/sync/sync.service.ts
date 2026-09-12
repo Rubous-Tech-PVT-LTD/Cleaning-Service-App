@@ -1,18 +1,61 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TrackingGateway } from '../tracking/tracking.gateway';
-
+const calculateDistance = (
+  latitude1: number,
+  longitude1: number,
+  latitude2: number,
+  longitude2: number,
+): number => {
+  const earthRadiusKm = 6371;
+  const latitudeDelta = (latitude2 - latitude1) * (Math.PI / 180);
+  const longitudeDelta = (longitude2 - longitude1) * (Math.PI / 180);
+  const a =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(latitude1 * (Math.PI / 180)) *
+    Math.cos(latitude2 * (Math.PI / 180)) *
+    Math.sin(longitudeDelta / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
 @Injectable()
 export class SyncService {
   constructor(
     private prisma: PrismaService,
     private trackingGateway: TrackingGateway,
   ) { }
-
-  // ============================================================
-  // PULL CHANGES
-  // ============================================================
-
+  private async findProviderForBooking(serviceId: string, address: any) {
+    if (!serviceId || address?.latitude == null || address?.longitude == null) {
+      return null;
+    }
+    const providers = await (this.prisma as any).user.findMany({
+      where: {
+        role: 'PROVIDER',
+        profile: {
+          isVerified: true,
+          latitude: { not: null },
+          longitude: { not: null },
+          OR: [
+            { professionIds: { array_contains: serviceId } },
+            { professionId: serviceId },
+          ],
+        },
+      },
+      include: { profile: true },
+    });
+    return providers
+      .map((provider: any) => ({
+        provider,
+        distance: calculateDistance(
+          address.latitude,
+          address.longitude,
+          provider.profile.latitude,
+          provider.profile.longitude,
+        ),
+      }))
+      .filter((candidate: any) => candidate.distance <= 25)
+      .sort((left: any, right: any) => left.distance - right.distance)[0]
+      ?.provider || null;
+  }
   async pullChanges(
     lastPulledAt: number | null,
     userId?: string,
@@ -27,48 +70,33 @@ export class SyncService {
       const lastPulledDate = lastPulledAt
         ? new Date(lastPulledAt)
         : new Date(0);
-
       const toChangeset = (
         items: any[],
         mapper: (r: any) => any,
       ) => {
         if (!lastPulledAt || lastPulledDate.getTime() === 0) {
-          // Initial sync - all records are created
           return {
             created: items.map(mapper),
             updated: [],
             deleted: [],
           };
         }
-
-        // Subsequent syncs - classify based on createdAt vs lastPulledAt
         const created: any[] = [];
         const updated: any[] = [];
-
         for (const item of items) {
           const createdAt = item.createdAt ? item.createdAt.getTime() : 0;
-
           if (createdAt > lastPulledAt) {
-            // Record was created after last pull
             created.push(mapper(item));
           } else {
-            // Record existed before but was updated after last pull
             updated.push(mapper(item));
           }
         }
-
         return {
           created,
           updated,
           deleted: [],
         };
       };
-
-      // ==========================================================
-      // GLOBAL DATA
-      // ==========================================================
-
-      // Categories
       const categories = await (this.prisma as any).category.findMany({
         where: {
           updatedAt: {
@@ -84,8 +112,6 @@ export class SyncService {
           },
         },
       });
-
-      // Subcategories
       const subcategories = await (
         this.prisma as any
       ).subcategory.findMany({
@@ -96,8 +122,6 @@ export class SyncService {
           },
         },
       });
-
-      // Services
       const services = await (this.prisma as any).service.findMany({
         where: {
           updatedAt: {
@@ -113,43 +137,28 @@ export class SyncService {
           }
         }
       });
-
-      // ==========================================================
-      // USER-SPECIFIC DATA
-      // ==========================================================
-
       let bookings: any[] = [];
       let addresses: any[] = [];
       let chats: any[] = [];
       let messages: any[] = [];
-
       if (userId) {
         let isProvider = role === 'PROVIDER';
-
-        // Fetch user role if role was not explicitly provided
+        const isInitialSync = !lastPulledAt || lastPulledAt === 0;
         if (!isProvider && userId !== '1') {
           const user = await (this.prisma as any).user.findUnique({
             where: {
               id: userId,
             },
           });
-
           if (user && user.role === 'PROVIDER') {
             isProvider = true;
           }
         }
-
-        // ========================================================
-        // PROVIDER DATA
-        // ========================================================
-
         if (isProvider) {
-          // Fetch user to get their professions
           const providerUser = await (this.prisma as any).user.findUnique({
             where: { id: userId },
             include: { profile: true }
           });
-          
           const professionIds: string[] = [];
           if (providerUser?.profile?.professionId) {
             professionIds.push(providerUser.profile.professionId);
@@ -157,249 +166,218 @@ export class SyncService {
           if (providerUser?.profile?.professionIds && Array.isArray(providerUser.profile.professionIds)) {
             professionIds.push(...(providerUser.profile.professionIds as string[]));
           }
-
+          const providerBookingWhere = isInitialSync ? {
+            OR: [
+              { providerId: userId },
+              { status: 'PENDING', serviceId: { in: professionIds } }
+            ]
+          } : {
+            OR: [
+              { providerId: userId },
+              { status: 'PENDING', serviceId: { in: professionIds } }
+            ],
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
           bookings = await (this.prisma as any).booking.findMany({
-            where: {
-              OR: [
-                {
-                  providerId: userId,
-                },
-                {
-                  status: 'PENDING',
-                  serviceId: { in: professionIds }
-                },
-              ],
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: providerBookingWhere,
             include: {
               address: true,
               service: true,
               client: true,
             },
           });
-
           const bookingAddressIds = bookings
             .map((booking: any) => booking.addressId)
             .filter(Boolean);
-
+          const providerAddressWhere = isInitialSync ? {
+            OR: [
+              { userId },
+              { id: { in: bookingAddressIds } }
+            ]
+          } : {
+            OR: [
+              { userId },
+              { id: { in: bookingAddressIds } }
+            ],
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
           addresses = await (this.prisma as any).address.findMany({
-            where: {
-              OR: [
-                {
-                  userId,
-                },
-                {
-                  id: {
-                    in: bookingAddressIds,
-                  },
-                },
-              ],
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: providerAddressWhere,
           });
-
+          const providerChatWhere = isInitialSync ? {
+            OR: [
+              { providerId: userId },
+              { booking: { providerId: userId } }
+            ]
+          } : {
+            OR: [
+              { providerId: userId },
+              { booking: { providerId: userId } }
+            ],
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
           chats = await (this.prisma as any).chat.findMany({
-            where: {
+            where: providerChatWhere,
+          });
+          const providerMessageWhere = isInitialSync ? {
+            chat: {
               OR: [
                 { providerId: userId },
-                { booking: { providerId: userId } },
-              ],
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
+                { booking: { providerId: userId } }
+              ]
+            }
+          } : {
+            chat: {
+              OR: [
+                { providerId: userId },
+                { booking: { providerId: userId } }
+              ]
             },
-          });
-
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
           messages = await (this.prisma as any).message.findMany({
-            where: {
-              chat: {
-                OR: [
-                  { providerId: userId },
-                  { booking: { providerId: userId } },
-                ],
-              },
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: providerMessageWhere,
             include: {
               chat: true,
             },
           });
         }
-
-        // ========================================================
-        // CLIENT DATA
-        // ========================================================
-
         else {
+          const clientBookingWhere = isInitialSync ? {
+            clientId: userId
+          } : {
+            clientId: userId,
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
           bookings = await (this.prisma as any).booking.findMany({
-            where: {
-              clientId: userId,
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: clientBookingWhere,
             include: {
               address: true,
               service: true,
             },
           });
-
-          addresses = await (this.prisma as any).address.findMany({
-            where: {
-              userId,
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
+          const clientBookingAddressIds = bookings
+            .map((booking: any) => booking.addressId)
+            .filter(Boolean);
+          const clientAddressWhere = isInitialSync ? {
+            OR: [
+              { userId },
+              { id: { in: clientBookingAddressIds } },
+            ],
+          } : {
+            OR: [
+              {
+                userId,
+                updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate },
               },
-            },
+              { id: { in: clientBookingAddressIds } },
+            ],
+          };
+          addresses = await (this.prisma as any).address.findMany({
+            where: clientAddressWhere,
           });
-
+          const clientChatWhere = isInitialSync ? {
+            OR: [
+              { clientId: userId },
+              { booking: { clientId: userId } }
+            ]
+          } : {
+            OR: [
+              { clientId: userId },
+              { booking: { clientId: userId } }
+            ],
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
           chats = await (this.prisma as any).chat.findMany({
-            where: {
+            where: clientChatWhere,
+          });
+          const clientMessageWhere = isInitialSync ? {
+            chat: {
               OR: [
                 { clientId: userId },
-                { booking: { clientId: userId } },
-              ],
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
+                { booking: { clientId: userId } }
+              ]
+            }
+          } : {
+            chat: {
+              OR: [
+                { clientId: userId },
+                { booking: { clientId: userId } }
+              ]
             },
-          });
-
+            updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
+          };
           messages = await (this.prisma as any).message.findMany({
-            where: {
-              chat: {
-                OR: [
-                  { clientId: userId },
-                  { booking: { clientId: userId } },
-                ],
-              },
-              updatedAt: {
-                gt: lastPulledDate,
-                lte: syncBoundaryDate,
-              },
-            },
+            where: clientMessageWhere,
             include: {
               chat: true,
             },
           });
         }
       }
-
-      // ==========================================================
-      // DATA MAPPERS
-      // ==========================================================
-
-      // Category mapper
+      const chatIdMapping = new Map<string, string>();
+      chats.forEach((chat: any) => {
+        if (chat.id && chat.offlineId) {
+          chatIdMapping.set(chat.id, chat.offlineId);
+        }
+      });
       const mapCategory = (r: any) => ({
         id: r.id,
-
         name_en: r.nameTranslations?.en || '',
         name_hi: r.nameTranslations?.hi || '',
-
         icon_url: r.iconUrl,
-
-        // Category ordering
         order: r.order || 0,
-
-        // Used by mobile navigation
         has_subcategories:
           (r._count?.subcategories > 0) || false,
-
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
-
-      // Subcategory mapper
       const mapSubcategory = (r: any) => ({
         id: r.id,
-
         category_id: r.categoryId,
-
         name_en: r.nameTranslations?.en || '',
         name_hi: r.nameTranslations?.hi || '',
-
         slug: r.slug,
         icon_url: r.iconUrl,
-
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
-
-      // Service mapper
       const mapService = (r: any) => ({
         id: r.id,
-
         category_id: r.categoryId,
-
-        // Optional subcategory relationship
         subcategory_id: r.subcategoryId,
-
         name_en: r.nameTranslations?.en || '',
         name_hi: r.nameTranslations?.hi || '',
-
         description_en:
           r.descriptionTranslations?.en || '',
-
         description_hi:
           r.descriptionTranslations?.hi || '',
-
         base_price: Number(r.basePrice),
-
         image_url: r.imageUrl,
         status: r.status,
-
         included_items_str: r.includedItems ? JSON.stringify(r.includedItems) : null,
         not_included_items_str: r.notIncludedItems ? JSON.stringify(r.notIncludedItems) : null,
-
-        // Include subcategory name for mobile app to determine "coming soon" status
         subcategory_name_en: r.subcategory?.nameTranslations?.en || null,
-
-        // Include estimated time from backend
         estimated_time: r.estimatedTime || null,
-
-        // Include isComingSoon field from database
         is_coming_soon: r.isComingSoon || false,
-
+        duration_type: r.durationType || 'FLEXIBLE',
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
-
-      // Booking mapper
       const mapBooking = (r: any) => ({
         id: r.offlineId || r.id,
-
+        server_id: r.id,
         service_id: r.serviceId,
         client_id: r.clientId,
         provider_id: r.providerId,
-        address_id: r.addressId,
-
+        address_id: (r.address && r.address.offlineId) ? r.address.offlineId : r.addressId,
         status: r.status,
-
         scheduled_at: r.scheduledAt.getTime(),
-
         total_price: Number(r.totalPrice),
-
         items: JSON.stringify(r.items),
-
         otp: r.otp,
-
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
-
-        // Include address details for navigation
         address: r.address ? {
           id: r.address.id,
           address_line1: r.address.addressLine1,
@@ -411,182 +389,102 @@ export class SyncService {
           longitude: r.address.longitude,
           label: r.address.label,
         } : null,
-
-        // Include service details for display
         service: r.service ? {
           id: r.service.id,
           name_en: r.service.nameTranslations?.en || '',
           name_hi: r.service.nameTranslations?.hi || '',
           base_price: Number(r.service.basePrice),
         } : null,
-
-        // Include client details for provider reference
         client: r.client ? {
           id: r.client.id,
           full_name: r.client.fullName,
           phone: r.client.phone,
         } : null,
       });
-
-      // Address mapper
       const mapAddress = (r: any) => ({
         id: r.offlineId || r.id,
-
         user_id: r.userId,
-
         label: r.label,
-
         address_line1: r.addressLine1,
         address_line2: r.addressLine2,
-
         city: r.city,
         state: r.state,
         pincode: r.pincode,
-
         is_default: r.isDefault,
-
         latitude: r.latitude,
         longitude: r.longitude,
-
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
-
-      // Chat mapper
       const mapChat = (r: any) => ({
         id: r.offlineId || r.id,
-
         booking_id: r.bookingId,
-
         client_id: r.clientId,
         provider_id: r.providerId,
-
+        server_id: r.id,
         created_at: r.createdAt.getTime(),
         updated_at: r.updatedAt.getTime(),
       });
-
-      // Message mapper
-      const mapMessage = (r: any) => ({
-        id: r.offlineId || r.id,
-
-        chat_id: r.chatId,
-
-        sender_id: r.senderId,
-
-        content: r.content,
-
-        created_at: r.createdAt.getTime(),
-        updated_at: r.updatedAt.getTime(),
-      });
-
-      // ==========================================================
-      // FINAL CHANGESET
-      // ==========================================================
-
+      const mapMessage = (r: any) => {
+        const localChatId = chatIdMapping.get(r.chatId) || r.chatId;
+        return {
+          id: r.offlineId || r.id,
+          chat_id: localChatId,
+          sender_id: r.senderId,
+          content: r.content,
+          server_id: r.id,
+          created_at: r.createdAt.getTime(),
+          updated_at: r.updatedAt.getTime(),
+        };
+      };
       const changes = {
         categories: toChangeset(
           categories,
           mapCategory,
         ),
-
         subcategories: toChangeset(
           subcategories,
           mapSubcategory,
         ),
-
         services: toChangeset(
           services,
           mapService,
         ),
-
         bookings: toChangeset(
           bookings,
           mapBooking,
         ),
-
         addresses: toChangeset(
           addresses,
           mapAddress,
         ),
-
         chats: toChangeset(
           chats,
           mapChat,
         ),
-
         messages: toChangeset(
           messages,
           mapMessage,
         ),
-
         reviews: {
           created: [],
           updated: [],
           deleted: [],
         },
       };
-
-      console.log(
-        `✅ [Sync] Pull successful for user ${userId || 'guest'
-        } — ${categories.length} cats, ${subcategories.length
-        } subcats, ${services.length} services, ${bookings.length
-        } bookings`,
-      );
-
       return {
         changes,
         timestamp: syncBoundary,
       };
     } catch (error) {
-      console.error(
-        '❌ [Sync] Pull Changes failed:',
-        error,
-      );
-
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(error);
-
-      const errorStack =
-        error instanceof Error
-          ? error.stack
-          : undefined;
-
-      require('fs').writeFileSync(
-        'pull-error.log',
-        JSON.stringify(
-          {
-            message: errorMessage,
-            stack: errorStack,
-          },
-          null,
-          2,
-        ),
-      );
-
       throw error;
     }
   }
-
-  // ============================================================
-  // PUSH CHANGES
-  // ============================================================
-
   async pushChanges(
     changes: any,
     lastPulledAt: number,
   ) {
     try {
-      require('fs').writeFileSync(
-        'sync-payload.log',
-        JSON.stringify(changes, null, 2),
-      );
-
-      // ==========================================================
-      // ADDRESSES
-      // ==========================================================
-
       if (changes.addresses) {
         for (const addr of changes.addresses.created || []) {
           await (this.prisma as any).address.upsert({
@@ -594,58 +492,42 @@ export class SyncService {
               offlineId:
                 addr.offlineId || addr.id,
             },
-
             update: {
               label: addr.label,
-
               addressLine1:
                 addr.address_line1,
-
               addressLine2:
                 addr.address_line2,
-
               city: addr.city,
               state: addr.state,
               pincode: addr.pincode,
-
               isDefault:
                 addr.is_default,
-
               latitude: addr.latitude,
               longitude: addr.longitude,
-
               version: {
                 increment: 1,
               },
             },
-
             create: {
               offlineId:
                 addr.offlineId || addr.id,
-
               userId: addr.user_id,
-
               label: addr.label,
-
               addressLine1:
                 addr.address_line1,
-
               addressLine2:
                 addr.address_line2,
-
               city: addr.city,
               state: addr.state,
               pincode: addr.pincode,
-
               isDefault:
                 addr.is_default,
-
               latitude: addr.latitude,
               longitude: addr.longitude,
             },
           });
         }
-
         for (const addr of changes.addresses.updated || []) {
           const addressId = addr.id || addr.addressId;
           const existingAddress = await (this.prisma as any).address.findFirst({
@@ -656,7 +538,6 @@ export class SyncService {
               ],
             },
           });
-
           if (existingAddress) {
             await (this.prisma as any).address.update({
               where: { id: existingAddress.id },
@@ -676,36 +557,22 @@ export class SyncService {
           }
         }
       }
-
-      // ==========================================================
-      // BOOKINGS
-      // ==========================================================
-
       if (changes.bookings) {
-        // --------------------------------------------------------
-        // New bookings created offline
-        // --------------------------------------------------------
-
         for (const booking of changes.bookings.created || []) {
           const generatedOtp = Math.floor(
             1000 + Math.random() * 9000,
           ).toString();
-
           const bookingOfflineId =
             booking.offlineId || booking.id;
-
           const clientId =
             booking.client_id ||
             booking.clientId;
-
           const serviceId =
             booking.service_id ||
             booking.serviceId;
-
           const addressId =
             booking.address_id ||
             booking.addressId;
-
           const bookingAddress =
             addressId
               ? await (this.prisma as any).address.findFirst({
@@ -721,31 +588,29 @@ export class SyncService {
                 },
               })
               : null;
-
+          const assignedProvider = await this.findProviderForBooking(
+            serviceId,
+            bookingAddress,
+          );
           const newBooking =
             await (this.prisma as any).booking.upsert({
               where: {
                 offlineId: bookingOfflineId,
               },
-
               update: {
                 status: booking.status,
-
                 version: {
                   increment: 1,
                 },
               },
-
               create: {
                 offlineId:
                   bookingOfflineId,
-
                 client: {
                   connect: {
                     id: clientId,
                   },
                 },
-
                 ...(serviceId
                   ? {
                     service: {
@@ -755,7 +620,6 @@ export class SyncService {
                     },
                   }
                   : {}),
-
                 ...(bookingAddress?.id
                   ? {
                     address: {
@@ -765,22 +629,20 @@ export class SyncService {
                     },
                   }
                   : {}),
-
+                ...(assignedProvider?.id
+                  ? { providerId: assignedProvider.id }
+                  : {}),
                 scheduledAt: new Date(
                   booking.scheduled_at ||
                   booking.scheduledAt,
                 ),
-
                 totalPrice:
                   booking.total_price ||
                   booking.totalPrice,
-
                 items: booking.items
                   ? JSON.parse(booking.items)
                   : [],
-
                 status: booking.status,
-
                 otp: generatedOtp,
               },
               include: {
@@ -789,8 +651,20 @@ export class SyncService {
                 address: true,
               },
             });
-
-          // Broadcast pending booking to matching providers
+          const existingChat = await (this.prisma as any).chat.findFirst({
+            where: { bookingId: newBooking.id },
+          });
+          if (!existingChat) {
+            await (this.prisma as any).chat.create({
+              data: {
+                booking: {
+                  connect: { id: newBooking.id },
+                },
+                clientId: newBooking.clientId,
+                providerId: newBooking.providerId || 'system',
+              },
+            });
+          }
           if (
             newBooking.status ===
             'PENDING'
@@ -816,11 +690,6 @@ export class SyncService {
             }
           }
         }
-
-        // --------------------------------------------------------
-        // Offline booking updates
-        // --------------------------------------------------------
-
         const STATUS_PRIORITY: Record<
           string,
           number
@@ -831,13 +700,11 @@ export class SyncService {
           COMPLETED: 4,
           CANCELLED: 5,
         };
-
         for (const booking of changes.bookings
           .updated || []) {
           const bookingId =
             booking.id ||
             booking.bookingId;
-
           const serverBooking =
             await (this.prisma as any).booking.findFirst({
               where: {
@@ -851,47 +718,31 @@ export class SyncService {
                 ],
               },
             });
-
           if (!serverBooking) {
             continue;
           }
-
           const localStatus =
             booking.status as string;
-
           const serverStatus =
             serverBooking.status as string;
-
           const localPriority =
             STATUS_PRIORITY[
             localStatus
             ] ?? 0;
-
           const serverPriority =
             STATUS_PRIORITY[
             serverStatus
             ] ?? 0;
-
-          // Default: server wins
           let resolvedStatus =
             serverStatus;
-
           let resolvedScheduledAt =
             serverBooking.scheduledAt;
-
-          // Explicit offline cancellation wins
           if (
             localStatus === 'CANCELLED'
           ) {
             resolvedStatus =
               'CANCELLED';
-
-            console.log(
-              `[Sync/Conflict] Booking ${serverBooking.id}: local CANCELLED wins over server ${serverStatus}`,
-            );
           }
-
-          // Local more advanced state wins
           else if (
             localPriority >
             serverPriority
@@ -899,12 +750,9 @@ export class SyncService {
             resolvedStatus =
               localStatus;
           }
-
-          // Reschedule
           const localScheduledAt =
             booking.scheduled_at ||
             booking.scheduledAt;
-
           if (
             localScheduledAt &&
             localScheduledAt !==
@@ -913,21 +761,17 @@ export class SyncService {
             resolvedScheduledAt =
               new Date(localScheduledAt);
           }
-
           await (
             this.prisma as any
           ).booking.update({
             where: {
               id: serverBooking.id,
             },
-
             data: {
               status:
                 resolvedStatus,
-
               scheduledAt:
                 resolvedScheduledAt,
-
               version: {
                 increment: 1,
               },
@@ -935,18 +779,12 @@ export class SyncService {
           });
         }
       }
-
-      // ==========================================================
-      // REVIEWS
-      // ==========================================================
-
       if (changes.reviews) {
         for (const review of changes.reviews
           .created || []) {
           const reviewBookingId =
             review.booking_id ||
             review.bookingId;
-
           const booking =
             await (
               this.prisma as any
@@ -963,7 +801,6 @@ export class SyncService {
                 ],
               },
             });
-
           if (booking) {
             await (
               this.prisma as any
@@ -972,20 +809,16 @@ export class SyncService {
                 bookingId:
                   booking.id,
               },
-
               update: {
                 rating: review.rating,
                 comment:
                   review.comment,
               },
-
               create: {
                 bookingId:
                   booking.id,
-
                 rating:
                   review.rating,
-
                 comment:
                   review.comment,
               },
@@ -993,11 +826,6 @@ export class SyncService {
           }
         }
       }
-
-      // ==========================================================
-      // CHATS
-      // ==========================================================
-
       if (changes.chats) {
         const allChats = [
           ...(changes.chats.created || []),
@@ -1007,7 +835,6 @@ export class SyncService {
           const chatBookingId =
             chat.booking_id ||
             chat.bookingId;
-
           const booking =
             await (
               this.prisma as any
@@ -1024,14 +851,12 @@ export class SyncService {
                 ],
               },
             });
-
           if (booking) {
             const authoritativeProviderId =
               booking.providerId ||
               (chat.provider_id && chat.provider_id !== 'system' ? chat.provider_id : null) ||
               (chat.providerId && chat.providerId !== 'system' ? chat.providerId : null) ||
               'system';
-
             const existingChat = await (this.prisma as any).chat.findFirst({
               where: {
                 OR: [
@@ -1040,7 +865,6 @@ export class SyncService {
                 ],
               },
             });
-
             if (existingChat) {
               await (this.prisma as any).chat.update({
                 where: { id: existingChat.id },
@@ -1053,7 +877,9 @@ export class SyncService {
               await (this.prisma as any).chat.create({
                 data: {
                   offlineId: chat.offlineId || chat.id,
-                  bookingId: booking.id,
+                  booking: {
+                    connect: { id: booking.id },
+                  },
                   clientId: chat.client_id || chat.clientId,
                   providerId: authoritativeProviderId,
                 },
@@ -1062,11 +888,6 @@ export class SyncService {
           }
         }
       }
-
-      // ==========================================================
-      // MESSAGES
-      // ==========================================================
-
       if (changes.messages) {
         const allMessages = [
           ...(changes.messages.created || []),
@@ -1076,7 +897,6 @@ export class SyncService {
           const msgChatId =
             msg.chat_id ||
             msg.chatId;
-
           const chat =
             await (
               this.prisma as any
@@ -1093,39 +913,31 @@ export class SyncService {
                 ],
               },
             });
-
           if (chat) {
+            const messageOfflineId = msg.offlineId || msg.id;
+            const whereClause = messageOfflineId
+              ? { offlineId_chatId: { offlineId: messageOfflineId, chatId: chat.id } }
+              : { id: msg.id };
             await (
               this.prisma as any
             ).message.upsert({
-              where: {
-                offlineId:
-                  msg.offlineId ||
-                  msg.id,
-              },
-
+              where: whereClause,
               update: {
                 content: msg.content,
+                chatId: chat.id,
                 version: {
                   increment: 1,
                 },
               },
-
               create: {
-                offlineId:
-                  msg.offlineId ||
-                  msg.id,
-
+                offlineId: messageOfflineId,
                 chatId:
                   chat.id,
-
                 senderId:
                   msg.sender_id ||
                   msg.senderId,
-
                 content:
                   msg.content,
-
                 createdAt: new Date(
                   Math.min(
                     msg.created_at || msg.createdAt,
@@ -1137,42 +949,10 @@ export class SyncService {
           }
         }
       }
-
-      // ==========================================================
-      // SUCCESS
-      // ==========================================================
-
       return {
         status: 'ok',
       };
     } catch (error) {
-      console.error(
-        '❌ [Sync] Push Changes failed:',
-        error,
-      );
-
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(error);
-
-      const errorStack =
-        error instanceof Error
-          ? error.stack
-          : undefined;
-
-      require('fs').writeFileSync(
-        'sync-error.log',
-        JSON.stringify(
-          {
-            message: errorMessage,
-            stack: errorStack,
-          },
-          null,
-          2,
-        ),
-      );
-
       throw error;
     }
   }

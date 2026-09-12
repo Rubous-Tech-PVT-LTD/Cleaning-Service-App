@@ -12,16 +12,13 @@ export interface NominatimResult {
     county?: string;
   };
 }
-
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
-
 export async function searchPlaces(
   query: string,
   limit = 5,
 ): Promise<NominatimResult[]> {
   const trimmed = query.trim();
   if (trimmed.length < 3) return [];
-
   const params = new URLSearchParams({
     q: trimmed,
     format: 'json',
@@ -29,21 +26,17 @@ export async function searchPlaces(
     countrycodes: 'in',
     limit: String(limit),
   });
-
   const response = await fetch(`${NOMINATIM_BASE}/search?${params.toString()}`, {
     headers: {
       Accept: 'application/json',
       'User-Agent': 'HouceeCleaningApp/1.0',
     },
   });
-
   if (!response.ok) {
     throw new Error('Location search failed');
   }
-
   return response.json();
 }
-
 export function extractCityFromNominatim(result: NominatimResult): string {
   const addr = result.address;
   if (!addr) return '';

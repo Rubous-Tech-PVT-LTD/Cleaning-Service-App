@@ -32,7 +32,7 @@ export const database = new Database({
   ],
 });
 
-// Helper function to get categories sorted by order
+
 export const getCategoriesSorted = async () => {
   const categories = await database.get('categories').query().fetch();
   return categories.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));

@@ -59,14 +59,12 @@ export const ScheduleForLaterScreen = ({ navigation, route }: any) => {
         setDates(res.data.dates || []);
         setTimeSlots(res.data.timeSlots || []);
       } catch (error) {
-        console.error('Error fetching schedule options:', error);
       } finally {
         setLoading(false);
       }
     };
     fetchScheduleOptions();
 
-    // Redirect to service selection if no service is selected
     if (!selectedService) {
       navigation.replace('ServiceSelection');
     }
@@ -112,24 +110,18 @@ export const ScheduleForLaterScreen = ({ navigation, route }: any) => {
       }
 
       const res = await api.get('/cart');
-      console.log('Cart response:', res.data);
-      
-      // Handle both old JSON format and new CartItem table format
+
       let items = res.data.items || [];
-      
-      // If items is empty, check if cartItems array exists (new format)
+
       if (!items || items.length === 0) {
         items = res.data.cartItems || [];
       }
-      
-      // Find hourly item for the selected service, or any hourly item if no service selected
+
       const hourlyItem = selectedService 
         ? items.find((item: any) => item.type === 'hourly' && item.serviceId === selectedService.id)
         : items.find((item: any) => item.type === 'hourly');
-      console.log('Hourly item found:', hourlyItem);
       setCartItem(hourlyItem || null);
     } catch (e) {
-      console.error('Error fetching cart:', e);
       setCartItem(null);
     }
   };
@@ -191,21 +183,15 @@ export const ScheduleForLaterScreen = ({ navigation, route }: any) => {
         schedule,
       });
 
-      console.log('Cart add response:', res.data);
-      
-      // Handle both old JSON format and new CartItem table format
       let items = res.data?.items || [];
-      
-      // If items is empty, check if cartItems array exists (new format)
+
       if (!items || items.length === 0) {
         items = res.data?.cartItems || [];
       }
       
       const hourlyItem = items.find((i: any) => i.type === 'hourly' && i.serviceId === selectedService.id);
-      console.log('Setting cart item:', hourlyItem);
       setCartItem(hourlyItem || null);
     } catch (e) {
-      console.error('Error adding scheduled service to cart:', e);
       Alert.alert('Error', 'Failed to add to cart');
     } finally {
       setCartLoading(false);

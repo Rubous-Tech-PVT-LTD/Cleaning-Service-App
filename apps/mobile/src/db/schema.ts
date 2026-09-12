@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 18,
+  version: 22,
   tables: [
     tableSchema({
       name: 'categories',
@@ -44,6 +44,7 @@ export default appSchema({
         { name: 'subcategory_name_en', type: 'string', isOptional: true },
         { name: 'estimated_time', type: 'string', isOptional: true },
         { name: 'is_coming_soon', type: 'boolean' },
+        { name: 'duration_type', type: 'string' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],
@@ -61,6 +62,7 @@ export default appSchema({
         { name: 'items', type: 'string', isOptional: true },
         { name: 'otp', type: 'string', isOptional: true },
         { name: 'offline_id', type: 'string', isOptional: true },
+        { name: 'server_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],
@@ -72,6 +74,7 @@ export default appSchema({
         { name: 'sender_id', type: 'string' },
         { name: 'content', type: 'string' },
         { name: 'offline_id', type: 'string', isOptional: true },
+        { name: 'server_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],
@@ -83,6 +86,7 @@ export default appSchema({
         { name: 'client_id', type: 'string' },
         { name: 'provider_id', type: 'string' },
         { name: 'offline_id', type: 'string', isOptional: true },
+        { name: 'server_id', type: 'string', isOptional: true, isIndexed: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],

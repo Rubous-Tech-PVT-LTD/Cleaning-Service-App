@@ -15,7 +15,7 @@ const originalTheme = {
   muted: '#F1F5F9',        // Light Grey Background
 };
 
-// Golden Theme
+
 const goldenTheme = {
   primary: '#F9C935',      // Golden Yellow
   primaryDark: '#D4A520',  // Darker Golden
@@ -32,9 +32,9 @@ const goldenTheme = {
   muted: '#F1F5F9',
 };
 
-// Set this to switch themes temporarily
-// Options: 'original', 'golden'
-const CURRENT_THEME = 'golden'; // Change this to switch themes
+
+
+const CURRENT_THEME = 'golden';
 
 const themes = {
   original: originalTheme,

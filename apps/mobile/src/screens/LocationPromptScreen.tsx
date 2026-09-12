@@ -31,7 +31,6 @@ export const LocationPromptScreen = ({ navigation }: any) => {
       await setActiveLocation(activeLocation);
       navigation.navigate('Home');
     } catch (error) {
-      console.error('Error getting location:', error);
       Alert.alert(t('common.error', 'Error'), t('address.location_error', 'Failed to get your location. Please try again or enter manually.'));
     } finally {
       setLoading(false);

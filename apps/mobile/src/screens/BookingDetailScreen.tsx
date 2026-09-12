@@ -1,5 +1,5 @@
 import React from 'react';
-import { switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, MapPin, Calendar, Clock, Phone, MessageCircle, ShieldCheck, CreditCard } from 'lucide-react-native';
@@ -10,6 +10,7 @@ import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { database } from '../db';
+import { Q } from '@nozbe/watermelondb';
 import { Theme } from '../theme';
 import api, { SOCKET_URL } from '../api';
 
@@ -18,16 +19,16 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
   const [providerLocation, setProviderLocation] = React.useState<{ latitude: number, longitude: number } | null>(null);
   const [sosLoading, setSosLoading] = React.useState(false);
 
-  // Helper function to get translated service name by ID
+
   const getServiceTitle = (item: any) => {
-    // Always try to translate based on service ID when available
+
     if (item.serviceId) {
       const itemService = services ? services.find((s: any) => s.id === item.serviceId) : null;
       if (itemService) {
         return i18n.language === 'hi' ? itemService.nameHi : itemService.nameEn;
       }
     }
-    // Fallback to stored title only if service ID is not available or service not found
+
     return item.title || 'Service';
   };
 
@@ -121,7 +122,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ChevronLeft size={24} color={Theme.textPrimary} />
@@ -131,7 +131,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 24 }}>
-        {/* Status Card */}
         <View style={styles.statusCard}>
           <View style={[styles.statusBadge, { backgroundColor: booking.status === 'COMPLETED' ? '#ECFDF5' : '#FFFBEB' }]}>
             <Text style={[styles.statusText, { color: booking.status === 'COMPLETED' ? Theme.success : '#D97706' }]}>
@@ -145,7 +144,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
           <Text style={styles.bookingId}>ID: #{booking.id.slice(-8).toUpperCase()}</Text>
           <Text style={styles.serviceName}>{i18n.language === 'hi' ? (service.nameHi || service.nameEn) : service.nameEn}</Text>
           
-          {/* OTP Section */}
           {isAcceptedOrInProgress && booking.otp && (
             <View style={{ marginTop: 24, padding: 16, backgroundColor: '#F1F5F9', borderRadius: 16, alignItems: 'center', width: '100%' }}>
               <Text style={{ fontSize: 14, fontWeight: '700', color: Theme.textSecondary, marginBottom: 8 }}>{t('booking_detail.provide_pin')}</Text>
@@ -154,7 +152,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
           )}
         </View>
 
-        {/* Live Tracking Map */}
         {isAcceptedOrInProgress && (
           <View style={styles.mapContainer}>
             <Text style={styles.sectionTitle}>{t('booking_detail.live_tracking')}</Text>
@@ -186,7 +183,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
           </View>
         )}
 
-        {/* Appointment Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('booking_detail.appointment')}</Text>
           <View style={styles.detailRow}>
@@ -205,7 +201,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
           </View>
         </View>
 
-        {/* Items Summary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('booking_detail.order_summary')}</Text>
           {items.map((item: any, idx: number) => (
@@ -235,7 +230,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
           </View>
           <ChevronLeft size={20} color={Theme.textSecondary} style={{ transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
-        {/* SOS Emergency Button - only for active bookings */}
         {isAcceptedOrInProgress && (
           <TouchableOpacity
             onPress={handleTriggerSos}
@@ -458,16 +452,18 @@ const styles = StyleSheet.create({
 });
 
 export const BookingDetailScreen = withObservables(['route'], ({ route }: any) => {
-  const booking = database.collections.get('bookings').findAndObserve(route.params.bookingId);
+  const booking: any = database.collections.get('bookings').findAndObserve(route.params.bookingId);
   return {
     booking,
     service: booking.pipe(
-      // @ts-ignore
-      switchMap(b => b.service.observe())
+
+      switchMap((b: any) => b.service.observe())
     ),
     address: booking.pipe(
-      // @ts-ignore
-      switchMap(b => b.address.observe())
+      switchMap((b: any) => database.collections.get('addresses').query(
+        Q.where('id', b.addressId || '')
+      ).observe()),
+      map(addresses => addresses[0] || null)
     ),
     services: database.collections.get('services').query().observe(),
   };

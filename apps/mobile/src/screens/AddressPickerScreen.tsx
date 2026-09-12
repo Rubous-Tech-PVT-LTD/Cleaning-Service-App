@@ -86,7 +86,6 @@ export const AddressPickerScreen = ({ navigation }: any) => {
           setAddressString('Location timed out. Drag the pin to your address.');
         }
       } catch (error) {
-        console.error('[AddressPicker] Location error:', error);
         if (!cancelled) {
           setRegion(DEFAULT_REGION);
           setAddressString('Could not get location. Drag the pin to set address.');
@@ -114,7 +113,6 @@ export const AddressPickerScreen = ({ navigation }: any) => {
         setAddressString(formatGeocodedAddress(item));
       }
     } catch (error) {
-      console.error(error);
     }
   };
 
@@ -202,7 +200,6 @@ export const AddressPickerScreen = ({ navigation }: any) => {
 
       navigation.goBack();
     } catch (error) {
-      console.error(error);
       Alert.alert('Error', 'Could not save address.');
     }
   };

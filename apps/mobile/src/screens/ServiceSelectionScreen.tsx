@@ -53,7 +53,6 @@ export const ServiceSelectionScreen = ({ navigation }: any) => {
       const res = await api.get('/categories');
       const categoriesData = res.data || [];
 
-      // Fetch services for each category
       const categoriesWithServices = await Promise.all(
         categoriesData.map(async (category: any) => {
           try {
@@ -63,7 +62,6 @@ export const ServiceSelectionScreen = ({ navigation }: any) => {
               services: servicesRes.data || [],
             };
           } catch (error) {
-            console.error(`Error fetching services for category ${category.id}:`, error);
             return {
               ...category,
               services: [],
@@ -72,14 +70,12 @@ export const ServiceSelectionScreen = ({ navigation }: any) => {
         })
       );
 
-      // Filter out categories with no services
       const filteredCategories = categoriesWithServices.filter(
         (cat: Category) => cat.services.length > 0
       );
 
       setCategories(filteredCategories);
     } catch (error) {
-      console.error('Error fetching categories:', error);
       Alert.alert('Error', 'Failed to load services');
     } finally {
       setLoading(false);

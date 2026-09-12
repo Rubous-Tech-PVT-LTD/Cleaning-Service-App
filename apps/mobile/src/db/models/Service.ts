@@ -23,6 +23,7 @@ export default class Service extends Model {
   @field('subcategory_name_en') subcategoryNameEn?: string;
   @field('estimated_time') estimatedTime?: string;
   @field('is_coming_soon') isComingSoon!: boolean;
+  @field('duration_type') durationType!: string;
 
   get includedItems() {
     try {

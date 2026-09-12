@@ -19,7 +19,7 @@ const initI18n = async () => {
     .use(initReactI18next)
     .init({
       resources,
-      lng: savedLanguage || 'en', // Default to English
+      lng: savedLanguage || 'en',
       fallbackLng: 'en',
       interpolation: {
         escapeValue: false,

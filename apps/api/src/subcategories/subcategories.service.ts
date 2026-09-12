@@ -2,11 +2,9 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException }
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
 import { UpdateSubcategoryDto } from './dto/update-subcategory.dto';
-
 @Injectable()
 export class SubcategoriesService {
-  constructor(private prisma: PrismaService) {}
-
+  constructor(private prisma: PrismaService) { }
   async findAll() {
     return this.prisma.subcategory.findMany({
       include: {
@@ -17,17 +15,13 @@ export class SubcategoriesService {
       }
     });
   }
-
   async findByCategory(categoryId: string) {
-    // Validate that the category exists
     const category = await this.prisma.category.findUnique({
       where: { id: categoryId }
     });
-
     if (!category) {
       throw new NotFoundException(`Category with ID ${categoryId} not found`);
     }
-
     return this.prisma.subcategory.findMany({
       where: { categoryId },
       include: {
@@ -37,7 +31,6 @@ export class SubcategoriesService {
       }
     });
   }
-
   async findOne(id: string) {
     const subcategory = await this.prisma.subcategory.findUnique({
       where: { id },
@@ -49,38 +42,29 @@ export class SubcategoriesService {
         }
       }
     });
-
     if (!subcategory) {
       throw new NotFoundException(`Subcategory with ID ${id} not found`);
     }
-
     return subcategory;
   }
-
   async create(createSubcategoryDto: CreateSubcategoryDto) {
-    // Validate that the category exists
     const category = await this.prisma.category.findUnique({
       where: { id: createSubcategoryDto.categoryId }
     });
-
     if (!category) {
       throw new NotFoundException(`Category with ID ${createSubcategoryDto.categoryId} not found`);
     }
-
-    // Check for duplicate slug within the category
     const existing = await this.prisma.subcategory.findFirst({
       where: {
         categoryId: createSubcategoryDto.categoryId,
         slug: createSubcategoryDto.slug
       }
     });
-
     if (existing) {
       throw new ConflictException(
         `Subcategory with slug '${createSubcategoryDto.slug}' already exists in this category`
       );
     }
-
     return this.prisma.subcategory.create({
       data: {
         categoryId: createSubcategoryDto.categoryId,
@@ -96,45 +80,36 @@ export class SubcategoriesService {
       }
     });
   }
-
   async update(id: string, updateSubcategoryDto: UpdateSubcategoryDto) {
     const subcategory = await (this.prisma as any).subcategory.findUnique({
       where: { id }
     });
-
     if (!subcategory) {
       throw new NotFoundException(`Subcategory with ID ${id} not found`);
     }
-
-    // If changing category, validate it exists
     if (updateSubcategoryDto.categoryId) {
       const category = await this.prisma.category.findUnique({
         where: { id: updateSubcategoryDto.categoryId }
       });
-
       if (!category) {
         throw new NotFoundException(`Category with ID ${updateSubcategoryDto.categoryId} not found`);
       }
     }
-
-    // If changing slug, check for duplicates
     if (updateSubcategoryDto.slug) {
       const categoryId = updateSubcategoryDto.categoryId || subcategory.categoryId;
       const existing = await this.prisma.subcategory.findFirst({
         where: {
           categoryId,
           slug: updateSubcategoryDto.slug,
-          id: { not: id } // Exclude current subcategory
+          id: { not: id }
         }
       });
-
       if (existing) {
         throw new ConflictException(
           `Subcategory with slug '${updateSubcategoryDto.slug}' already exists in this category`
         );
       }
     }
-
     return this.prisma.subcategory.update({
       where: { id },
       data: {
@@ -151,7 +126,6 @@ export class SubcategoriesService {
       }
     });
   }
-
   async remove(id: string) {
     const subcategory = await this.prisma.subcategory.findUnique({
       where: { id },
@@ -161,18 +135,14 @@ export class SubcategoriesService {
         }
       }
     });
-
     if (!subcategory) {
       throw new NotFoundException(`Subcategory with ID ${id} not found`);
     }
-
-    // Prevent deletion if subcategory has services
     if (subcategory._count.services > 0) {
       throw new BadRequestException(
         'Cannot delete subcategory with associated services. Please reassign or delete the services first.'
       );
     }
-
     await this.prisma.subcategory.delete({
       where: { id }
     });

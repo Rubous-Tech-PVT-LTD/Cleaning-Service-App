@@ -169,6 +169,7 @@
   "provider": {
     "welcome_back": "स्वागत है",
     "provider": "प्रदाता",
+    "maintenance_message": "ऐप रखरखाव में है। हम कुछ सुधार कर रहे हैं।",
     "online": "ऑनलाइन",
     "offline": "ऑफलाइन",
     "pending_jobs": "लंबित कार्य",

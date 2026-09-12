@@ -82,3 +82,12 @@ git log
 # See the difference between your last sync and the current code
 git diff
 ```
+```###Security Flow Documentation```
+
+For details about the application's authentication, authorization, API, database, synchronization, and real-time security flows, refer to the Security Flow documentation:
+https://docs.google.com/document/d/1Kt8wc1Xbw9LcGu0WDMeZTn88cAqk4lywMz3UsDZHVvQ/edit?usp=sharing
+
+```###Third-Party Subscription Requirements```
+
+For details about the third-party services, subscriptions, API keys, and production requirements needed for the application, refer to the Third-Party Subscription Requirements document.
+https://docs.google.com/document/d/1wnX7VB8Pq7TpCCq584AlhSGr9OSyTjpb5pKwXI1RDUs/edit?usp=sharing

@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
-
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 
 export const useAuthGuard = () => {
   const { isAuthenticated, isGuest } = useAuth();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<any>>();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const requireAuth = (callback?: () => void) => {
@@ -21,7 +20,7 @@ export const useAuthGuard = () => {
 
   const handleLoginPress = () => {
     setShowLoginModal(false);
-    // @ts-ignore
+
     navigation.navigate('Login');
   };
 

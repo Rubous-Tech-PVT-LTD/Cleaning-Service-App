@@ -18,14 +18,12 @@ export const OtpVerifyScreen = ({ route, navigation }: any) => {
     if (otp.length < 6) return;
     setLoading(true);
     try {
-      console.log('Verifying OTP for:', phone, 'Code:', otp);
       const response = await api.post('/auth/otp/verify', { phone, code: otp });
       if (response.data.accessToken) {
         await login(response.data.accessToken, response.data.user);
 
-        // 🔔 Register push token immediately after login
         NotificationService.registerForPushNotificationsAsync().catch(
-          (e) => console.warn('[OTP] Push token registration failed:', e),
+          (e) => {},
         );
 
         navigation.navigate('LocationPrompt');

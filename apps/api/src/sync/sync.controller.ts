@@ -1,13 +1,10 @@
 import { Controller, Get, Post, Body, Query, Req } from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-
 @ApiTags('Sync')
 @Controller('sync')
 export class SyncController {
-  constructor(private readonly syncService: SyncService) {}
-
-  // Pull handles categories/services (public) and user-data (private)
+  constructor(private readonly syncService: SyncService) { }
   @Get('pull')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Pull changes from server since last sync' })
@@ -26,7 +23,6 @@ export class SyncController {
     const effectiveRole = authUser?.role || role;
     return this.syncService.pullChanges(timestamp, effectiveUserId, effectiveRole);
   }
-
   @Post('push')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Push local changes from client to server' })

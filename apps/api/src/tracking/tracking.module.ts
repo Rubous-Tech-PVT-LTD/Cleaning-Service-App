@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TrackingGateway } from './tracking.gateway';
-
 @Module({
   providers: [TrackingGateway],
-  exports: [TrackingGateway], // Export so other modules (like bookings) can use it
+  exports: [TrackingGateway],
 })
-export class TrackingModule {}
+export class TrackingModule { }

@@ -9,17 +9,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { database } from '../db';
 import { LocationSearchInput } from './LocationSearchInput';
 import { Theme } from '../theme';
-
 const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-
   const goHomeWithLocation = async (lat: number, lng: number) => {
     await AsyncStorage.setItem('provider_latitude', String(lat));
     await AsyncStorage.setItem('provider_longitude', String(lng));
     navigation.navigate('Dashboard');
   };
-
   const handleUseCurrentLocation = async () => {
     setLoading(true);
     try {
@@ -28,7 +25,6 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
         Alert.alert('Permission Denied', 'Please allow location access.');
         return;
       }
-
       let location = await Location.getLastKnownPositionAsync({});
       if (!location) {
         location = await Location.getCurrentPositionAsync({
@@ -37,13 +33,11 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
       }
       await goHomeWithLocation(location.coords.latitude, location.coords.longitude);
     } catch (error) {
-      console.error('Location Error:', error);
       Alert.alert('Error', 'Failed to get your location.');
     } finally {
       setLoading(false);
     }
   };
-
   const handleManualSelect = async (selection: {
     address: string;
     city: string;
@@ -60,7 +54,6 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
       setLoading(false);
     }
   };
-
   const handleSelectSavedAddress = async (address: any) => {
     try {
       setLoading(true);
@@ -71,7 +64,6 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
       setLoading(false);
     }
   };
-
   const getIcon = (label: string) => {
     switch (label.toLowerCase()) {
       case 'home':
@@ -82,7 +74,6 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
         return <MapPin size={20} color="#94A3B8" />;
     }
   };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top', 'bottom']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFFFFF' }}>
@@ -93,7 +84,6 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
           {t('address.search_location', 'Search your location')}
         </Text>
       </View>
-
       <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: 16 }}>
           <LocationSearchInput
@@ -101,12 +91,10 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
             onSelect={handleManualSelect}
           />
         </View>
-
         <View style={{ marginTop: 24 }}>
           <Text style={{ fontSize: 14, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>
             {t('address.quick_actions', 'QUICK ACTIONS')}
           </Text>
-          
           <TouchableOpacity
             onPress={() => navigation.navigate('AddressPicker')}
             style={{
@@ -126,7 +114,6 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
             </Text>
             <ChevronRight size={20} color={Theme.textSecondary} />
           </TouchableOpacity>
-
           <TouchableOpacity
             onPress={handleUseCurrentLocation}
             disabled={loading}
@@ -151,7 +138,6 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
             )}
           </TouchableOpacity>
         </View>
-
         {addresses && addresses.length > 0 && (
           <View style={{ marginTop: 24, paddingBottom: 24 }}>
             <Text style={{ fontSize: 14, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>
@@ -198,7 +184,6 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
     </SafeAreaView>
   );
 };
-
 export const SearchLocationScreen = withObservables([], () => ({
   addresses: database.collections.get('addresses').query().observe(),
 }))(SearchLocationScreenBase);

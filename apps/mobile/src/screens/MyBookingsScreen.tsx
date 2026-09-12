@@ -18,17 +18,14 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
   }
 
   const primaryServiceTitle = service ? (i18n.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
-  
-  // Translate item titles based on current language
+
   const getItemTitle = (item: any) => {
-    // Always try to translate based on service ID when available
     if (item.serviceId) {
       const itemService = services ? services.find((s: any) => s.id === item.serviceId) : null;
       if (itemService) {
         return i18n.language === 'hi' ? itemService.nameHi : itemService.nameEn;
       }
     }
-    // Fallback to stored title only if service ID is not available or service not found
     return item.title || 'Service';
   };
   
@@ -67,7 +64,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
         <View style={{ flexDirection: 'row' }}>
           {isChatEnabled && (
             <TouchableOpacity
-              onPress={() => navigation.navigate('Chat', { bookingId: booking.id, serviceName: primaryServiceTitle, providerId: booking.providerId, clientId: booking.clientId })}
+              onPress={() => navigation.navigate('Chat', { bookingId: booking.serverId || booking.id, serviceName: primaryServiceTitle, providerId: booking.providerId, clientId: booking.clientId })}
               style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F4EDFF', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}
             >
               <MessageCircle size={20} color={Theme.primary} />
@@ -83,7 +80,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
           )}
           {booking.status === 'COMPLETED' && (
             <TouchableOpacity
-              onPress={() => navigation.navigate('Review', { bookingId: booking.id, serviceName: primaryServiceTitle })}
+              onPress={() => navigation.navigate('Review', { bookingId: booking.serverId || booking.offlineId || booking.id, serviceName: primaryServiceTitle })}
               style={{ backgroundColor: Theme.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, justifyContent: 'center' }}
             >
               <Text style={{ fontSize: 12, fontWeight: '900', color: 'white' }}>{t('common.rate_service').toUpperCase()}</Text>
@@ -111,13 +108,11 @@ const MyBookingsScreenBase = ({ navigation, bookings }: any) => {
     try {
       await syncDatabase();
     } catch (error) {
-      console.warn('Sync failed', error);
     } finally {
       setRefreshing(false);
     }
   }, []);
 
-  // Guest mode UI
   if (isGuest) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background }}>

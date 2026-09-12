@@ -5,6 +5,7 @@ import { ChevronLeft, Navigation, ChevronRight, Home, Briefcase, MapPin, Plus, P
 import * as Location from 'expo-location';
 import withObservables from '@nozbe/with-observables';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { database } from '../db';
 import { LocationSearchInput } from '../components/LocationSearchInput';
 import {
@@ -21,6 +22,29 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
   const goHomeWithLocation = async (location: Awaited<ReturnType<typeof buildActiveLocationFromManual>>) => {
     await setActiveLocation(location);
     navigation.navigate('Home');
+  };
+
+  const saveSelectedLocation = async (location: Awaited<ReturnType<typeof buildActiveLocationFromManual>>) => {
+    const userId = await AsyncStorage.getItem('user_id');
+    if (!userId) return location;
+
+    const savedAddressId = await database.write(async () => {
+      const address = await database.get('addresses').create((record: any) => {
+        record.userId = userId;
+        record.label = location.label;
+        record.addressLine1 = location.address;
+        record.addressLine2 = '';
+        record.city = location.city;
+        record.state = location.state || '';
+        record.pincode = '';
+        record.latitude = location.lat;
+        record.longitude = location.lng;
+        record.isDefault = false;
+      });
+      return address.id;
+    });
+
+    return { ...location, savedAddressId };
   };
 
   const handleUseCurrentLocation = async () => {
@@ -40,19 +64,18 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
             accuracy: Location.Accuracy.High,
           });
         } catch (err) {
-          console.warn('High accuracy failed, falling back to Lowest accuracy (Emulator quirk)', err);
           location = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Lowest,
           });
         }
       }
-      const activeLocation = await buildActiveLocationFromCoords(
+      const selectedLocation = await buildActiveLocationFromCoords(
         location.coords,
         'Current Location',
       );
+      const activeLocation = await saveSelectedLocation(selectedLocation);
       await goHomeWithLocation(activeLocation);
     } catch (error) {
-      console.error('Location Error:', error);
       Alert.alert('Error', 'Failed to get your location.');
     } finally {
       setLoading(false);
@@ -68,10 +91,11 @@ const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
   }) => {
     try {
       setLoading(true);
-      const activeLocation = await buildActiveLocationFromManual({
+      const selectedLocation = await buildActiveLocationFromManual({
         label: 'Selected Location',
         ...selection,
       });
+      const activeLocation = await saveSelectedLocation(selectedLocation);
       await goHomeWithLocation(activeLocation);
     } catch {
       Alert.alert('Error', 'Could not validate this location. Please try again.');

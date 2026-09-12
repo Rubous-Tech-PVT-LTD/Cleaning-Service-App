@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Dimensions, Animated, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Phone, Lock, Globe, Zap, Leaf } from 'lucide-react-native';
+import { Phone, Globe, Zap, Leaf } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import api from '../api';
@@ -17,7 +17,6 @@ export const LoginScreen = ({ navigation }: any) => {
   const [isSplashing, setIsSplashing] = useState(true);
   const { width, height } = Dimensions.get('window');
 
-  // Animation values
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
   const contentFadeAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -38,14 +37,13 @@ export const LoginScreen = ({ navigation }: any) => {
 
   const handleRequestOtp = async () => {
     if (phone.length < 10) return;
-    setPhone(''); // Clear for security
+    setPhone('');
     setLoading(true);
     try {
       await api.post('/auth/otp/request', { phone: `+91${phone}` });
       navigation.navigate('OtpVerify', { phone: `+91${phone}` });
     } catch (error: any) {
       setLoading(false);
-      console.error('OTP Error:', error.response?.data || error.message);
       Alert.alert('Error', error.response?.data?.message || error.message || 'Service unavailable.');
     }
   };
@@ -55,7 +53,6 @@ export const LoginScreen = ({ navigation }: any) => {
       await enterGuestMode();
       navigation.navigate('Home');
     } catch (error: any) {
-      console.error('Skip Login Error:', error);
       Alert.alert('Error', 'Failed to enter guest mode');
     }
   };
@@ -112,7 +109,6 @@ export const LoginScreen = ({ navigation }: any) => {
         </Animated.View>
       )}
 
-      {/* Login Form Layer */}
       <Animated.View style={{ flex: 1, opacity: isSplashing ? 0 : contentFadeAnim }}>
         <View style={{ paddingHorizontal: 32, paddingVertical: 20, alignItems: 'flex-end', zIndex: 20 }}>
           <TouchableOpacity onPress={toggleLanguage} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>

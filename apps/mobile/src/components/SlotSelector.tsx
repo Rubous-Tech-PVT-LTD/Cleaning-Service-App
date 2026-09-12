@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../theme';
 
@@ -12,7 +12,6 @@ export const SlotSelector = ({ onSlotSelect }: SlotSelectorProps) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState('10:00 AM');
 
-  // Generate next 10 days
   const dates = Array.from({ length: 10 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);

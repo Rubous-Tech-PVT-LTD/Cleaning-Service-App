@@ -1,0 +1,61 @@
+{
+  "categories": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "subcategories": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "services": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "bookings": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "messages": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "chats": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "reviews": {
+    "created": [],
+    "updated": [],
+    "deleted": []
+  },
+  "addresses": {
+    "created": [
+      {
+        "id": "GF2EhPRGzpf2cazc",
+        "_status": "created",
+        "_changed": "",
+        "user_id": "3abc8b48-39b2-454f-9cff-2af0f4ceab7f",
+        "label": "Home",
+        "address_line1": "P826+VW",
+        "address_line2": "Gwalior Division",
+        "city": "Nehgawan",
+        "state": "Madhya Pradesh",
+        "pincode": "473113",
+        "is_default": false,
+        "latitude": 24.700182968622723,
+        "longitude": 77.31298891827464,
+        "offline_id": null,
+        "created_at": 1789108773083,
+        "updated_at": 1789108773083
+      }
+    ],
+    "updated": [],
+    "deleted": []
+  }
+}

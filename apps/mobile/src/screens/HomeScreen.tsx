@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Animated, TextInput, RefreshControl, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Animated, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, ChevronDown, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow, Plus, Minus } from 'lucide-react-native';
+import { Search, WifiOff, History, ShieldCheck, Clock, Star, Phone, Home, Zap, MessageCircle, User, MapPin, Calendar, ChevronDown as DownArrow, Plus, Minus, Wrench } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import NetInfo from '@react-native-community/netinfo';
@@ -18,7 +18,7 @@ import { getActiveLocation, ActiveLocation } from '../services/locationService';
 import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
 import api from '../api';
-import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, DURATION_INCREMENT_MINS, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
+import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrevDuration, isDurationAtMaximum, getMaxDurationMessage, MAX_DURATION_MINS } from '../utils/durationPriceUtils';
 
 const HomeScreen = ({ navigation, categories, services }: any) => {
   const { t, i18n } = useTranslation();
@@ -61,7 +61,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       }
       setCartItemsMap(itemsMap);
     } catch (error) {
-      console.error('Error fetching cart:', error);
     }
   };
 
@@ -75,7 +74,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       
       const itemBaseTime = Math.round(parseEstimatedTime(serviceItem.estimatedTime));
 
-      // Check if duration exceeds maximum
       if (currentDuration > MAX_DURATION_MINS) {
         Alert.alert(
           'Maximum Duration Reached',
@@ -84,14 +82,14 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
         return;
       }
 
-      // Backend will calculate price based on duration
+      const isFlexible = serviceItem.durationType !== 'FIXED';
       const itemToAdd = {
         serviceId: serviceItem.id,
         title: i18n.language === 'hi' ? serviceItem.nameHi : serviceItem.nameEn,
         quantity: 1,
         type: 'service',
         duration: {
-          label: `${currentDuration} mins`
+          label: isFlexible ? `${currentDuration} mins` : serviceItem.estimatedTime || `${currentDuration} mins`
         }
       };
 
@@ -101,7 +99,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       });
       await fetchCart();
     } catch (error) {
-      console.error('Error adding to cart:', error);
     }
   };
 
@@ -110,7 +107,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       await api.delete('/cart', { serviceId });
       await fetchCart();
     } catch (error) {
-      console.error('Error removing from cart:', error);
     }
   };
 
@@ -120,7 +116,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       await syncDatabase();
       await fetchCart();
     } catch (e) {
-      console.error('Manual sync failed:', e);
     } finally {
       setRefreshing(false);
     }
@@ -136,7 +131,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
       const response = await api.get('/services/trending');
       setTrendingServices(response.data);
     } catch (error) {
-      console.error('Failed to fetch trending services:', error);
     }
   };
 
@@ -181,7 +175,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           resizeMode="cover"
         />
     )}
-      {/* ===== PURPLE STICKY HEADER ===== */}
       <Animated.View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 999,
         opacity: stickyOpacity,
@@ -245,7 +238,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           />
         }
       >
-        {/* Header */}
         <View style={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <TouchableOpacity
             onPress={() => navigation.navigate('SearchLocation')}
@@ -357,7 +349,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           </View>
         )}
 
-        {/* Bottom Section */}
         <View style={{ backgroundColor: 'white', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: 40, paddingTop: 24, minHeight: height * 0.6 }}>
           <View style={{ paddingHorizontal: 16, paddingBottom: 20 }}>
             <View style={{ marginBottom: 20, paddingHorizontal: 8 }}>
@@ -384,7 +375,9 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                     const cartItem = cartItemsMap[service.id];
                     const isInCart = !!cartItem;
                     
-                    // Calculate current duration for UI
+
+                    const isFlexibleDuration = service.durationType !== 'FIXED';
+
                     const baseTime = Math.round(parseEstimatedTime(service.estimatedTime));
                     let currentDuration = baseTime;
                     if (cartItem && cartItem.duration) {
@@ -394,12 +387,11 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                       }
                     }
 
-                    // Calculate estimated price for display
                     const basePrice = Number(service.basePrice);
                     const currentEstimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseTime, currentDuration));
 
                     const handleIncrease = () => {
-                      const newDuration = Math.round(getNextDuration(currentDuration));
+                      const newDuration = Math.round(getNextDuration(currentDuration, baseTime));
                       if (isDurationAtMaximum(newDuration)) {
                         Alert.alert(
                           'Maximum Duration Reached',
@@ -411,7 +403,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                     };
 
                     const handleDecrease = () => {
-                      // If already at base duration, remove from cart
                       if (currentDuration === baseTime) {
                         handleRemoveFromCart(service.id);
                         return;
@@ -467,18 +458,31 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                       {!isComingSoon && (
                         <View style={{ position: 'absolute', right: 8, top: '48%', zIndex: 10 }}>
                           {isInCart ? (
-                            <View style={{ backgroundColor: 'white', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, flexDirection: 'row', alignItems: 'center', minWidth: 70, justifyContent: 'space-between' }}>
-                              <TouchableOpacity onPress={handleDecrease} style={{ padding: 2 }}>
-                                <Minus size={14} color={Theme.primary} />
-                              </TouchableOpacity>
-                              <View style={{ alignItems: 'center', paddingHorizontal: 2 }}>
-                                <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.primary }}>{Math.round(currentDuration)}</Text>
-                                <Text style={{ fontSize: 8, color: Theme.textSecondary, marginTop: -2 }}>Mins</Text>
+                            isFlexibleDuration ? (
+                              <View style={{ backgroundColor: 'white', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, flexDirection: 'row', alignItems: 'center', minWidth: 70, justifyContent: 'space-between' }}>
+                                <TouchableOpacity onPress={handleDecrease} style={{ padding: 2 }}>
+                                  <Minus size={14} color={Theme.primary} />
+                                </TouchableOpacity>
+                                <View style={{ alignItems: 'center', paddingHorizontal: 2 }}>
+                                  <Text style={{ fontSize: 12, fontWeight: '900', color: Theme.primary }}>
+                                    {isFlexibleDuration ? Math.round(currentDuration) : service.estimatedTime}
+                                  </Text>
+                                  <Text style={{ fontSize: 8, color: Theme.textSecondary, marginTop: -2 }}>
+                                    {isFlexibleDuration ? 'Mins' : ''}
+                                  </Text>
+                                </View>
+                                <TouchableOpacity onPress={handleIncrease} style={{ padding: 2 }}>
+                                  <Plus size={14} color={Theme.primary} />
+                                </TouchableOpacity>
                               </View>
-                              <TouchableOpacity onPress={handleIncrease} style={{ padding: 2 }}>
-                                <Plus size={14} color={Theme.primary} />
+                            ) : (
+                              <TouchableOpacity 
+                                onPress={() => handleRemoveFromCart(service.id)}
+                                style={{ backgroundColor: 'white', borderRadius: 8, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 }}
+                              >
+                                <Minus size={18} color={Theme.primary} />
                               </TouchableOpacity>
-                            </View>
+                            )
                           ) : (
                             <TouchableOpacity 
                               onPress={() => handleAddToCart(service, baseTime)}
@@ -640,6 +644,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           </View>
         </View>
       </Animated.ScrollView>
+      <MaintenanceBanner />
      <BottomNav
         active="home"
         onTabPress={(tab: string) => {
@@ -657,6 +662,49 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
   );
 };
 
+
+const MaintenanceBanner = () => {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const translateX = useRef(new Animated.Value(-Dimensions.get('window').width)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: Dimensions.get('window').width,
+        duration: 15000,
+        useNativeDriver: true,
+      })
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [translateX]);
+
+  return (
+    <View style={{
+      position: 'absolute',
+      bottom: 65 + insets.bottom,
+      left: 0,
+      right: 0,
+      height: 34,
+      backgroundColor: Theme.primaryDark,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      zIndex: 998,
+      overflow: 'hidden',
+    }}>
+      <Animated.View style={{ position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, transform: [{ translateX }] }}>
+        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: Theme.accent, justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+          <Wrench size={12} color={Theme.primaryDark} />
+        </View>
+        <Text style={{ color: 'white', fontFamily: 'Poppins_500Medium', fontSize: 11 }} numberOfLines={1}>
+          {t('home.maintenance_message')}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+};
 
 const OfferCard = ({ title, subtitle, code, codePrefix, label }: any) => (
   <TouchableOpacity style={{ width: 300, height: 160, borderRadius: 32, marginRight: 20, overflow: 'hidden' }}>
