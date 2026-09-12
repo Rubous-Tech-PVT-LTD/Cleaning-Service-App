@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Alert, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, Settings, LogOut, Shield, HelpCircle, MapPin, CreditCard, Bell, User, History, Globe, Gift } from 'lucide-react-native';
+import { ChevronRight, Settings, LogOut, Shield, HelpCircle, MapPin, CreditCard, Bell, User, History, Globe, Gift, Palette } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../theme';
 import { NotificationService } from '../services/NotificationService';
 import { useAuth } from '../contexts/AuthContext';
 import { useAuthGuard } from '../hooks/useAuthGuard';
+import { useAppTheme } from '../contexts/ThemeContext';
 import { LoginRequiredModal } from '../components/LoginRequiredModal';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
   const { isAuthenticated, isGuest, logout } = useAuth();
+  const { themeMode, toggleTheme } = useAppTheme();
   const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
   const [userName, setUserName] = useState('User Name');
   const [phone, setPhone] = useState('+91 99999 00000');
@@ -114,6 +116,23 @@ export const ProfileScreen = ({ navigation }: any) => {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>{t('profile.language')}</Text>
                 <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '600' }}>{i18n.language === 'en' ? 'English' : 'हिंदी'}</Text>
+              </View>
+              <View style={{ backgroundColor: Theme.muted, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: Theme.primary }}>{t('profile.switch', 'SWITCH')}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={toggleTheme}
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: Theme.muted }}
+            >
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: themeMode === 'golden' ? '#FEF3C7' : '#EDE9FE', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+                <Palette size={20} color={themeMode === 'golden' ? '#D97706' : '#7C3AED'} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: Theme.textPrimary }}>{t('profile.theme', 'App Theme')}</Text>
+                <Text style={{ fontSize: 12, color: Theme.textSecondary, fontWeight: '600' }}>
+                  {themeMode === 'golden' ? 'Golden Theme' : 'Original Purple'}
+                </Text>
               </View>
               <View style={{ backgroundColor: Theme.muted, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
                 <Text style={{ fontSize: 11, fontWeight: '800', color: Theme.primary }}>{t('profile.switch', 'SWITCH')}</Text>

@@ -19,6 +19,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import './src/i18n';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { ThemeProvider } from './src/contexts/ThemeContext';
 import { fetchSupportedCities } from './src/services/locationService';
 
 applyWorkarounds();
@@ -149,8 +150,10 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

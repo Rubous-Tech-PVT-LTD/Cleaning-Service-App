@@ -463,7 +463,7 @@ export const BookingDetailScreen = withObservables(['route'], ({ route }: any) =
       switchMap((b: any) => database.collections.get('addresses').query(
         Q.where('id', b.addressId || '')
       ).observe()),
-      map(addresses => addresses[0] || null)
+      map((addresses: any) => addresses[0] || null)
     ),
     services: database.collections.get('services').query().observe(),
   };

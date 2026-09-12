@@ -1,6 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-export const BASE_URL = 'http://192.168.234.209:3000/v1';
-export const SOCKET_URL = 'http://192.168.234.209:3000';
+
+// ✅ Direct local IP — no tunnel needed (same WiFi)
+export const BASE_URL = 'http://192.168.0.198:3000/v1';
+export const SOCKET_URL = 'http://192.168.0.198:3000';
+
+/**
+ * XHR-based request - avoids the Hermes Event.NONE crash that fetch() triggers
+ * on physical Android devices.
+ */
 function xhrRequest(
   method: string,
   url: string,

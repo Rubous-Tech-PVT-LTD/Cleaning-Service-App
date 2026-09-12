@@ -195,7 +195,7 @@ export const CancellationScreen = withObservables(['route'], ({ route }: any) =>
     booking,
     service: booking.pipe(
 
-      switchMap(b => b.service.observe())
+      switchMap((b: any) => b.service.observe())
     )
   };
 })(CancellationScreenBase);
