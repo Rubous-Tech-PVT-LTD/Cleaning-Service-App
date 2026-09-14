@@ -477,8 +477,8 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
           >
             {isCurrentServiceInCart ? (
               <>
-                <ShoppingCart size={20} color="white" style={{ marginRight: 10 }} />
-                <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('common.go_to_cart').toUpperCase()}</Text>
+                <ShoppingCart size={20} color="black" style={{ marginRight: 10 }} />
+                <Text style={{ color: 'black', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('common.go_to_cart').toUpperCase()}</Text>
               </>
             ) : (
               <>
@@ -532,7 +532,7 @@ const InclusionItem = ({ text, included }: { text: string; included: boolean }) 
     <View style={{ marginTop: 2, width: 16, height: 16, borderRadius: 8, backgroundColor: included ? '#22C55E' : '#EF4444', justifyContent: 'center', alignItems: 'center' }}>
       <Text style={{ color: 'white', fontSize: 10, fontWeight: '900' }}>{included ? '✓' : '✕'}</Text>
     </View>
-    <Text style={{ fontSize: 12, fontWeight: '600', color: included ? '#166534' : '#991B1B', flex: 1 }}>{text}</Text>
+    <Text style={{ fontSize: 14, fontWeight: '600', color: included ? '#166534' : '#991B1B', flex: 1 }}>{text}</Text>
   </View>
 );
 

@@ -14,6 +14,7 @@ import { QUICK_CATEGORIES } from '../constants';
 import { syncDatabase } from '../db/sync';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 import { LoginRequiredModal } from '../components/LoginRequiredModal';
+import { CartFooter } from '../components/CartFooter';
 import { getActiveLocation, ActiveLocation } from '../services/locationService';
 import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
@@ -652,6 +653,10 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           if (tab === 'services') navigation.navigate('Search');
           if (tab === 'chat') requireAuth(() => navigation.navigate('MyBookings'));
         }}
+      />
+      <CartFooter
+        itemCount={cart?.items?.length || 0}
+        onNavigateToCart={() => navigation.navigate('Cart')}
       />
       <LoginRequiredModal
         visible={showLoginModal}

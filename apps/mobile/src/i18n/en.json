@@ -371,7 +371,7 @@
     "reason_wrong_time": "Scheduled wrong time",
     "reason_other": "Other",
     "cancellation_policy": "📋 Cancellation Policy",
-    "cancellation_policy_text": "• Free cancellation up to 2 hours before the appointment\n• 50% charge if cancelled within 2 hours\n• No refund for same-day cancellations",
+    "cancellation_policy_text": "• 100% refund if cancelled before 2 hours (5% transaction charges applicable)\n• 50% cancellation charges if cancelled before 1 hour / or schedule to next available slot\n• No refund if cancelled before one hour of the scheduled time",
     "cancel_booking": "Cancel Booking",
     "select_new_slot": "Select New Slot",
     "confirm_reschedule": "Confirm Reschedule",

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../theme';
 import { ShoppingCart } from 'lucide-react-native';
@@ -16,6 +17,7 @@ export const CartFooter: React.FC<CartFooterProps> = ({
   show = true,
 }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   if (!show || itemCount === 0) return null;
 
@@ -23,25 +25,25 @@ export const CartFooter: React.FC<CartFooterProps> = ({
     <View
       style={{
         position: 'absolute',
-        bottom: 0,
+        bottom: 65 + insets.bottom,
         left: 0,
         right: 0,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: Theme.background,
         paddingHorizontal: 24,
         paddingVertical: 10,
-        paddingBottom: 55,
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-        borderTopLeftRadius: 36,
-        borderTopRightRadius: 36,
+        paddingBottom: 10,
+        borderWidth: 1,
+        borderColor: Theme.border,
+        borderRadius: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -10 },
         shadowOpacity: 0.08,
         shadowRadius: 20,
         elevation: 25,
+        zIndex: 1000,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -50,13 +52,13 @@ export const CartFooter: React.FC<CartFooterProps> = ({
             width: 24,
             height: 24,
             borderRadius: 12,
-            backgroundColor: '#F3F4F6',
+            backgroundColor: Theme.muted,
             justifyContent: 'center',
             alignItems: 'center',
           }}
         >
           <ShoppingCart 
-        color="#000000" 
+        color={Theme.textPrimary} 
         size={24} 
         strokeWidth={2} 
       />
@@ -67,11 +69,11 @@ export const CartFooter: React.FC<CartFooterProps> = ({
       </View>
       <TouchableOpacity
         style={{
-          backgroundColor: '#10B981',
+          backgroundColor: Theme.primary,
           paddingHorizontal: 32,
-          paddingVertical: 16,
+          paddingVertical: 12,
           borderRadius: 20,
-          shadowColor: '#10B981',
+          shadowColor: Theme.primary,
           shadowOffset: { width: 0, height: 6 },
           shadowOpacity: 0.3,
           shadowRadius: 12,
@@ -79,7 +81,7 @@ export const CartFooter: React.FC<CartFooterProps> = ({
         }}
         onPress={onNavigateToCart}
       >
-        <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>{t('cart.go_to_cart')}</Text>
+        <Text style={{ color: '#000000', fontSize: 16, fontWeight: 'bold' }}>{t('cart.go_to_cart')}</Text>
       </TouchableOpacity>
     </View>
   );
