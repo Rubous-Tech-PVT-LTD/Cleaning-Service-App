@@ -40,6 +40,23 @@ export class AuthService {
   async updatePushToken(userId: string, token: string) {
     return this.usersService.update(userId, { pushToken: token });
   }
+
+  async logout(userId: string) {
+    // For JWT-based auth, we can't directly invalidate tokens without a blacklist
+    // This endpoint can be used for logging, analytics, or future token blacklisting
+    this.logger.log(`User logged out: ${userId}`);
+    
+    // Clear push token on logout
+    if (userId) {
+      try {
+        await this.usersService.update(userId, { pushToken: null });
+      } catch (error) {
+        this.logger.warn(`Failed to clear push token for user ${userId}:`, error);
+      }
+    }
+    
+    return { success: true, message: 'Logged out successfully' };
+  }
   async registerProvider(dto: RegisterProviderDto) {
     let user = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
     if (!user) {

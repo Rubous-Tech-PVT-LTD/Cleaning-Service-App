@@ -1,9 +1,10 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
@@ -27,12 +28,14 @@ import { SosModule } from './sos/sos.module';
       isGlobal: true,
       envFilePath: '../../.env',
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 100,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 100,
+        },
+      ],
+    }),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -51,7 +54,13 @@ import { SosModule } from './sos/sos.module';
     SosModule,
   ],
   controllers: [AppController, HealthController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   private readonly logger = new Logger('HTTP');

@@ -1,4 +1,5 @@
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { SosService } from './sos.service';
 import { CreateSosDto } from './dto/create-sos.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -10,6 +11,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nes
 export class SosController {
   constructor(private readonly sosService: SosService) {}
   @Post()
+  @Throttle({ default: { limit: 10, ttl: 600000 } }) // 10 requests per 10 minutes
   @ApiOperation({ summary: 'Trigger an SOS emergency alert for an active booking' })
   @ApiBody({ type: CreateSosDto })
   @ApiResponse({ status: 201, description: 'SOS alert created successfully' })

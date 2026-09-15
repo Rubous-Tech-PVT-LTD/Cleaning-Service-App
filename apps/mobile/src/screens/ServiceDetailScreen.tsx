@@ -283,7 +283,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
                     onPress={handleBookButton}
                     style={{ backgroundColor: Theme.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 }}
                   >
-                    <Text style={{ color: 'white', fontWeight: '900', fontSize: 16 }}>{t('common.book')}</Text>
+                    <Text style={{ color: 'black', fontWeight: '900', fontSize: 16 }}>{t('common.book')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -482,8 +482,8 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
               </>
             ) : (
               <>
-                <ShoppingCart size={20} color="white" style={{ marginRight: 10 }} />
-                <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('common.add_to_cart').toUpperCase()}</Text>
+                <ShoppingCart size={20} color="black" style={{ marginRight: 10 }} />
+                <Text style={{ color: 'black', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('common.add_to_cart').toUpperCase()}</Text>
               </>
             )}
           </TouchableOpacity>

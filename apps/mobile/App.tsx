@@ -9,7 +9,7 @@ import { io } from 'socket.io-client';
 import { SOCKET_URL } from './src/api';
 import { NotificationService } from './src/services/NotificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
+
 import {
   useFonts,
   Poppins_400Regular,
@@ -121,19 +121,8 @@ const AppContent = () => {
   }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = response.notification.request.content.data as any;
-        if (data?.bookingId && navigationRef.current) {
-          setTimeout(() => {
-            navigationRef.current?.navigate('BookingDetail', {
-              bookingId: data.bookingId,
-            });
-          }, 500);
-        }
-      },
-    );
-    return () => subscription.remove();
+    // Notification listener disabled for Expo Go SDK 57 compatibility
+    // Re-enable this when using development build with expo-notifications
   }, []);
 
   if (!initialRoute || !fontsLoaded) return null;

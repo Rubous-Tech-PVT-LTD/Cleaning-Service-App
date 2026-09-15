@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
@@ -14,6 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) { }
   @Post()
+  @Throttle({ default: { limit: 30, ttl: 60000 } }) // 30 requests per minute
   @Roles(UserRole.CLIENT)
   @ApiOperation({ summary: 'Create a new booking' })
   @ApiResponse({ status: 201, description: 'Booking created' })
@@ -31,6 +33,7 @@ export class BookingsController {
     return this.bookingsService.findOne(id);
   }
   @Patch(':id/status')
+  @Throttle({ default: { limit: 60, ttl: 60000 } }) // 60 requests per minute
   @ApiOperation({ summary: 'Update the status of a booking' })
   updateStatus(@Request() req: any, @Param('id') id: string, @Body() updateStatusDto: UpdateBookingStatusDto) {
     return this.bookingsService.updateStatus(id, updateStatusDto, req.user);
