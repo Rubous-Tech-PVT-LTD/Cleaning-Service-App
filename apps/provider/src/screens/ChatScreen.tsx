@@ -6,11 +6,11 @@ import withObservables from '@nozbe/with-observables';
 import { Q } from '@nozbe/watermelondb';
 import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { database } from '../db';
-import { Theme } from '../theme';
+import { database } from '../db/index';
+import { Theme } from '../theme/index';
 import { syncDatabase } from '../db/sync';
 import { io, Socket } from 'socket.io-client';
-import { SOCKET_URL } from '../api';
+import { SOCKET_URL } from '../api/index';
 const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   const { bookingId, clientName } = route.params;
   const [text, setText] = useState('');

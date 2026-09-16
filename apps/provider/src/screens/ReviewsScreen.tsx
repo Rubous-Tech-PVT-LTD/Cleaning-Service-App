@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Theme } from '../theme';
-import api from '../api';
-import i18n from '../i18n';
+import { Theme } from '../theme/index';
+import api from '../api/index';
+import i18n from '../i18n/index';
 import { useTranslation } from 'react-i18next';
 export const ReviewsScreen = () => {
   const { t } = useTranslation();

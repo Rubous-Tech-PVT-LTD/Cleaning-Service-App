@@ -3,24 +3,33 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react-native';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import api from '../api';
 import { Theme } from '../theme';
+import { reviewSchema } from '../validation/schemas';
+
+type ReviewFormData = z.infer<typeof reviewSchema>;
 
 export const ReviewScreen = ({ route, navigation }: any) => {
   const { t } = useTranslation();
   const { bookingId, serviceName } = route.params;
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
+  const { control, handleSubmit, formState: { errors }, watch } = useForm<ReviewFormData>({
+    resolver: zodResolver(reviewSchema),
+    defaultValues: {
+      rating: 5,
+      comment: ''
+    }
+  });
+
+  const rating = watch('rating');
+
+  const onSubmit = async (data: ReviewFormData) => {
     if (!bookingId) {
       Alert.alert('Error', 'Booking ID is missing');
-      return;
-    }
-
-    if (rating < 1 || rating > 5) {
-      Alert.alert('Error', 'Rating must be between 1 and 5');
       return;
     }
 
@@ -28,10 +37,10 @@ export const ReviewScreen = ({ route, navigation }: any) => {
     try {
       const response = await api.post('/reviews', {
         bookingId,
-        rating: Number(rating),
-        comment: comment || undefined,
+        rating: Number(data.rating),
+        comment: data.comment || undefined,
       });
-      
+
       Alert.alert('Success', 'Thank you for your feedback!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Could not submit review';
@@ -46,25 +55,42 @@ export const ReviewScreen = ({ route, navigation }: any) => {
         <Text style={{ fontSize: 18, color: Theme.textSecondary, marginTop: 8 }}>{serviceName}</Text>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 40, marginBottom: 40 }}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity key={star} onPress={() => setRating(star)}>
-              <Star size={40} color={star <= rating ? Theme.accent : Theme.border} fill={star <= rating ? Theme.accent : 'none'} style={{ marginHorizontal: 8 }} />
-            </TouchableOpacity>
-          ))}
+          <Controller
+            control={control}
+            name="rating"
+            render={({ field: { onChange, value } }) => (
+              <>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity key={star} onPress={() => onChange(star)}>
+                    <Star size={40} color={star <= value ? Theme.accent : Theme.border} fill={star <= value ? Theme.accent : 'none'} style={{ marginHorizontal: 8 }} />
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+          />
         </View>
 
-        <TextInput
-          style={{ backgroundColor: Theme.background, borderRadius: 24, padding: 24, height: 150, textAlignVertical: 'top', fontSize: 16 }}
-          placeholder="Write your experience..."
-          multiline
-          value={comment}
-          onChangeText={setComment}
+        <Controller
+          control={control}
+          name="comment"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={{ backgroundColor: Theme.background, borderRadius: 24, padding: 24, height: 150, textAlignVertical: 'top', fontSize: 16, borderWidth: 2, borderColor: errors.comment ? Theme.error : 'transparent' }}
+              placeholder="Write your experience..."
+              multiline
+              value={value}
+              onChangeText={onChange}
+            />
+          )}
         />
+        {errors.comment && (
+          <Text style={{ marginTop: 4, fontSize: 12, color: Theme.error }}>{errors.comment.message}</Text>
+        )}
 
         <TouchableOpacity
-          onPress={handleSubmit}
+          onPress={handleSubmit(onSubmit)}
           disabled={loading}
-          style={{ marginTop: 40, backgroundColor: Theme.primary, paddingVertical: 22, borderRadius: 24, alignItems: 'center' }}
+          style={{ marginTop: 40, backgroundColor: Theme.primary, paddingVertical: 22, borderRadius: 24, alignItems: 'center', opacity: loading ? 0.5 : 1 }}
         >
           {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>{t('common.submit_review')}</Text>}
         </TouchableOpacity>

@@ -5,9 +5,9 @@ import {
 } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api from '../api';
-import { Theme } from '../theme';
-import i18n from '../i18n';
+import api from '../api/index';
+import { Theme } from '../theme/index';
+import i18n from '../i18n/index';
 import { useTranslation } from 'react-i18next';
 export const ManageServicesScreen = ({ navigation }: any) => {
   const { t } = useTranslation();

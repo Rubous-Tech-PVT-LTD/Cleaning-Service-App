@@ -7,7 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Tag, Gift, Check, Wallet } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Theme } from '../theme';
+import { promoCodeSchema } from '../validation/schemas';
+
+type PromoCodeFormData = z.infer<typeof promoCodeSchema>;
 
 const MOCK_COUPONS = [
   { code: 'CLEAN200', discount: 200, type: 'flat', desc: '₹200 off on first cleaning service', minOrder: 999 },
@@ -16,11 +22,15 @@ const MOCK_COUPONS = [
 ];
 
 export const PromoCodeScreen = ({ navigation }: any) => {
-  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [walletBalance] = useState(0);
   const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<PromoCodeFormData>({
+    resolver: zodResolver(promoCodeSchema),
+    defaultValues: { code: '' }
+  });
 
   const shake = () => {
     Animated.sequence([
@@ -31,8 +41,8 @@ export const PromoCodeScreen = ({ navigation }: any) => {
     ]).start();
   };
 
-  const applyCode = async (promoCode?: string) => {
-    const codeToApply = (promoCode || code).toUpperCase().trim();
+  const applyCode = async (data: PromoCodeFormData) => {
+    const codeToApply = data.code.toUpperCase().trim();
     if (!codeToApply) return;
     setLoading(true);
     await new Promise(r => setTimeout(r, 800));
@@ -49,7 +59,7 @@ export const PromoCodeScreen = ({ navigation }: any) => {
 
   const removeCoupon = async () => {
     setAppliedCoupon(null);
-    setCode('');
+    reset();
     await AsyncStorage.removeItem('applied_coupon');
   };
 
@@ -83,23 +93,32 @@ export const PromoCodeScreen = ({ navigation }: any) => {
         <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 24, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12 }}>
           <Text style={{ fontSize: 15, fontWeight: '800', color: Theme.textPrimary, marginBottom: 14 }}>Enter Promo Code</Text>
           <Animated.View style={{ flexDirection: 'row', gap: 12, transform: [{ translateX: shakeAnim }] }}>
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, borderWidth: 2, borderColor: '#E2E8F0', paddingHorizontal: 14 }}>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, borderWidth: 2, borderColor: errors.code ? Theme.error : '#E2E8F0', paddingHorizontal: 14 }}>
               <Tag size={18} color={Theme.primary} />
-              <TextInput
-                value={code}
-                onChangeText={t => setCode(t.toUpperCase())}
-                placeholder="e.g. CLEAN200"
-                placeholderTextColor="#94A3B8"
-                autoCapitalize="characters"
-                style={{ flex: 1, paddingVertical: 14, marginLeft: 10, fontSize: 16, fontWeight: '800', color: Theme.textPrimary, letterSpacing: 1 }}
+              <Controller
+                control={control}
+                name="code"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    value={value}
+                    onChangeText={t => onChange(t.toUpperCase())}
+                    placeholder="e.g. CLEAN200"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="characters"
+                    style={{ flex: 1, paddingVertical: 14, marginLeft: 10, fontSize: 16, fontWeight: '800', color: Theme.textPrimary, letterSpacing: 1 }}
+                  />
+                )}
               />
             </View>
-            <TouchableOpacity onPress={() => applyCode()} disabled={loading || !code} style={{ backgroundColor: Theme.primary, paddingHorizontal: 20, borderRadius: 14, justifyContent: 'center' }}>
+            <TouchableOpacity onPress={handleSubmit(applyCode)} disabled={loading} style={{ backgroundColor: Theme.primary, paddingHorizontal: 20, borderRadius: 14, justifyContent: 'center', opacity: loading ? 0.5 : 1 }}>
               {loading ? <ActivityIndicator color="white" size="small" /> : (
                 <Text style={{ color: 'white', fontWeight: '900', fontSize: 14 }}>Apply</Text>
               )}
             </TouchableOpacity>
           </Animated.View>
+          {errors.code && (
+            <Text style={{ marginTop: 4, fontSize: 12, color: Theme.error }}>{errors.code.message}</Text>
+          )}
         </View>
 
         {/* Applied Coupon */}
@@ -129,7 +148,10 @@ export const PromoCodeScreen = ({ navigation }: any) => {
                 <Gift size={18} color={Theme.primary} />
                 <Text style={{ marginLeft: 8, fontSize: 15, fontWeight: '900', color: Theme.primary, letterSpacing: 0.5 }}>{coupon.code}</Text>
                 <TouchableOpacity
-                  onPress={() => applyCode(coupon.code)}
+                  onPress={() => {
+                    reset({ code: coupon.code });
+                    handleSubmit(applyCode)();
+                  }}
                   style={{ marginLeft: 'auto', borderWidth: 2, borderColor: Theme.primary, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10 }}
                 >
                   <Text style={{ color: Theme.primary, fontWeight: '800', fontSize: 12 }}>Apply</Text>

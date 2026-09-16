@@ -8,10 +8,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../api';
-import { Theme } from '../theme';
-import i18n from '../i18n';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import api from '../api/index';
+import { Theme } from '../theme/index';
+import i18n from '../i18n/index';
 import { useTranslation } from 'react-i18next';
+import { registrationSchema } from '../validation/schemas';
+
+type RegistrationFormData = z.infer<typeof registrationSchema>;
+
 const { width, height } = Dimensions.get('window');
 const GlobeIcon = ({ size = 16, color = 'white' }: { size?: number; color?: string }) => {
   return (
@@ -37,10 +44,10 @@ const InputField = ({ label, placeholder, value, onChangeText, keyboardType = 'd
     </View>
   </View>
 );
-const TranslatedInputField = ({ labelKey, placeholderKey, value, onChangeText, keyboardType = 'default', t }: any) => (
+const TranslatedInputField = ({ labelKey, placeholderKey, value, onChangeText, keyboardType = 'default', t, error }: any) => (
   <View style={{ marginBottom: 16 }}>
     <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>{t(labelKey)}</Text>
-    <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: Theme.border }}>
+    <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: error ? Theme.error : Theme.border }}>
       <TextInput
         style={{ padding: 14, fontSize: 16, color: Theme.textPrimary, fontWeight: '500' }}
         placeholder={t(placeholderKey)}
@@ -50,40 +57,49 @@ const TranslatedInputField = ({ labelKey, placeholderKey, value, onChangeText, k
         keyboardType={keyboardType}
       />
     </View>
+    {error && <Text style={{ marginTop: 4, fontSize: 12, color: Theme.error }}>{error}</Text>}
   </View>
 );
 export const RegistrationScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<any[]>([]);
-  const [form, setForm] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    city: '',
-    state: '',
-    addressLine1: '',
-    country: 'India',
-    professionId: '',
-    professionIds: [] as string[],
-  });
   const [docs, setDocs] = useState({
     pan: false,
     aadhar: false,
     election: false,
     school: false
   });
+
+  const { control, handleSubmit, formState: { errors }, watch, setValue } = useForm<RegistrationFormData>({
+    resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      phone: '',
+      city: '',
+      state: '',
+      addressLine1: '',
+      country: 'India',
+      professionId: '',
+      professionIds: [],
+    }
+  });
+
+  const professionIds = watch('professionIds') || [];
+  const professionId = watch('professionId') || '';
   useEffect(() => {
     api.get('/services')
       .then(res => {
         setServices(res.data);
         if (res.data.length > 0) {
-          setForm(f => ({ ...f, professionId: res.data[0].id, professionIds: [res.data[0].id] }));
+          setValue('professionId', res.data[0].id);
+          setValue('professionIds', [res.data[0].id]);
         }
       })
       .catch(err => {
       });
-  }, []);
+  }, [setValue]);
   const toggleLanguage = async () => {
     const nextLang = i18n.language === 'en' ? 'hi' : 'en';
     await i18n.changeLanguage(nextLang);
@@ -104,73 +120,70 @@ export const RegistrationScreen = ({ navigation }: any) => {
       serviceName.includes('रसोई');
     const isBathroom = serviceName.toLowerCase().includes('bathroom') ||
       serviceName.includes('बाथरूम');
-    setForm(prev => {
-      const isSelected = prev.professionIds.includes(serviceId);
-      if (isSelected) {
-        const newProfessionIds = prev.professionIds.filter(id => id !== serviceId);
-        const newProfessionId = newProfessionIds.length > 0 ? newProfessionIds[0] : '';
-        return { ...prev, professionIds: newProfessionIds, professionId: newProfessionId };
-      } else {
-        if (isKitchen) {
-          const bathroomServices = services.filter(s => {
-            const enName = s.nameTranslations?.en?.toLowerCase() || '';
-            const hiName = s.nameTranslations?.hi || '';
-            return enName.includes('bathroom') || hiName.includes('बाथरूम');
-          });
-          const bathroomIds = bathroomServices.map(s => s.id);
-          const hasBathroomSelected = prev.professionIds.some(id => bathroomIds.includes(id));
-          if (hasBathroomSelected) {
-            Alert.alert(
-              t('provider.kitchen_bathroom_conflict'),
-              t('provider.kitchen_conflict'),
-              [{ text: t('common.ok') }]
-            );
-            return prev;
-          }
-          const newProfessionIds = [...prev.professionIds, serviceId];
-          return { ...prev, professionIds: newProfessionIds, professionId: serviceId };
-        } else if (isBathroom) {
-          const kitchenServices = services.filter(s => {
-            const enName = s.nameTranslations?.en?.toLowerCase() || '';
-            const hiName = s.nameTranslations?.hi || '';
-            return enName.includes('kitchen') || hiName.includes('रसोईघर') || hiName.includes('रसोई');
-          });
-          const kitchenIds = kitchenServices.map(s => s.id);
-          const hasKitchenSelected = prev.professionIds.some(id => kitchenIds.includes(id));
-          if (hasKitchenSelected) {
-            Alert.alert(
-              t('provider.kitchen_bathroom_conflict'),
-              t('provider.bathroom_conflict'),
-              [{ text: t('common.ok') }]
-            );
-            return prev;
-          }
-          const newProfessionIds = [...prev.professionIds, serviceId];
-          return { ...prev, professionIds: newProfessionIds, professionId: serviceId };
-        } else {
-          const newProfessionIds = [...prev.professionIds, serviceId];
-          return { ...prev, professionIds: newProfessionIds, professionId: serviceId };
+
+    const currentProfessionIds = professionIds || [];
+    const isSelected = currentProfessionIds.includes(serviceId);
+
+    if (isSelected) {
+      const newProfessionIds = currentProfessionIds.filter(id => id !== serviceId);
+      const newProfessionId = newProfessionIds.length > 0 ? newProfessionIds[0] : '';
+      setValue('professionIds', newProfessionIds);
+      setValue('professionId', newProfessionId);
+    } else {
+      if (isKitchen) {
+        const bathroomServices = services.filter(s => {
+          const enName = s.nameTranslations?.en?.toLowerCase() || '';
+          const hiName = s.nameTranslations?.hi || '';
+          return enName.includes('bathroom') || hiName.includes('बाथरूम');
+        });
+        const bathroomIds = bathroomServices.map(s => s.id);
+        const hasBathroomSelected = currentProfessionIds.some(id => bathroomIds.includes(id));
+        if (hasBathroomSelected) {
+          Alert.alert(
+            t('provider.kitchen_bathroom_conflict'),
+            t('provider.kitchen_conflict'),
+            [{ text: t('common.ok') }]
+          );
+          return;
         }
+        const newProfessionIds = [...currentProfessionIds, serviceId];
+        setValue('professionIds', newProfessionIds);
+        setValue('professionId', serviceId);
+      } else if (isBathroom) {
+        const kitchenServices = services.filter(s => {
+          const enName = s.nameTranslations?.en?.toLowerCase() || '';
+          const hiName = s.nameTranslations?.hi || '';
+          return enName.includes('kitchen') || hiName.includes('रसोईघर') || hiName.includes('रसोई');
+        });
+        const kitchenIds = kitchenServices.map(s => s.id);
+        const hasKitchenSelected = currentProfessionIds.some(id => kitchenIds.includes(id));
+        if (hasKitchenSelected) {
+          Alert.alert(
+            t('provider.kitchen_bathroom_conflict'),
+            t('provider.bathroom_conflict'),
+            [{ text: t('common.ok') }]
+          );
+          return;
+        }
+        const newProfessionIds = [...currentProfessionIds, serviceId];
+        setValue('professionIds', newProfessionIds);
+        setValue('professionId', serviceId);
+      } else {
+        const newProfessionIds = [...currentProfessionIds, serviceId];
+        setValue('professionIds', newProfessionIds);
+        setValue('professionId', serviceId);
       }
-    });
+    }
   };
-  const handleRegister = async () => {
-    if (!form.fullName || !form.phone || !form.city || !form.addressLine1) {
-      Alert.alert(t('registration.missing_fields'), t('registration.fill_required_fields'));
-      return;
-    }
-    if (form.phone.length < 10) {
-      Alert.alert(t('registration.invalid_phone'), t('registration.valid_phone_number'));
-      return;
-    }
+  const handleRegister = async (data: RegistrationFormData) => {
     setLoading(true);
     try {
-      const phoneWithCode = `+91${form.phone}`;
+      const phoneWithCode = `+91${data.phone}`;
       const payload = {
-        ...form,
+        ...data,
         phone: phoneWithCode,
         documents: docs,
-        professionIds: form.professionIds.length > 0 ? form.professionIds : [form.professionId]
+        professionIds: data.professionIds && data.professionIds.length > 0 ? data.professionIds : [data.professionId || '']
       };
       await api.post('/auth/register-provider', payload);
       const otpRes = await api.post('/auth/otp/request', { phone: phoneWithCode });
@@ -200,7 +213,7 @@ export const RegistrationScreen = ({ navigation }: any) => {
         msg = error.message;
       }
       if (msg.includes('NONE') || msg.includes('read-only')) {
-        navigation.navigate('OtpVerify', { phone: `+91${form.phone}` });
+        navigation.navigate('OtpVerify', { phone: `+91${data.phone}` });
         return;
       }
       Alert.alert(t('registration.registration_error'), msg);
@@ -235,29 +248,119 @@ export const RegistrationScreen = ({ navigation }: any) => {
           </View>
           { }
           <View style={{ paddingHorizontal: 24 }}>
-            <TranslatedInputField labelKey="registration.full_name" placeholderKey="registration.full_name_placeholder" value={form.fullName} onChangeText={(t: string) => setForm({ ...form, fullName: t })} t={t} />
-            <TranslatedInputField labelKey="registration.email_address_optional" placeholderKey="registration.email_placeholder" keyboardType="email-address" value={form.email} onChangeText={(t: string) => setForm({ ...form, email: t })} t={t} />
+            <Controller
+              control={control}
+              name="fullName"
+              render={({ field: { onChange, value } }) => (
+                <TranslatedInputField
+                  labelKey="registration.full_name"
+                  placeholderKey="registration.full_name_placeholder"
+                  value={value}
+                  onChangeText={onChange}
+                  t={t}
+                  error={errors.fullName?.message}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value } }) => (
+                <TranslatedInputField
+                  labelKey="registration.email_address_optional"
+                  placeholderKey="registration.email_placeholder"
+                  keyboardType="email-address"
+                  value={value}
+                  onChangeText={onChange}
+                  t={t}
+                  error={errors.email?.message}
+                />
+              )}
+            />
             <View style={{ marginBottom: 16 }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>{t('registration.phone_number')}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: Theme.border }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: errors.phone ? Theme.error : Theme.border }}>
                 <Text style={{ padding: 14, fontSize: 16, fontWeight: '700', color: Theme.textPrimary, borderRightWidth: 1, borderColor: Theme.border }}>+91</Text>
-                <TextInput
-                  style={{ flex: 1, padding: 14, fontSize: 16, color: Theme.textPrimary, fontWeight: '700', letterSpacing: 1 }}
-                  placeholder={t('registration.phone_placeholder')}
-                  placeholderTextColor="#cbd5e1"
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                  value={form.phone}
-                  onChangeText={(t: string) => setForm({ ...form, phone: t })}
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      style={{ flex: 1, padding: 14, fontSize: 16, color: Theme.textPrimary, fontWeight: '700', letterSpacing: 1 }}
+                      placeholder={t('registration.phone_placeholder')}
+                      placeholderTextColor="#cbd5e1"
+                      keyboardType="phone-pad"
+                      maxLength={10}
+                      value={value}
+                      onChangeText={onChange}
+                    />
+                  )}
+                />
+              </View>
+              {errors.phone && <Text style={{ marginTop: 4, fontSize: 12, color: Theme.error }}>{errors.phone.message}</Text>}
+            </View>
+            <Controller
+              control={control}
+              name="addressLine1"
+              render={({ field: { onChange, value } }) => (
+                <TranslatedInputField
+                  labelKey="registration.address"
+                  placeholderKey="registration.address_placeholder"
+                  value={value}
+                  onChangeText={onChange}
+                  t={t}
+                  error={errors.addressLine1?.message}
+                />
+              )}
+            />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Controller
+                  control={control}
+                  name="city"
+                  render={({ field: { onChange, value } }) => (
+                    <TranslatedInputField
+                      labelKey="registration.city"
+                      placeholderKey="registration.city_placeholder"
+                      value={value}
+                      onChangeText={onChange}
+                      t={t}
+                      error={errors.city?.message}
+                    />
+                  )}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Controller
+                  control={control}
+                  name="state"
+                  render={({ field: { onChange, value } }) => (
+                    <TranslatedInputField
+                      labelKey="registration.state"
+                      placeholderKey="registration.state_placeholder"
+                      value={value}
+                      onChangeText={onChange}
+                      t={t}
+                      error={errors.state?.message}
+                    />
+                  )}
                 />
               </View>
             </View>
-            <TranslatedInputField labelKey="registration.address" placeholderKey="registration.address_placeholder" value={form.addressLine1} onChangeText={(t: string) => setForm({ ...form, addressLine1: t })} t={t} />
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <View style={{ flex: 1 }}><TranslatedInputField labelKey="registration.city" placeholderKey="registration.city_placeholder" value={form.city} onChangeText={(t: string) => setForm({ ...form, city: t })} t={t} /></View>
-              <View style={{ flex: 1 }}><TranslatedInputField labelKey="registration.state" placeholderKey="registration.state_placeholder" value={form.state} onChangeText={(t: string) => setForm({ ...form, state: t })} t={t} /></View>
-            </View>
-            <TranslatedInputField labelKey="registration.country" placeholderKey="registration.country_placeholder" value={form.country} onChangeText={(t: string) => setForm({ ...form, country: t })} t={t} />
+            <Controller
+              control={control}
+              name="country"
+              render={({ field: { onChange, value } }) => (
+                <TranslatedInputField
+                  labelKey="registration.country"
+                  placeholderKey="registration.country_placeholder"
+                  value={value}
+                  onChangeText={onChange}
+                  t={t}
+                  error={errors.country?.message}
+                />
+              )}
+            />
             <View style={{ marginBottom: 24 }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 8 }}>{t('registration.your_profession')}</Text>
               <Text style={{ fontSize: 11, color: Theme.textSecondary, marginBottom: 12 }}>
@@ -292,7 +395,7 @@ export const RegistrationScreen = ({ navigation }: any) => {
                   else if (service.name) {
                     serviceName = service.name;
                   }
-                  const isSelected = form.professionIds.includes(service.id);
+                  const isSelected = professionIds.includes(service.id);
                   return (
                     <TouchableOpacity
                       key={service.id}
@@ -351,13 +454,14 @@ export const RegistrationScreen = ({ navigation }: any) => {
             </View>
             { }
             <TouchableOpacity
-              onPress={handleRegister}
+              onPress={handleSubmit(handleRegister)}
               disabled={loading}
               style={{
                 backgroundColor: Theme.primary,
                 paddingVertical: 18, borderRadius: 16, alignItems: 'center',
                 shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.2, shadowRadius: 8,
+                opacity: loading ? 0.5 : 1
               }}
             >
               {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('registration.register_verify')}</Text>}

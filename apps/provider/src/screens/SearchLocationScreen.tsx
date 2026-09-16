@@ -6,9 +6,9 @@ import * as Location from 'expo-location';
 import withObservables from '@nozbe/with-observables';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { database } from '../db';
+import { database } from '../db/index';
 import { LocationSearchInput } from './LocationSearchInput';
-import { Theme } from '../theme';
+import { Theme } from '../theme/index';
 const SearchLocationScreenBase = ({ navigation, addresses }: any) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);

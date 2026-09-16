@@ -2,23 +2,32 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import api from '../api';
 import { Theme } from '../theme';
 import { NotificationService } from '../services/NotificationService';
 import { useAuth } from '../contexts/AuthContext';
+import { otpSchema } from '../validation/schemas';
+
+type OtpFormData = z.infer<typeof otpSchema>;
 
 export const OtpVerifyScreen = ({ route, navigation }: any) => {
   const { t } = useTranslation();
   const { login } = useAuth();
   const { phone } = route.params;
-  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleVerify = async () => {
-    if (otp.length < 6) return;
+  const { control, handleSubmit, formState: { errors } } = useForm<OtpFormData>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { otp: '' }
+  });
+
+  const handleVerify = async (data: OtpFormData) => {
     setLoading(true);
     try {
-      const response = await api.post('/auth/otp/verify', { phone, code: otp });
+      const response = await api.post('/auth/otp/verify', { phone, code: data.otp });
       if (response.data.accessToken) {
         await login(response.data.accessToken, response.data.user);
 
@@ -40,19 +49,28 @@ export const OtpVerifyScreen = ({ route, navigation }: any) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
       <View style={{ padding: 32, flex: 1, justifyContent: 'center' }}>
         <Text style={{ fontSize: 32, fontWeight: '800', color: Theme.textPrimary }}>{t('common.verify_identity')}</Text>
-        <TextInput
-          style={{ fontSize: 48, fontWeight: 'bold', marginTop: 40, letterSpacing: 10, color: Theme.textPrimary }}
-          placeholder="000000"
-          keyboardType="number-pad"
-          maxLength={6}
-          value={otp}
-          onChangeText={setOtp}
-          autoFocus
+        <Controller
+          control={control}
+          name="otp"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={{ fontSize: 48, fontWeight: 'bold', marginTop: 40, letterSpacing: 10, color: Theme.textPrimary }}
+              placeholder="000000"
+              keyboardType="number-pad"
+              maxLength={6}
+              value={value}
+              onChangeText={onChange}
+              autoFocus
+            />
+          )}
         />
+        {errors.otp && (
+          <Text style={{ marginTop: 8, fontSize: 14, color: Theme.error, textAlign: 'center' }}>{errors.otp.message}</Text>
+        )}
         <TouchableOpacity
-          onPress={handleVerify}
-          disabled={loading || otp.length < 6}
-          style={{ marginTop: 40, backgroundColor: Theme.primary, paddingVertical: 20, borderRadius: 24, alignItems: 'center' }}
+          onPress={handleSubmit(handleVerify)}
+          disabled={loading}
+          style={{ marginTop: 40, backgroundColor: Theme.primary, paddingVertical: 20, borderRadius: 24, alignItems: 'center', opacity: loading ? 0.5 : 1 }}
         >
           {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>{t('common.verify_continue')}</Text>}
         </TouchableOpacity>

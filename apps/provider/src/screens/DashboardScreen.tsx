@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StatusBar, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Theme } from '../theme';
-import api from '../api';
+import { Theme } from '../theme/index';
+import api from '../api/index';
 import { Switch } from 'react-native';
-import i18n from '../i18n';
+import i18n from '../i18n/index';
 import { useTranslation } from 'react-i18next';
 import { useBookings } from '../context/BookingContext';
 export const DashboardScreen = () => {

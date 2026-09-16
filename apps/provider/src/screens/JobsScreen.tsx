@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
-import { Theme } from '../theme';
-import api from '../api';
-import i18n from '../i18n';
+import { Theme } from '../theme/index';
+import api from '../api/index';
+import i18n from '../i18n/index';
 import { useTranslation } from 'react-i18next';
 import { useBookings } from '../context/BookingContext';
 export const JobsScreen = () => {

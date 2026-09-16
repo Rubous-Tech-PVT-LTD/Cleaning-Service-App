@@ -5,17 +5,27 @@ import { useTranslation } from 'react-i18next';
 import { Phone, Globe, Zap, Leaf } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import api from '../api';
 import { Theme } from '../theme';
 import { useAuth } from '../contexts/AuthContext';
+import { loginSchema } from '../validation/schemas';
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export const LoginScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
   const { enterGuestMode } = useAuth();
-  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSplashing, setIsSplashing] = useState(true);
   const { width, height } = Dimensions.get('window');
+
+  const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { phone: '' }
+  });
 
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
   const contentFadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -35,13 +45,11 @@ export const LoginScreen = ({ navigation }: any) => {
     i18n.changeLanguage(nextLng);
   };
 
-  const handleRequestOtp = async () => {
-    if (phone.length < 10) return;
-    setPhone('');
+  const handleRequestOtp = async (data: LoginFormData) => {
     setLoading(true);
     try {
-      await api.post('/auth/otp/request', { phone: `+91${phone}` });
-      navigation.navigate('OtpVerify', { phone: `+91${phone}` });
+      await api.post('/auth/otp/request', { phone: `+91${data.phone}` });
+      navigation.navigate('OtpVerify', { phone: `+91${data.phone}` });
     } catch (error: any) {
       setLoading(false);
       Alert.alert('Error', error.response?.data?.message || error.message || 'Service unavailable.');
@@ -138,11 +146,28 @@ export const LoginScreen = ({ navigation }: any) => {
 
           <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 10 }}>
             <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 12 }}>{t('common.phone_number', 'Phone Number')}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1.5, borderBottomColor: Theme.border, paddingBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1.5, borderBottomColor: errors.phone ? Theme.error : Theme.border, paddingBottom: 12 }}>
               <Text style={{ fontSize: 22, fontWeight: '700', color: Theme.textPrimary, marginRight: 12 }}>+91</Text>
-              <TextInput style={{ flex: 1, fontSize: 22, fontWeight: '700', color: Theme.textPrimary }} placeholder="00000 00000" placeholderTextColor="#cbd5e1" keyboardType="phone-pad" value={phone} onChangeText={setPhone} maxLength={10} />
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    style={{ flex: 1, fontSize: 22, fontWeight: '700', color: Theme.textPrimary }}
+                    placeholder="00000 00000"
+                    placeholderTextColor="#cbd5e1"
+                    keyboardType="phone-pad"
+                    value={value}
+                    onChangeText={onChange}
+                    maxLength={10}
+                  />
+                )}
+              />
             </View>
-            <TouchableOpacity onPress={handleRequestOtp} disabled={loading || phone.length < 10} style={{ marginTop: 32, backgroundColor: Theme.primary, paddingVertical: 18, borderRadius: 16, alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 }}>
+            {errors.phone && (
+              <Text style={{ marginTop: 4, fontSize: 12, color: Theme.error }}>{errors.phone.message}</Text>
+            )}
+            <TouchableOpacity onPress={handleSubmit(handleRequestOtp)} disabled={loading} style={{ marginTop: 32, backgroundColor: Theme.primary, paddingVertical: 18, borderRadius: 16, alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, opacity: loading ? 0.5 : 1 }}>
               {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>{t('login.login_securely', 'Login securely')}</Text>}
             </TouchableOpacity>
             

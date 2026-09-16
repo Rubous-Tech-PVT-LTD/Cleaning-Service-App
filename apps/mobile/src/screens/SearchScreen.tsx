@@ -4,20 +4,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Search as SearchIcon, X, Clock, ArrowRight, TrendingUp } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Theme } from '../theme';
 import { database } from '../db';
 import { Q } from '@nozbe/watermelondb';
+import { searchSchema } from '../validation/schemas';
+
+type SearchFormData = z.infer<typeof searchSchema>;
 
 const RECENT_SEARCHES_KEY = 'recent_searches';
 const MAX_RECENT = 7;
 
 export const SearchScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState('all');
+
+  const { control, watch, formState: { errors }, setValue } = useForm<SearchFormData>({
+    resolver: zodResolver(searchSchema),
+    defaultValues: { query: '' }
+  });
+
+  const query = watch('query');
 
   useEffect(() => {
     AsyncStorage.getItem(RECENT_SEARCHES_KEY).then((stored) => {
@@ -35,7 +47,7 @@ export const SearchScreen = ({ navigation }: any) => {
 
   const addRecentSearch = useCallback(async (term: string) => {
     const trimmed = term.trim();
-    if (!trimmed) return;
+    if (!trimmed || trimmed.length < 2) return;
     const updated = [trimmed, ...recentSearches.filter((s) => s !== trimmed)].slice(0, MAX_RECENT);
     setRecentSearches(updated);
     await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
@@ -80,7 +92,7 @@ export const SearchScreen = ({ navigation }: any) => {
   };
 
   const handleSelectRecent = (term: string) => {
-    setQuery(term);
+    setValue('query', term);
     searchServices(term);
   };
 
@@ -130,21 +142,32 @@ export const SearchScreen = ({ navigation }: any) => {
           </TouchableOpacity>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.muted, borderRadius: 16, paddingHorizontal: 16, marginLeft: 12 }}>
             <SearchIcon size={18} color={Theme.textSecondary} />
-            <TextInput
-              autoFocus
-              style={{ flex: 1, height: 50, marginLeft: 10, fontSize: 16, color: Theme.textPrimary, fontWeight: '600' }}
-              placeholder={t('search.placeholder')}
-              value={query}
-              onChangeText={setQuery}
-              onSubmitEditing={() => query.trim() && addRecentSearch(query)}
-              returnKeyType="search"
+            <Controller
+              control={control}
+              name="query"
+              render={({ field: { onChange, value } }) => (
+                <>
+                  <TextInput
+                    autoFocus
+                    style={{ flex: 1, height: 50, marginLeft: 10, fontSize: 16, color: Theme.textPrimary, fontWeight: '600' }}
+                    placeholder={t('search.placeholder')}
+                    value={value}
+                    onChangeText={onChange}
+                    onSubmitEditing={() => value.trim() && addRecentSearch(value)}
+                    returnKeyType="search"
+                  />
+                  {value.length > 0 && (
+                    <TouchableOpacity onPress={() => onChange('')}>
+                      <X size={20} color={Theme.textSecondary} />
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
             />
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery('')}>
-                <X size={20} color={Theme.textSecondary} />
-              </TouchableOpacity>
-            )}
           </View>
+          {errors.query && (
+            <Text style={{ paddingHorizontal: 20, marginTop: 4, fontSize: 12, color: Theme.error }}>{errors.query.message}</Text>
+          )}
         </View>
 
         {/* Filter Pills */}
