@@ -28,9 +28,6 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
   };
   const playSound = async () => {
     try {
-      // Sound playback temporarily disabled due to module compatibility issues
-      // Vibration has been removed as requested
-      console.log('Notification triggered (sound disabled)');
     } catch (error) {
     }
   };

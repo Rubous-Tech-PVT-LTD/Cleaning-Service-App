@@ -4,9 +4,10 @@ export const profileSchema = z.object({
   fullName: z.string()
     .min(2, 'Name must be at least 2 characters')
     .max(50, 'Name must be less than 50 characters')
-    .trim(),
-  phone: z.string()
-    .regex(/^[0-9]{10}$/, 'Phone number must be 10 digits')
+    .regex(/^[a-zA-Z\s]+$/, 'Name must contain only letters and spaces')
+    .trim()
+    .refine((val) => val.trim().length > 0, 'Name cannot be empty or only spaces'),
+  phone: z.string().optional()
 });
 
 export const otpSchema = z.object({

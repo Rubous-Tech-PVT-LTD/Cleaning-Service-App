@@ -94,7 +94,6 @@ export const HelpCenterScreen = ({ navigation }: any) => {
           />
         </View>
 
-        {/* FAQ Section */}
         <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('help_center.common_questions')}</Text>
         {faqs.map((faq, index) => (
           <FAQItem key={index} {...faq} />

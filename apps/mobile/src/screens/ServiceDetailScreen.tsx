@@ -395,7 +395,6 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
             )}
           </View>
 
-          {/* Related Services Section */}
           {relatedServices && relatedServices.length > 0 && (
             <View style={{ marginBottom: 40 }}>
               <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('service.related_title')}</Text>

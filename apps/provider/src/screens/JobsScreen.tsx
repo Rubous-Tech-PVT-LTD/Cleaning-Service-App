@@ -8,11 +8,13 @@ import api from '../api/index';
 import i18n from '../i18n/index';
 import { useTranslation } from 'react-i18next';
 import { useBookings } from '../context/BookingContext';
+import { completionOtpSchema } from '../validation/schemas';
 export const JobsScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [completionJobId, setCompletionJobId] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState('');
+  const [otpError, setOtpError] = useState<string>('');
   const [sosLoadingJobId, setSosLoadingJobId] = useState<string | null>(null);
   const { bookings, loading: isFetchingBookings, refreshBookings } = useBookings();
   const jobs = bookings.filter((b: any) => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS');
@@ -40,12 +42,16 @@ export const JobsScreen = () => {
   const promptForCompletion = (jobId: string) => {
     setCompletionJobId(jobId);
     setOtpInput('');
+    setOtpError('');
   };
   const handleConfirmCompletion = () => {
-    if (!otpInput || otpInput.length !== 4) {
-      Alert.alert('Invalid PIN', 'Please enter a valid 4-digit PIN.');
+    const validationResult = completionOtpSchema.safeParse({ otp: otpInput });
+    if (!validationResult.success) {
+      setOtpError(validationResult.error.errors[0]?.message || 'Invalid PIN');
       return;
     }
+    
+    setOtpError('');
     if (completionJobId) {
       updateStatus(completionJobId, 'COMPLETED', otpInput);
       setCompletionJobId(null);
@@ -214,14 +220,19 @@ export const JobsScreen = () => {
             <Text style={styles.modalTitle}>{t('provider.enter_client_pin')}</Text>
             <Text style={styles.modalSubtitle}>{t('provider.ask_client_pin')}</Text>
             <TextInput
-              style={styles.otpInput}
+              style={[styles.otpInput, otpError && styles.otpInputError]}
               keyboardType="number-pad"
               maxLength={4}
               placeholder="0000"
+              placeholderTextColor="#cbd5e1"
               value={otpInput}
-              onChangeText={setOtpInput}
+              onChangeText={(text) => {
+                setOtpInput(text);
+                setOtpError('');
+              }}
               autoFocus
             />
+            {otpError && <Text style={styles.otpError}>{otpError}</Text>}
             <View style={styles.modalActions}>
               <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#F1F5F9' }]} onPress={() => setCompletionJobId(null)}>
                 <Text style={{ color: Theme.textSecondary, fontWeight: '700' }}>{t('provider.cancel')}</Text>
@@ -267,7 +278,9 @@ const styles = StyleSheet.create({
   modalContent: { backgroundColor: 'white', width: '85%', padding: 24, borderRadius: 24, elevation: 10 },
   modalTitle: { fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 8 },
   modalSubtitle: { fontSize: 14, color: Theme.textSecondary, marginBottom: 20 },
-  otpInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: Theme.border, borderRadius: 12, padding: 16, fontSize: 24, letterSpacing: 8, textAlign: 'center', fontWeight: '900', color: Theme.primary, marginBottom: 24 },
+  otpInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: Theme.border, borderRadius: 12, padding: 16, fontSize: 24, letterSpacing: 8, textAlign: 'center', fontWeight: '900', color: Theme.primary, marginBottom: 12 },
+  otpInputError: { borderColor: Theme.error },
+  otpError: { color: Theme.error, fontSize: 12, marginTop: 4, marginBottom: 20, textAlign: 'center' },
   modalActions: { flexDirection: 'row', gap: 12 },
   modalButton: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center' },
   sosButton: {

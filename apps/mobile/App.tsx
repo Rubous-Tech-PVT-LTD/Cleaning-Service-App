@@ -121,8 +121,6 @@ const AppContent = () => {
   }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
-    // Notification listener disabled for Expo Go SDK 57 compatibility
-    // Re-enable this when using development build with expo-notifications
   }, []);
 
   if (!initialRoute || !fontsLoaded) return null;

@@ -15,7 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) { }
   @Post()
-  @Throttle({ default: { limit: 30, ttl: 60000 } }) // 30 requests per minute
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Roles(UserRole.CLIENT)
   @ApiOperation({ summary: 'Create a new booking' })
   @ApiResponse({ status: 201, description: 'Booking created' })
@@ -29,11 +29,14 @@ export class BookingsController {
   }
   @Get(':id')
   @ApiOperation({ summary: 'Get details of a specific booking' })
-  findOne(@Param('id') id: string) {
-    return this.bookingsService.findOne(id);
+  @ApiResponse({ status: 200, description: 'Return the booking.' })
+  @ApiResponse({ status: 404, description: 'Booking not found.' })
+  @ApiResponse({ status: 403, description: 'Access denied.' })
+  findOne(@Param('id') id: string, @Request() req: any) {
+    return this.bookingsService.findOne(id, req.user);
   }
   @Patch(':id/status')
-  @Throttle({ default: { limit: 60, ttl: 60000 } }) // 60 requests per minute
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Update the status of a booking' })
   updateStatus(@Request() req: any, @Param('id') id: string, @Body() updateStatusDto: UpdateBookingStatusDto) {
     return this.bookingsService.updateStatus(id, updateStatusDto, req.user);

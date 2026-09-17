@@ -11,6 +11,7 @@ import { Theme } from '../theme/index';
 import { syncDatabase } from '../db/sync';
 import { io, Socket } from 'socket.io-client';
 import { SOCKET_URL } from '../api/index';
+import { messageSchema } from '../validation/schemas';
 const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   const { bookingId, clientName } = route.params;
   const [text, setText] = useState('');
@@ -18,6 +19,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   const [isSending, setIsSending] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [serverChatId, setServerChatId] = useState<string>('');
+  const [messageError, setMessageError] = useState<string>('');
   const scrollViewRef = React.useRef<ScrollView>(null);
   useEffect(() => {
     const ensureChat = async () => {
@@ -163,7 +165,15 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
     }
   }, [uniqueMessages.length]);
   const handleSend = async () => {
-    if (!text.trim() || !myId || isSending) return;
+    if (!myId || isSending) return;
+
+    const validationResult = messageSchema.safeParse({ text: text.trim() });
+    if (!validationResult.success) {
+      setMessageError(validationResult.error.errors[0]?.message || 'Invalid message');
+      return;
+    }
+    
+    setMessageError('');
     setIsSending(true);
     const messageContent = text.trim();
     setText('');
@@ -239,12 +249,19 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
         )}
       </ScrollView>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          value={text}
-          onChangeText={setText}
-        />
+        <View style={{ flex: 1 }}>
+          <TextInput
+            style={[styles.input, messageError && styles.inputError]}
+            placeholder="Type a message..."
+            placeholderTextColor="#cbd5e1"
+            value={text}
+            onChangeText={(text) => {
+              setText(text);
+              setMessageError('');
+            }}
+          />
+          {messageError && <Text style={styles.errorMessage}>{messageError}</Text>}
+        </View>
         <TouchableOpacity onPress={handleSend} disabled={isSending} style={[styles.sendButton, isSending && { opacity: 0.6 }]}>
           <Text style={{ color: 'white', fontWeight: 'bold' }}>➤</Text>
         </TouchableOpacity>
@@ -258,7 +275,9 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '900', color: Theme.textPrimary },
   messageBubble: { padding: 16, borderRadius: 24, marginBottom: 12, maxWidth: '80%' },
   inputContainer: { padding: 20, borderTopWidth: 1, borderTopColor: Theme.border, flexDirection: 'row', alignItems: 'center' },
-  input: { flex: 1, backgroundColor: Theme.background, borderRadius: 24, paddingHorizontal: 20, paddingVertical: 14, fontSize: 16 },
+  input: { flex: 1, backgroundColor: Theme.background, borderRadius: 24, paddingHorizontal: 20, paddingVertical: 14, fontSize: 16, borderWidth: 1, borderColor: 'transparent' },
+  inputError: { borderColor: Theme.error },
+  errorMessage: { color: Theme.error, fontSize: 12, marginTop: 4, marginLeft: 4 },
   sendButton: { marginLeft: 16, backgroundColor: Theme.primary, width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' },
 });
 export const ChatScreen = withObservables(['route'], ({ route }: any) => {

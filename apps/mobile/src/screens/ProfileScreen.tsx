@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Alert, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, Settings, LogOut, Shield, HelpCircle, MapPin, CreditCard, Bell, User, History, Globe, Gift } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../theme';
 import { NotificationService } from '../services/NotificationService';
 import { useAuth } from '../contexts/AuthContext';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 import { LoginRequiredModal } from '../components/LoginRequiredModal';
+import api from '../api';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
@@ -24,14 +26,37 @@ export const ProfileScreen = ({ navigation }: any) => {
     await AsyncStorage.setItem('user_language', nextLang);
   };
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const storedPhone = await AsyncStorage.getItem('user_phone');
-      if (storedPhone) setPhone(storedPhone);
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadUser = async () => {
+        const storedPhone = await AsyncStorage.getItem('user_phone');
+        const storedName = await AsyncStorage.getItem('user_name');
+        if (storedPhone) setPhone(storedPhone);
+        if (storedName) setUserName(storedName);
 
-    };
-    loadUser();
-  }, []);
+        try {
+          const userId = await AsyncStorage.getItem('user_id');
+          if (userId) {
+            const response = await api.get(`/users/${userId}`);
+            const userData = response.data?.data;
+            if (userData) {
+              if (userData.name || userData.fullName) {
+                const freshName = userData.name || userData.fullName;
+                await AsyncStorage.setItem('user_name', freshName);
+                setUserName(freshName);
+              }
+              if (userData.phone) {
+                await AsyncStorage.setItem('user_phone', userData.phone);
+                setPhone(userData.phone);
+              }
+            }
+          }
+        } catch (error) {
+        }
+      };
+      loadUser();
+    }, [])
+  );
 
   const handleLogout = () => {
     Alert.alert(

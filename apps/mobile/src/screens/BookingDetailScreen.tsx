@@ -218,7 +218,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
 
      
 
-        {/* Help Center Shortcut */}
         <TouchableOpacity
           onPress={() => navigation.navigate('HelpCenter')}
           style={styles.helpCard}
@@ -246,7 +245,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
             )}
           </TouchableOpacity>
         )}
-        {/* Action Buttons */}
         {isNotCancelledOrCompleted && (
           <View style={styles.actionContainer}>
             <TouchableOpacity
@@ -463,7 +461,7 @@ export const BookingDetailScreen = withObservables(['route'], ({ route }: any) =
       switchMap((b: any) => database.collections.get('addresses').query(
         Q.where('id', b.addressId || '')
       ).observe()),
-      map(addresses => addresses[0] || null)
+      map((addresses: any[]) => addresses[0] || null)
     ),
     services: database.collections.get('services').query().observe(),
   };

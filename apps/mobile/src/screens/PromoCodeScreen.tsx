@@ -121,7 +121,6 @@ export const PromoCodeScreen = ({ navigation }: any) => {
           )}
         </View>
 
-        {/* Applied Coupon */}
         {appliedCoupon && (
           <View style={{ backgroundColor: '#F0FDF4', borderRadius: 20, padding: 18, marginBottom: 24, borderWidth: 2, borderColor: '#10B981' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -139,7 +138,6 @@ export const PromoCodeScreen = ({ navigation }: any) => {
           </View>
         )}
 
-        {/* Available Coupons */}
         <Text style={{ fontSize: 17, fontWeight: '800', color: Theme.textPrimary, marginBottom: 16 }}>Available Offers</Text>
         <View style={{ gap: 14 }}>
           {MOCK_COUPONS.map((coupon) => (

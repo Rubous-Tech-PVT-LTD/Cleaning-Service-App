@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
@@ -205,12 +205,19 @@ export class BookingsService {
       orderBy: { createdAt: 'desc' },
     });
   }
-  async findOne(id: string) {
+  async findOne(id: string, user?: any) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
       include: { service: true, client: true, provider: true, review: true, address: true },
     });
     if (!booking) throw new NotFoundException('Booking not found');
+    if (user) {
+      const isOwner = booking.clientId === user.id || booking.providerId === user.id;
+      const isAdmin = user.role === 'ADMIN';
+      if (!isOwner && !isAdmin) {
+        throw new ForbiddenException('Access denied: You can only access your own bookings');
+      }
+    }
     return booking;
   }
   async updateStatus(id: string, updateStatusDto: UpdateBookingStatusDto, user?: any) {

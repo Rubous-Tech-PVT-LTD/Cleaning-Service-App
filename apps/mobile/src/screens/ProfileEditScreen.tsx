@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
   Image, Alert, ActivityIndicator, KeyboardAvoidingView, Platform
@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Camera, User, Phone, Check, Info } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,37 +24,56 @@ export const ProfileEditScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const { control, handleSubmit, formState: { errors, isDirty }, reset } = useForm<ProfileFormData>({
+  const { control, handleSubmit, formState: { errors, isDirty, isValid, dirtyFields }, reset, watch, trigger } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       fullName: '',
       phone: ''
-    }
+    },
+    mode: 'onChange'
   });
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const storedName = await AsyncStorage.getItem('user_name');
-      const storedPhone = await AsyncStorage.getItem('user_phone');
-      const storedAvatar = await AsyncStorage.getItem('user_avatar');
-      if (storedName) reset({ fullName: storedName, phone: storedPhone || '' });
-      if (storedAvatar) setAvatarUrl(storedAvatar);
-    };
-    loadUser();
-  }, [reset]);
+  const fullName = watch('fullName');
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadUser = async () => {
+        const storedName = await AsyncStorage.getItem('user_name');
+        const storedPhone = await AsyncStorage.getItem('user_phone');
+        const storedAvatar = await AsyncStorage.getItem('user_avatar');
+        if (storedName) reset({ fullName: storedName, phone: storedPhone || '' });
+        if (storedAvatar) setAvatarUrl(storedAvatar);
+      };
+      loadUser();
+    }, [reset])
+  );
 
   const handleSave = async (data: ProfileFormData) => {
+    const isFormValid = await trigger();
+    if (!isFormValid) {
+      Alert.alert('Validation Error', 'Please fix the errors before saving.');
+      return;
+    }
+
+    if (!data.fullName || data.fullName.trim().length < 2) {
+      Alert.alert('Validation Error', 'Name must be at least 2 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await api.put('/users/profile', { fullName: data.fullName });
-      await AsyncStorage.setItem('user_name', data.fullName);
+      const response = await api.patch('/users/profile', { name: data.fullName.trim() });
+
+      const savedName = response.data?.data?.name || response.data?.data?.fullName || data.fullName.trim();
+      await AsyncStorage.setItem('user_name', savedName);
+
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
         navigation.goBack();
       }, 1200);
     } catch (e) {
-      await AsyncStorage.setItem('user_name', data.fullName);
+      await AsyncStorage.setItem('user_name', data.fullName.trim());
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
@@ -73,7 +93,7 @@ export const ProfileEditScreen = ({ navigation }: any) => {
           </TouchableOpacity>
           <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginLeft: 16 }}>{t('profile.edit_profile')}</Text>
           <View style={{ flex: 1 }} />
-          <TouchableOpacity onPress={handleSubmit(handleSave)} disabled={loading || !isDirty} style={{ backgroundColor: saved ? Theme.success : Theme.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 14, opacity: (!isDirty || loading) ? 0.5 : 1 }}>
+          <TouchableOpacity onPress={handleSubmit(handleSave)} disabled={loading || !isDirty || !isValid} style={{ backgroundColor: saved ? Theme.success : Theme.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 14, opacity: (!isDirty || loading || !isValid) ? 0.5 : 1 }}>
             {loading ? (
               <ActivityIndicator size="small" color="white" />
             ) : saved ? (
@@ -115,13 +135,16 @@ export const ProfileEditScreen = ({ navigation }: any) => {
                 <Controller
                   control={control}
                   name="fullName"
-                  render={({ field: { onChange, value } }) => (
+                  render={({ field: { onChange, value, onBlur } }) => (
                     <TextInput
                       value={value}
                       onChangeText={onChange}
+                      onBlur={onBlur}
                       placeholder={t('profile.enter_name')}
                       placeholderTextColor={Theme.textSecondary}
                       style={{ flex: 1, paddingVertical: 16, marginLeft: 12, fontSize: 16, fontWeight: '600', color: Theme.textPrimary }}
+                      autoCapitalize="words"
+                      autoCorrect={false}
                     />
                   )}
                 />

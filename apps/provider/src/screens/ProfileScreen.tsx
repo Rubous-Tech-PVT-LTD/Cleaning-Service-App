@@ -31,6 +31,10 @@ export const ProfileScreen = () => {
         text: t('profile.logout', 'Logout'),
         style: 'destructive',
         onPress: async () => {
+          try {
+            await api.post('/auth/logout');
+          } catch (error) {
+          }
           await AsyncStorage.removeItem('provider_token');
           await AsyncStorage.removeItem('provider_id');
           await AsyncStorage.removeItem('provider_phone');

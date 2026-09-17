@@ -13,7 +13,7 @@ export class AuthService {
     private prisma: PrismaService,
   ) {}
   async requestOtp(phone: string): Promise<{ message: string; devCode?: string }> {
-    const code = phone === '+919999999999' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     this.otpStore.set(phone, code);
     if (process.env.NODE_ENV !== 'production') {
       this.logger.log(`Login OTP for ${phone}: ${code}`);
@@ -42,11 +42,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    // For JWT-based auth, we can't directly invalidate tokens without a blacklist
-    // This endpoint can be used for logging, analytics, or future token blacklisting
     this.logger.log(`User logged out: ${userId}`);
-    
-    // Clear push token on logout
     if (userId) {
       try {
         await this.usersService.update(userId, { pushToken: null });
@@ -54,7 +50,6 @@ export class AuthService {
         this.logger.warn(`Failed to clear push token for user ${userId}:`, error);
       }
     }
-    
     return { success: true, message: 'Logged out successfully' };
   }
   async registerProvider(dto: RegisterProviderDto) {

@@ -261,7 +261,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           </View>
         </View>
 
-        {/* Search Bar */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24, marginTop: 4 }}>
           <TouchableOpacity
             onPress={() => navigation.navigate('Search')}
@@ -283,7 +282,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           </TouchableOpacity>
         </View>
 
-        {/* Quick Action Cards */}
         {!(savedAddress && !savedAddress.isSupported) && (
           <View style={{ paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', gap: 12,marginTop:150}}>
             <TouchableOpacity
@@ -319,7 +317,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           </View>
         )}
 
-        {/* Coming Soon Section - Full width when location not supported */}
         {savedAddress && !savedAddress.isSupported && (
           <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
             <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 32, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}>
@@ -331,14 +328,11 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                 {t('home.coming_soon_body')}
               </Text>
 
-           
-              {/* Notify Me Button */}
               <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.primary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 30, marginBottom: 16, shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 }}>
                 <MessageCircle size={18} color="white" style={{ marginRight: 8 }} />
                 <Text style={{ fontSize: 15, fontWeight: '700', color: 'white' }}>{t('home.notify_me')}</Text>
               </TouchableOpacity>
 
-              {/* Change Location Link */}
               <TouchableOpacity 
                 onPress={() => navigation.navigate('SearchLocation')}
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
@@ -454,8 +448,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                           </View>
                         )}
                       </View>
-                      
-                      {/* Plus Button / Increment Decrement */}
+
                       {!isComingSoon && (
                         <View style={{ position: 'absolute', right: 8, top: '48%', zIndex: 10 }}>
                           {isInCart ? (
@@ -501,7 +494,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
               </View>
           </View>
 
-          {/* Categories Section Restored */}
           <View style={{ paddingHorizontal: 24, paddingBottom: 40, marginTop: 10 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('common.categories', 'Categories')}</Text>
 
@@ -583,8 +575,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
               </View>
           </View>
 
-          {/* Exclusive Offers */}
-        
            <View style={{ paddingBottom: 40 }}>
             <View style={{ paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>{t('home.exclusive_offers')}</Text>
@@ -604,7 +594,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
             </ScrollView>
           </View>
 
-          {/* Trust Section */}
         <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('home.why_houcee')}</Text>
             <View style={{ backgroundColor: Theme.background, borderRadius: 32, padding: 28, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
@@ -614,8 +603,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
               <TrustItem icon={<Phone size={24} color={Theme.primary} />} label={t('home.trust_support')} />
             </View>
           </View>
-          
-          {/* Trending Services */}
+
          <View style={{ paddingBottom: 60 }}>
             <View style={{ paddingHorizontal: 24, marginBottom: 16 }}><Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>{t('home.trending_now')}</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
@@ -636,7 +624,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
             </ScrollView>
           </View>
 
-          {/* FAQ Section */}
    <View style={{ paddingHorizontal: 24, paddingBottom: 120, marginTop: 10 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('home.common_questions')}</Text>
             {Array.isArray(faqs) && faqs.map((f: any, i: number) => (

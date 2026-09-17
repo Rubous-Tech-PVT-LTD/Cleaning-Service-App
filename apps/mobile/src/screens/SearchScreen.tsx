@@ -170,7 +170,6 @@ export const SearchScreen = ({ navigation }: any) => {
           )}
         </View>
 
-        {/* Filter Pills */}
         {query.length > 0 && (
           <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
             <FlatList

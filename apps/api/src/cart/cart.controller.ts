@@ -23,14 +23,14 @@ export class CartController {
     return this.cartService.getCart(req.user.id);
   }
   @Post()
-  @Throttle({ default: { limit: 60, ttl: 60000 } }) // 60 requests per minute
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Add item to cart' })
   @ApiResponse({ status: 201, description: 'Item added to cart.' })
   addToCart(@Request() req: RequestWithUser, @Body() body: AddToCartDto) {
     return this.cartService.addToCart(req.user.id, body);
   }
   @Put()
-  @Throttle({ default: { limit: 60, ttl: 60000 } }) // 60 requests per minute
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Update cart item' })
   @ApiResponse({ status: 200, description: 'Cart item updated.' })
   updateCartItem(@Request() req: RequestWithUser, @Body() body: { item: Record<string, any> }) {

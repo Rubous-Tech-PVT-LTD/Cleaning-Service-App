@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TrackingGateway } from '../tracking/tracking.gateway';
 const calculateDistance = (
@@ -144,16 +144,6 @@ export class SyncService {
       if (userId) {
         let isProvider = role === 'PROVIDER';
         const isInitialSync = !lastPulledAt || lastPulledAt === 0;
-        if (!isProvider && userId !== '1') {
-          const user = await (this.prisma as any).user.findUnique({
-            where: {
-              id: userId,
-            },
-          });
-          if (user && user.role === 'PROVIDER') {
-            isProvider = true;
-          }
-        }
         if (isProvider) {
           const providerUser = await (this.prisma as any).user.findUnique({
             where: { id: userId },
@@ -483,10 +473,13 @@ export class SyncService {
   async pushChanges(
     changes: any,
     lastPulledAt: number,
+    userId?: string,
+    userRole?: string,
   ) {
     try {
       if (changes.addresses) {
         for (const addr of changes.addresses.created || []) {
+          const addressUserId = userId || addr.user_id;
           await (this.prisma as any).address.upsert({
             where: {
               offlineId:
@@ -512,7 +505,7 @@ export class SyncService {
             create: {
               offlineId:
                 addr.offlineId || addr.id,
-              userId: addr.user_id,
+              userId: addressUserId,
               label: addr.label,
               addressLine1:
                 addr.address_line1,
@@ -565,8 +558,11 @@ export class SyncService {
           const bookingOfflineId =
             booking.offlineId || booking.id;
           const clientId =
-            booking.client_id ||
-            booking.clientId;
+            userId || (booking.client_id || booking.clientId);
+          if (userId && clientId !== userId && userRole !== 'ADMIN') {
+            throw new ForbiddenException('You can only create bookings for yourself');
+          }
+            
           const serviceId =
             booking.service_id ||
             booking.serviceId;

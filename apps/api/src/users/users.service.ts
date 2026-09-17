@@ -21,7 +21,8 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+    const { fullName, ...userWithoutFullName } = user;
+    return { name: fullName, fullName, ...userWithoutFullName };
   }
   async create(data: { phone: string, languagePref?: string }) {
     const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -38,7 +39,7 @@ export class UsersService {
     });
   }
   async updateProfile(userId: string, data: any) {
-    const { fullName, languagePref, avatar, professionIds, ...profileData } = data;
+    const { name, fullName, languagePref, avatar, addressLine1, addressLine2, city, state, pincode, latitude, longitude, bio, professionIds } = data;
     let avatarUrl = undefined;
     if (avatar && typeof avatar === 'string') {
       try {
@@ -48,9 +49,18 @@ export class UsersService {
       }
     }
     const userUpdate: any = {};
-    if (fullName !== undefined) userUpdate.fullName = fullName;
+    const nameToUpdate = name || fullName;
+    if (nameToUpdate !== undefined) userUpdate.fullName = nameToUpdate;
     if (languagePref !== undefined) userUpdate.languagePref = languagePref;
-    const profileUpdateData: any = { ...profileData };
+    const profileUpdateData: any = {};
+    if (addressLine1 !== undefined) profileUpdateData.addressLine1 = addressLine1;
+    if (addressLine2 !== undefined) profileUpdateData.addressLine2 = addressLine2;
+    if (city !== undefined) profileUpdateData.city = city;
+    if (state !== undefined) profileUpdateData.state = state;
+    if (pincode !== undefined) profileUpdateData.pincode = pincode;
+    if (latitude !== undefined) profileUpdateData.latitude = latitude;
+    if (longitude !== undefined) profileUpdateData.longitude = longitude;
+    if (bio !== undefined) profileUpdateData.bio = bio;
     if (professionIds !== undefined) {
       profileUpdateData.professionIds = professionIds;
       if (professionIds.length > 0) {
@@ -59,6 +69,7 @@ export class UsersService {
         profileUpdateData.professionId = null;
       }
     }
+    
     return this.prisma.user.update({
       where: { id: userId },
       data: {

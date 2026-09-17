@@ -11,7 +11,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
   @Post('otp/request')
-  @Throttle({ default: { limit: 5, ttl: 600000 } }) // 5 requests per 10 minutes
+  @Throttle({ default: { limit: 5, ttl: 600000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request an OTP for login/signup' })
   @ApiResponse({ status: 200, description: 'OTP sent successfully.' })
@@ -19,7 +19,7 @@ export class AuthController {
     return this.authService.requestOtp(requestOtpDto.phone);
   }
   @Post('otp/verify')
-  @Throttle({ default: { limit: 10, ttl: 300000 } }) // 10 requests per 5 minutes
+  @Throttle({ default: { limit: 10, ttl: 300000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify OTP and obtain JWT' })
   @ApiResponse({ status: 200, description: 'Successfully authenticated, returns JWT.' })
@@ -34,10 +34,11 @@ export class AuthController {
     return req.user;
   }
   @Post('push-token')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update user push token' })
-  async updatePushToken(@Body() body: { userId: string; token: string }) {
-    return this.authService.updatePushToken(body.userId, body.token);
+  async updatePushToken(@Request() req: any, @Body() body: { token: string }) {
+    return this.authService.updatePushToken(req.user.sub, body.token);
   }
   @Post('logout')
   @UseGuards(JwtAuthGuard)
@@ -48,7 +49,7 @@ export class AuthController {
     return this.authService.logout(req.user.sub);
   }
   @Post('register-provider')
-  @Throttle({ default: { limit: 5, ttl: 600000 } }) // 5 requests per 10 minutes
+  @Throttle({ default: { limit: 5, ttl: 600000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new provider profile' })
   @ApiResponse({ status: 201, description: 'Provider registered successfully.' })

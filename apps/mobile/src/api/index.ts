@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.1.6:3000/v1';
-export const SOCKET_URL = 'http://192.168.1.6:3000';
+const BASE_URL = 'http://192.168.1.17:3000/v1';
+export const SOCKET_URL = 'http://192.168.1.17:3000';
 
 async function request(method: string, endpoint: string, data?: any) {
   const token = await AsyncStorage.getItem('user_token');
@@ -39,6 +39,7 @@ const api = {
   get: (endpoint: string) => request('GET', endpoint),
   post: (endpoint: string, data?: any) => request('POST', endpoint, data),
   put: (endpoint: string, data?: any) => request('PUT', endpoint, data),
+  patch: (endpoint: string, data?: any) => request('PATCH', endpoint, data),
   delete: (endpoint: string, data?: any) => request('DELETE', endpoint, data),
 };
 

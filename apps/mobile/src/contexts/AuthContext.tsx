@@ -72,17 +72,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
-      // Call server-side logout endpoint first (while token is still valid)
-      // This clears push token on server and logs the logout
       try {
         await api.post('/auth/logout');
       } catch (error) {
-        // Continue with logout even if server logout fails
-        // This handles network issues or missing endpoints gracefully
       }
 
-      // Clear all user-specific AsyncStorage data
-      // Note: Cart data is kept on server so users can see their items when they log in again
       await AsyncStorage.multiRemove([
         'user_token',
         'user_id',

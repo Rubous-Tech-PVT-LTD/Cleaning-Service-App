@@ -370,7 +370,6 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
                 </View>
                 );
               })}
-               {/* Add More Services Button */}
             <View
               style={{
                 backgroundColor: '#FFFFFF',
