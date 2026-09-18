@@ -80,6 +80,12 @@ export const ProfileScreen = () => {
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuItemText}>{t('profile.bank_details')}</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('HelpCenter')}>
+            <Text style={styles.menuItemText}>{t('profile.help_center')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ProviderTerms')}>
+            <Text style={styles.menuItemText}>{t('profile.legal_terms')}</Text>
+          </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutBtnText}>{t('profile.logout')}</Text>

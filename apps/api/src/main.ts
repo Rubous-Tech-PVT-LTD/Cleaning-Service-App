@@ -13,7 +13,7 @@ async function bootstrap() {
   app.use(bodyParser.json({ limit: '5mb' }));
   app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
   app.enableCors({
-    origin: '*',
+    origin: ['http://localhost:8081', 'http://localhost:8082', 'http://127.0.0.1:8081', 'http://127.0.0.1:8082'],
     methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
     credentials: true,
     allowedHeaders: '*',

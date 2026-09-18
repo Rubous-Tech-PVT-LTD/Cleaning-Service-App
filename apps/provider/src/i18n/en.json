@@ -95,6 +95,8 @@
     "phone_note": "Phone number cannot be changed",
     "manage_services": "Manage Services",
     "bank_details": "Bank Details",
+    "help_center": "Help Center",
+    "legal_terms": "Terms & Privacy",
     "logout_confirm": "Are you sure you want to logout?"
   },
   "service": {
@@ -248,5 +250,24 @@
     "nav_wallet": "Wallet",
     "nav_profile": "Profile",
     "total": "Total"
+  },
+  "help_center": {
+    "title": "Help Center",
+    "search_placeholder": "Search for help...",
+    "intro_text": "Find answers to common questions about using the Houcee Provider platform. Can't find what you need? Contact our support team.",
+    "faq_title": "Frequently Asked Questions",
+    "no_results": "No results found for",
+    "still_need_help": "Still need help?",
+    "chat_support": "Chat support: Available 24/7 through the app",
+    "phone_support": "Phone support: 1800-XXX-XXXX (9 AM - 6 PM)",
+    "email_support": "Email: support@houcee.in (Response within 24 hours)",
+    "categories": {
+      "getting_started": "Getting Started",
+      "payments": "Payments & Earnings",
+      "jobs": "Jobs & Bookings",
+      "account": "Account Management",
+      "technical": "Technical Support",
+      "legal": "Legal & Compliance"
+    }
   }
 }

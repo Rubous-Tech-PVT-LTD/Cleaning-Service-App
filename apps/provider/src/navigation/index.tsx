@@ -11,6 +11,8 @@ import { ChatScreen } from '../screens/ChatScreen';
 import { TabNavigator } from './TabNavigator';
 import { TrackingScreen } from '../screens/TrackingScreen';
 import { ManageServicesScreen } from '../screens/ManageServicesScreen';
+import { ProviderTermsScreen } from '../screens/ProviderTermsScreen';
+import { HelpCenterScreen } from '../screens/HelpCenterScreen';
 import { Theme } from '../theme/index';
 const Stack = createNativeStackNavigator();
 export const ProviderNavigation = () => {
@@ -53,6 +55,8 @@ export const ProviderNavigation = () => {
       <Stack.Screen name="Dashboard" component={TabNavigator} />
       <Stack.Screen name="Tracking" component={TrackingScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="ManageServices" component={ManageServicesScreen} />
+      <Stack.Screen name="ProviderTerms" component={ProviderTermsScreen} />
+      <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
     </Stack.Navigator>
   );
 };

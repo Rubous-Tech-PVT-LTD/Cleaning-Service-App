@@ -224,16 +224,100 @@ export class BookingsService {
     const updateData: any = { status: updateStatusDto.status };
     const currentBooking = await this.prisma.booking.findUnique({ where: { id } });
     if (!currentBooking) throw new NotFoundException('Booking not found');
-    if (updateStatusDto.status === BookingStatus.COMPLETED) {
-      if (!currentBooking.otp) {
-        throw new BadRequestException('This booking does not have an OTP set up.');
-      }
-      if (currentBooking.otp !== updateStatusDto.otp) {
-        throw new BadRequestException('Invalid OTP. Please ask the client for the correct 4-digit PIN.');
-      }
+    
+    // Authorization checks based on the recommended authorization matrix
+    if (!user) {
+      throw new ForbiddenException('Authentication required');
+    }
+
+    const isAdmin = user.role === UserRole.ADMIN;
+    const isClient = user.role === UserRole.CLIENT;
+    const isProvider = user.role === UserRole.PROVIDER;
+    const isOwner = currentBooking.clientId === user.id;
+    const isAssignedProvider = currentBooking.providerId === user.id;
+
+    // Validate status transitions based on user role and booking ownership
+    switch (updateStatusDto.status) {
+      case BookingStatus.CANCELLED:
+        // Cancel booking: Own booking (client), assigned booking (provider), or admin
+        if (!isAdmin && !isOwner && !isAssignedProvider) {
+          throw new ForbiddenException('You can only cancel your own bookings or bookings assigned to you');
+        }
+        // Additional business rule: can only cancel bookings in certain statuses
+        const cancelableStatuses = ['PENDING', 'ACCEPTED', 'IN_PROGRESS'];
+        if (!isAdmin && !cancelableStatuses.includes(currentBooking.status)) {
+          throw new BadRequestException('Cannot cancel bookings that are already completed or cancelled');
+        }
+        break;
+
+      case BookingStatus.ACCEPTED:
+        // Accept booking: Only eligible assigned/claimable booking (provider) or admin
+        if (!isAdmin) {
+          if (!isProvider) {
+            throw new ForbiddenException('Only providers can accept bookings');
+          }
+          // Provider can accept if they are assigned or if the booking is pending and unassigned
+          if (!isAssignedProvider && currentBooking.status !== BookingStatus.PENDING) {
+            throw new ForbiddenException('You can only accept bookings assigned to you or pending bookings');
+          }
+          if (currentBooking.status !== BookingStatus.PENDING) {
+            throw new BadRequestException('Can only accept pending bookings');
+          }
+        }
+        break;
+
+      case BookingStatus.IN_PROGRESS:
+        // Start service: Assigned provider or admin
+        if (!isAdmin) {
+          if (!isProvider) {
+            throw new ForbiddenException('Only providers can start services');
+          }
+          if (!isAssignedProvider) {
+            throw new ForbiddenException('You can only start services for bookings assigned to you');
+          }
+          if (currentBooking.status !== BookingStatus.ACCEPTED) {
+            throw new BadRequestException('Can only start services for accepted bookings');
+          }
+        }
+        break;
+
+      case BookingStatus.COMPLETED:
+        // Complete service: Assigned provider + OTP or admin
+        if (!isAdmin) {
+          if (!isProvider) {
+            throw new ForbiddenException('Only providers can complete services');
+          }
+          if (!isAssignedProvider) {
+            throw new ForbiddenException('You can only complete services for bookings assigned to you');
+          }
+          if (!currentBooking.otp) {
+            throw new BadRequestException('This booking does not have an OTP set up.');
+          }
+          if (currentBooking.otp !== updateStatusDto.otp) {
+            throw new BadRequestException('Invalid OTP. Please ask the client for the correct 4-digit PIN.');
+          }
+          if (currentBooking.status !== BookingStatus.IN_PROGRESS) {
+            throw new BadRequestException('Can only complete services that are in progress');
+          }
+        }
+        break;
+
+      case BookingStatus.PENDING:
+        // Reset to pending: Admin only (override)
+        if (!isAdmin) {
+          throw new ForbiddenException('Only admins can reset booking status to pending');
+        }
+        break;
+
+      default:
+        // Any other status change: Admin only
+        if (!isAdmin) {
+          throw new ForbiddenException('Invalid status transition for your role');
+        }
+        break;
     }
     const booking = await this.prisma.$transaction(async (tx: any) => {
-      if (updateStatusDto.status === BookingStatus.ACCEPTED && user && user.role === 'PROVIDER') {
+      if (updateStatusDto.status === BookingStatus.ACCEPTED && isProvider) {
         updateData.providerId = user.id;
         const existingChat = await tx.chat.findFirst({
           where: { bookingId: id },

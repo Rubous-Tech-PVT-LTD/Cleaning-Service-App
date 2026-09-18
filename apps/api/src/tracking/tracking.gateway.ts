@@ -1,1 +1,56 @@
-import {  WebSocketGateway,  WebSocketServer,  SubscribeMessage,  MessageBody,  ConnectedSocket,  OnGatewayConnection,  OnGatewayDisconnect,} from '@nestjs/websockets';import { Server, Socket } from 'socket.io';@WebSocketGateway({  cors: {    origin: '*',  },})export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect {  @WebSocketServer()  server!: Server;  handleConnection(client: Socket) {  }  handleDisconnect(client: Socket) {  }  @SubscribeMessage('register')  handleRegister(    @MessageBody() data: { userId: string; role: string },    @ConnectedSocket() client: Socket,  ) {    client.join(data.userId);    if (data.role === 'PROVIDER') {      client.join('providers');    } else if (data.role === 'CLIENT') {      client.join('clients');    }  }  broadcastNewBooking(booking: any) {    this.server.to('providers').emit('new_booking', booking);  }  notifyUser(userId: string, event: string, data: any) {    this.server.to(userId).emit(event, data);  }  notifyProviders(providerIds: string[], event: string, data: any) {    providerIds.forEach(providerId => {      this.notifyUser(providerId, event, data);    });  }  @SubscribeMessage('update_location')  handleLocationUpdate(    @MessageBody() data: { providerId: string; clientId: string; latitude: number; longitude: number },  ) {    this.notifyUser(data.clientId, 'provider_location', {      latitude: data.latitude,      longitude: data.longitude,      providerId: data.providerId,    });  }}
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+})
+export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  server!: Server;
+  handleConnection(client: Socket) {
+  }
+  handleDisconnect(client: Socket) {
+  }
+  @SubscribeMessage('register')
+  handleRegister(
+    @MessageBody() data: { userId: string; role: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(data.userId);
+    if (data.role === 'PROVIDER') {
+      client.join('providers');
+    } else if (data.role === 'CLIENT') {
+      client.join('clients');
+    }
+  }
+  broadcastNewBooking(booking: any) {
+    this.server.to('providers').emit('new_booking', booking);
+  }
+  notifyUser(userId: string, event: string, data: any) {
+    this.server.to(userId).emit(event, data);
+  }
+  notifyProviders(providerIds: string[], event: string, data: any) {
+    providerIds.forEach(providerId => {
+      this.notifyUser(providerId, event, data);
+    });
+  }
+  @SubscribeMessage('update_location')
+  handleLocationUpdate(
+    @MessageBody() data: { providerId: string; clientId: string; latitude: number; longitude: number },
+  ) {
+    this.notifyUser(data.clientId, 'provider_location', {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      providerId: data.providerId,
+    });
+  }
+}

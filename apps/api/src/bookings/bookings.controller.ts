@@ -38,6 +38,10 @@ export class BookingsController {
   @Patch(':id/status')
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Update the status of a booking' })
+  @ApiResponse({ status: 200, description: 'Booking status updated successfully' })
+  @ApiResponse({ status: 403, description: 'Access denied - insufficient permissions' })
+  @ApiResponse({ status: 400, description: 'Invalid status transition' })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
   updateStatus(@Request() req: any, @Param('id') id: string, @Body() updateStatusDto: UpdateBookingStatusDto) {
     return this.bookingsService.updateStatus(id, updateStatusDto, req.user);
   }
