@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronDown, ChevronUp, Shield, FileText, Building2 } from 'lucide-react-native';
 import { LayoutAnimation } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Theme } from '../theme';
+import { Theme } from '../theme/index';
 
 const PROVIDER_TERMS_SECTIONS = [
   {
@@ -150,33 +150,33 @@ export const ProviderTermsScreen = ({ navigation }: any) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <LinearGradient colors={[Theme.primary, '#D4A520']} style={{ paddingBottom: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.white20, justifyContent: 'center', alignItems: 'center' }}>
             <ChevronLeft size={22} color="white" />
           </TouchableOpacity>
           <Text style={{ flex: 1, fontSize: 22, fontWeight: '900', color: 'white', marginLeft: 16 }}>Legal</Text>
         </View>
 
-        <View style={{ marginHorizontal: 20, flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 4 }}>
+        <View style={{ marginHorizontal: 20, flexDirection: 'row', backgroundColor: Theme.white15, borderRadius: 16, padding: 4 }}>
           <TouchableOpacity
             onPress={() => setActiveTab('terms')}
             style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12, backgroundColor: activeTab === 'terms' ? 'white' : 'transparent', gap: 8 }}
           >
-            <FileText size={16} color={activeTab === 'terms' ? Theme.primary : 'rgba(255,255,255,0.8)'} />
-            <Text style={{ fontSize: 14, fontWeight: '800', color: activeTab === 'terms' ? Theme.primary : 'rgba(255,255,255,0.8)' }}>Terms</Text>
+            <FileText size={16} color={activeTab === 'terms' ? Theme.primary : Theme.white80} />
+            <Text style={{ fontSize: 14, fontWeight: '800', color: activeTab === 'terms' ? Theme.primary : Theme.white80 }}>Terms</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('privacy')}
             style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12, backgroundColor: activeTab === 'privacy' ? 'white' : 'transparent', gap: 8 }}
           >
-            <Shield size={16} color={activeTab === 'privacy' ? Theme.primary : 'rgba(255,255,255,0.8)'} />
-            <Text style={{ fontSize: 14, fontWeight: '800', color: activeTab === 'privacy' ? Theme.primary : 'rgba(255,255,255,0.8)' }}>Privacy</Text>
+            <Shield size={16} color={activeTab === 'privacy' ? Theme.primary : Theme.white80} />
+            <Text style={{ fontSize: 14, fontWeight: '800', color: activeTab === 'privacy' ? Theme.primary : Theme.white80 }}>Privacy</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('agreement')}
             style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12, backgroundColor: activeTab === 'agreement' ? 'white' : 'transparent', gap: 8 }}
           >
-            <Building2 size={16} color={activeTab === 'agreement' ? Theme.primary : 'rgba(255,255,255,0.8)'} />
-            <Text style={{ fontSize: 14, fontWeight: '800', color: activeTab === 'agreement' ? Theme.primary : 'rgba(255,255,255,0.8)' }}>Agreement</Text>
+            <Building2 size={16} color={activeTab === 'agreement' ? Theme.primary : Theme.white80} />
+            <Text style={{ fontSize: 14, fontWeight: '800', color: activeTab === 'agreement' ? Theme.primary : Theme.white80 }}>Agreement</Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>

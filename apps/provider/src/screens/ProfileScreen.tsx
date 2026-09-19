@@ -7,9 +7,12 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '../theme/index';
 import api from '../api/index';
 import i18n from '../i18n/index';
+import { useAuth } from '../context/AuthContext';
+
 export const ProfileScreen = () => {
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
+  const { logout } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -32,11 +35,9 @@ export const ProfileScreen = () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            await api.post('/auth/logout');
+            await logout();
           } catch (error) {
           }
-          await AsyncStorage.removeItem('provider_token');
-          await AsyncStorage.removeItem('provider_id');
           await AsyncStorage.removeItem('provider_phone');
           navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
         },

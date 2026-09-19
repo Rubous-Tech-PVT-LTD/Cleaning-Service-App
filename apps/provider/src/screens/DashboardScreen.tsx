@@ -75,7 +75,7 @@ export const DashboardScreen = () => {
             <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary }}>{pendingBookings.length}</Text>
           </View>
           <View style={{ flex: 1, backgroundColor: Theme.primary, padding: 24, borderRadius: 24, elevation: 8, shadowColor: Theme.primary, shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 6 } }}>
-            <Text style={{ fontSize: 13, fontWeight: '800', color: 'rgba(255,255,255,0.8)', marginBottom: 8 }}>{t('provider.earnings')}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: Theme.white80, marginBottom: 8 }}>{t('provider.earnings')}</Text>
             <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.white }}>₹{totalEarnings.toLocaleString()}</Text>
           </View>
         </View>

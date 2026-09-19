@@ -37,6 +37,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
 
   useEffect(() => {
     loadAddress();
+    syncDatabase().catch(() => {});
     fetchTrendingServices();
     fetchCart();
   }, [navigation]);
@@ -244,16 +245,16 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
             onPress={() => navigation.navigate('SearchLocation')}
             style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 }}
           >
-            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-              <MapPin size={22} color="white" />
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.white40, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+              <MapPin size={22} color="#0F172A" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' }}>{savedAddress?.label || t('common.location')}</Text>
-              <Text style={{ fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'white' }} numberOfLines={1}>
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: Theme.black60 }}>{savedAddress?.label || t('common.location')}</Text>
+              <Text style={{ fontSize: 15, fontFamily: 'Poppins_500Medium', color: '#0F172A' }} numberOfLines={1}>
                 {savedAddress?.address || t('address.select_location')}
               </Text>
             </View>
-            <DownArrow size={20} color="white" />
+            <DownArrow size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {isOffline && <WifiOff size={20} color={Theme.accent} style={{ marginRight: 16 }} />}
@@ -422,7 +423,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                             <Home size={20} color={Theme.textSecondary} />
                           </View>
                         )}
-                        <View style={{ position: 'absolute', top: 6, alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 }}>
+                        <View style={{ position: 'absolute', top: 6, alignSelf: 'center', backgroundColor: Theme.white95, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 }}>
                           <Star size={10} color="#f59e0b" fill="#f59e0b" />
                           <Text style={{ fontSize: 9, fontWeight: '800', color: Theme.textPrimary, marginLeft: 4 }}>4.9 (4k)</Text>
                         </View>
@@ -701,7 +702,7 @@ const MaintenanceBanner = () => {
 const OfferCard = ({ title, subtitle, code, codePrefix, label }: any) => (
   <TouchableOpacity style={{ width: 300, height: 160, borderRadius: 32, marginRight: 20, overflow: 'hidden' }}>
     <LinearGradient colors={[Theme.primary, Theme.primary]} style={{ flex: 1, padding: 24 }} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-      <Text style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>{label}</Text>
+      <Text style={{ color: Theme.white80, fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>{label}</Text>
       <Text style={{ color: 'white', fontWeight: '900', fontSize: 28, marginTop: 4 }}>{title}</Text>
       <Text style={{ color: 'white', fontSize: 14, marginTop: 8, opacity: 0.9 }}>{subtitle}</Text>
       <View style={{ position: 'absolute', bottom: 16, left: 24, backgroundColor: 'white', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10 }}>

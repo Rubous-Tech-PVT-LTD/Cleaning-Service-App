@@ -13,6 +13,7 @@ import { Theme } from '../theme';
 import { syncDatabase } from '../db/sync';
 import { io, Socket } from 'socket.io-client';
 import { SOCKET_URL } from '../api';
+import { tokenStorage } from '../utils/tokenStorage';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -70,7 +71,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   useEffect(() => {
     const loadUser = async () => {
       const userId = await AsyncStorage.getItem('user_id');
-      const token = await AsyncStorage.getItem('user_token');
+      const token = await tokenStorage.getAccessToken();
       if (userId) setMyId(userId);
 
       const newSocket = io(SOCKET_URL, {
@@ -275,7 +276,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
             marginBottom: 12, maxWidth: '80%'
           }}>
             <Text style={{ color: m.senderId === myId ? 'white' : Theme.textPrimary, fontWeight: '500' }}>{m.content}</Text>
-            <Text style={{ fontSize: 10, color: m.senderId === myId ? 'rgba(255,255,255,0.6)' : Theme.textSecondary, marginTop: 4 }}>
+            <Text style={{ fontSize: 10, color: m.senderId === myId ? Theme.white60 : Theme.textSecondary, marginTop: 4 }}>
               {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>

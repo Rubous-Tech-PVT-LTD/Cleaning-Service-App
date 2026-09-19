@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   completeButton: { backgroundColor: Theme.success },
   inProgressButton: { backgroundColor: '#F59E0B' },
   buttonText: { color: Theme.white, fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: Theme.black50, justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: 'white', width: '85%', padding: 24, borderRadius: 24, elevation: 10 },
   modalTitle: { fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 8 },
   modalSubtitle: { fontSize: 14, color: Theme.textSecondary, marginBottom: 20 },

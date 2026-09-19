@@ -5,6 +5,7 @@ import { JwtAuthGuard } from './strategies/jwt-auth.guard';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RegisterProviderDto } from './dto/register-provider.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 @ApiTags('Authentication')
 @Controller('auth')
@@ -45,8 +46,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout user and clear session data' })
   @ApiResponse({ status: 200, description: 'Successfully logged out.' })
-  async logout(@Request() req: any) {
-    return this.authService.logout(req.user.sub);
+  async logout(@Request() req: any, @Body() body?: { refreshToken?: string }) {
+    return this.authService.logout(req.user.sub, body?.refreshToken);
+  }
+
+  @Post('refresh')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiResponse({ status: 200, description: 'Successfully refreshed tokens.' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token.' })
+  async refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refreshTokens(refreshTokenDto);
   }
   @Post('register-provider')
   @Throttle({ default: { limit: 5, ttl: 600000 } })

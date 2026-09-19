@@ -100,9 +100,9 @@ export const HelpCenterScreen = ({ navigation }: any) => {
         ))}
 
         <View style={{ marginTop: 20, padding: 24, backgroundColor: Theme.primary, borderRadius: 24, alignItems: 'center' }}>
-          <Mail size={32} color="white" style={{ marginBottom: 12 }} />
-          <Text style={{ fontSize: 18, fontWeight: '800', color: 'white', textAlign: 'center' }}>{t('help_center.still_need_help')}</Text>
-          <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: 4, marginBottom: 20 }}>
+          <Mail size={32} color={Theme.white} style={{ marginBottom: 12 }} />
+          <Text style={{ fontSize: 18, fontWeight: '800', color: Theme.white, textAlign: 'center' }}>{t('help_center.still_need_help')}</Text>
+          <Text style={{ fontSize: 14, color: Theme.white80, textAlign: 'center', marginTop: 4, marginBottom: 20 }}>
             {t('help_center.still_need_help_desc')}
           </Text>
           <TouchableOpacity

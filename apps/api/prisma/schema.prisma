@@ -7,26 +7,44 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(uuid())
-  phone            String    @unique
+  id               String         @id @default(uuid())
+  phone            String         @unique
   fullName         String?
-  role             UserRole  @default(CLIENT)
-  languagePref     String    @default("hi")
+  role             UserRole       @default(CLIENT)
+  languagePref     String         @default("hi")
   pushToken        String?
-  referralCode     String    @unique @default(uuid())
+  referralCode     String         @unique @default(uuid())
   referredBy       String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  version          Int       @default(1)
-  email            String?   @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  version          Int            @default(1)
+  email            String?        @unique
   addresses        Address[]
-  clientBookings   Booking[] @relation("ClientBookings")
-  providerBookings Booking[] @relation("ProviderBookings")
+  clientBookings   Booking[]      @relation("ClientBookings")
+  providerBookings Booking[]      @relation("ProviderBookings")
   cart             Cart?
   profile          Profile?
   raisedSosAlerts  Sos[]
+  refreshTokens    RefreshToken[]
 
   @@map("users")
+}
+
+model RefreshToken {
+  id           String   @id @default(uuid())
+  tokenHash    String   @unique
+  userId       String
+  familyId     String
+  revoked      Boolean  @default(false)
+  replacedBy   String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
 }
 
 model Cart {

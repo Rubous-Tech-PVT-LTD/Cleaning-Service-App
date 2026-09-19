@@ -4,6 +4,7 @@ import { io, Socket } from 'socket.io-client';
 import { Alert } from 'react-native';
 
 import api, { SOCKET_URL } from '../api';
+import { tokenStorage } from '../utils/tokenStorage';
 type BookingContextValue = {
   bookings: any[];
   setBookings: React.Dispatch<React.SetStateAction<any[]>>;
@@ -33,15 +34,25 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
   };
   useEffect(() => {
     let newSocket: Socket | null = null;
+    let reconnectTimer: NodeJS.Timeout | null = null;
+
     const initSocket = async () => {
       const userId = await AsyncStorage.getItem('provider_id');
-      if (userId && newSocket) {
+      const token = await tokenStorage.getAccessToken();
+      if (userId && newSocket && token) {
         newSocket.emit('register', { userId, role: 'PROVIDER' });
       }
     };
     const setup = async () => {
       await fetchBookings();
-      newSocket = io(SOCKET_URL, { autoConnect: false });
+      const token = await tokenStorage.getAccessToken();
+      newSocket = io(SOCKET_URL, { 
+        autoConnect: false,
+        auth: { token },
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
+      });
       setSocket(newSocket);
       newSocket.on('connect', () => {
         initSocket();
@@ -93,6 +104,15 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
       newSocket.on('booking_accepted', async (payload: any) => {
         await fetchBookings();
       });
+      newSocket.on('disconnect', () => {
+        reconnectTimer = setTimeout(async () => {
+          const newToken = await tokenStorage.getAccessToken();
+          if (newToken && newSocket) {
+            newSocket.auth = { token: newToken };
+            newSocket.connect();
+          }
+        }, 2000);
+      });
       const isOnline = await AsyncStorage.getItem('provider_online');
       if (isOnline !== 'false') {
         newSocket.connect();
@@ -100,6 +120,9 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     };
     setup();
     return () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
       if (newSocket) {
         newSocket.disconnect();
       }

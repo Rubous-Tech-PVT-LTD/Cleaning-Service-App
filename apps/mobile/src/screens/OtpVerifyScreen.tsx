@@ -28,8 +28,8 @@ export const OtpVerifyScreen = ({ route, navigation }: any) => {
     setLoading(true);
     try {
       const response = await api.post('/auth/otp/verify', { phone, code: data.otp });
-      if (response.data.accessToken) {
-        await login(response.data.accessToken, response.data.user);
+      if (response.data.accessToken && response.data.refreshToken) {
+        await login(response.data.accessToken, response.data.refreshToken, response.data.user);
 
         NotificationService.registerForPushNotificationsAsync().catch(
           (e) => {},

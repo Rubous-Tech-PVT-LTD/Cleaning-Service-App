@@ -1,6 +1,51 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-export const BASE_URL = 'http://192.168.138.209:3000/v1';
-export const SOCKET_URL = 'http://192.168.138.209:3000';
+import { tokenStorage } from '../utils/tokenStorage';
+
+export const BASE_URL = 'http://192.168.1.7:3000/v1';
+export const SOCKET_URL = 'http://192.168.1.7:3000';
+
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+const EXCLUDED_FROM_REFRESH = ['/auth/otp/request', '/auth/otp/verify', '/auth/refresh', '/auth/logout'];
+
+function subscribeTokenRefresh(callback: (token: string) => void) {
+  refreshSubscribers.push(callback);
+}
+
+function onTokenRefreshed(token: string) {
+  refreshSubscribers.forEach(callback => callback(token));
+  refreshSubscribers = [];
+}
+
+async function refreshAccessToken(): Promise<string> {
+  const refreshToken = await tokenStorage.getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await fetch(`${BASE_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Refresh failed');
+  }
+
+  const data = await response.json();
+  const newAccessToken = data.accessToken;
+  const newRefreshToken = data.refreshToken;
+
+  await tokenStorage.setAccessToken(newAccessToken);
+  await tokenStorage.setRefreshToken(newRefreshToken);
+
+  return newAccessToken;
+}
+
 function xhrRequest(
   method: string,
   url: string,
@@ -23,8 +68,9 @@ function xhrRequest(
     xhr.send(body || null);
   });
 }
-async function request(method: string, endpoint: string, data?: any) {
-  const token = await AsyncStorage.getItem('provider_token');
+
+async function request(method: string, endpoint: string, data?: any): Promise<{ data: any; status: number }> {
+  const token = await tokenStorage.getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Bypass-Tunnel-Reminder': 'true',
@@ -45,6 +91,35 @@ async function request(method: string, endpoint: string, data?: any) {
     try {
       responseData = JSON.parse(response.text);
     } catch {}
+
+    if (response.status === 401 && !EXCLUDED_FROM_REFRESH.some(path => endpoint.includes(path))) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh(async (newToken: string) => {
+            try {
+              const retryResponse = await request(method, endpoint, data);
+              resolve(retryResponse);
+            } catch (error) {
+              reject(error);
+            }
+          });
+        });
+      }
+
+      isRefreshing = true;
+      try {
+        const newToken = await refreshAccessToken();
+        isRefreshing = false;
+        onTokenRefreshed(newToken);
+        return request(method, endpoint, data);
+      } catch (error) {
+        isRefreshing = false;
+        await tokenStorage.clearTokens();
+        await AsyncStorage.multiRemove(['provider_id', 'provider_token']); // Clean up old token storage
+        throw error;
+      }
+    }
+
     if (!response.ok) {
       const error: any = new Error('Request failed');
       error.response = { data: responseData, status: response.status };

@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronDown, ChevronUp, HelpCircle, MessageCircle, Phone, 
 import { LayoutAnimation } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../theme';
+import { Theme } from '../theme/index';
 
 const HELP_CATEGORIES = [
   {
@@ -220,7 +220,7 @@ export const HelpCenterScreen = ({ navigation }: any) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <LinearGradient colors={[Theme.primary, '#D4A520']} style={{ paddingBottom: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.white20, justifyContent: 'center', alignItems: 'center' }}>
             <ChevronLeft size={22} color="white" />
           </TouchableOpacity>
           <Text style={{ flex: 1, fontSize: 22, fontWeight: '900', color: 'white', marginLeft: 16 }}>{t('help_center.title')}</Text>

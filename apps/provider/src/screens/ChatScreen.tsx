@@ -239,7 +239,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
             }
           ]}>
             <Text style={{ color: m.senderId === myId ? 'white' : Theme.textPrimary, fontWeight: '500' }}>{m.content}</Text>
-            <Text style={{ fontSize: 10, color: m.senderId === myId ? 'rgba(255,255,255,0.6)' : Theme.textSecondary, marginTop: 4 }}>
+            <Text style={{ fontSize: 10, color: m.senderId === myId ? Theme.white60 : Theme.textSecondary, marginTop: 4 }}>
               {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>

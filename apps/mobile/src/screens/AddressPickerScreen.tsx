@@ -245,7 +245,7 @@ export const AddressPickerScreen = ({ navigation }: any) => {
           />
         </MapView>
 
-        <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
+        <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: Theme.black45, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
           <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>OSM Mode</Text>
         </View>
 
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: Theme.black30,
     position: 'absolute',
     bottom: -2,
   },

@@ -99,7 +99,7 @@ export const LoginScreen = ({ navigation }: any) => {
                 <Svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: 0, left: 0 }}>
                   <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 </Svg>
-                <View style={{ position: 'absolute', bottom: 18, left: 16, width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1.5, borderColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', zIndex: 1 }}>
+                <View style={{ position: 'absolute', bottom: 18, left: 16, width: 42, height: 42, borderRadius: 21, backgroundColor: Theme.white20, borderWidth: 1.5, borderColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', zIndex: 1 }}>
                   <Zap size={22} color="#FFFFFF" fill="#FFFFFF" />
                 </View>
                 <View style={{ position: 'absolute', bottom: 20, right: 20, zIndex: 2 }}>
@@ -108,7 +108,7 @@ export const LoginScreen = ({ navigation }: any) => {
               </View>
               <View style={{ justifyContent: 'center' }}>
                 <Text style={{ fontSize: 42, fontWeight: '900', color: '#FFFFFF', letterSpacing: -1, lineHeight: 42 }}>houcee</Text>
-                <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.9)', fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}> one tap away</Text>
+                <Text style={{ fontSize: 16, color: Theme.white90, fontWeight: '700', letterSpacing: 0.5, marginTop: -2 }}> one tap away</Text>
               </View>
             </View>
             <ActivityIndicator size="large" color="#FFFFFF" />
@@ -118,7 +118,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
       <Animated.View style={{ flex: 1, opacity: isSplashing ? 0 : contentFadeAnim }}>
         <View style={{ paddingHorizontal: 32, paddingVertical: 20, alignItems: 'flex-end', zIndex: 20 }}>
-          <TouchableOpacity onPress={toggleLanguage} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
+          <TouchableOpacity onPress={toggleLanguage} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.white20, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
             <Globe size={16} color="white" />
             <Text style={{ marginLeft: 8, fontWeight: 'bold', color: 'white' }}>{i18n.language === 'hi' ? 'English' : 'हिंदी'}</Text>
           </TouchableOpacity>

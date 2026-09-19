@@ -9,11 +9,13 @@ import { z } from 'zod';
 import api from '../api/index';
 import { Theme } from '../theme/index';
 import { otpSchema } from '../validation/schemas';
+import { useAuth } from '../context/AuthContext';
 
 type OtpFormData = z.infer<typeof otpSchema>;
 
 export const OtpVerifyScreen = ({ route, navigation }: any) => {
   const { t } = useTranslation();
+  const { login } = useAuth();
   const { phone } = route.params;
   const [loading, setLoading] = useState(false);
 
@@ -26,9 +28,8 @@ export const OtpVerifyScreen = ({ route, navigation }: any) => {
     setLoading(true);
     try {
       const response = await api.post('/auth/otp/verify', { phone, code: data.otp });
-      if (response.data.accessToken) {
-        await AsyncStorage.setItem('provider_token', response.data.accessToken);
-        await AsyncStorage.setItem('provider_id', response.data.user.id);
+      if (response.data.accessToken && response.data.refreshToken) {
+        await login(response.data.accessToken, response.data.refreshToken, response.data.user);
         navigation.reset({ index: 0, routes: [{ name: 'LocationPrompt' }] });
       } else {
         Alert.alert('Error', t('otp.no_access_token'));

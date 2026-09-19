@@ -229,7 +229,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background, position: 'relative' }}>
       <View style={{ position: 'absolute', top: 60, left: 24, zIndex: 100 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 10 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: Theme.white90, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 10 }}>
           <ChevronLeft size={24} color={Theme.textPrimary} />
         </TouchableOpacity>
       </View>

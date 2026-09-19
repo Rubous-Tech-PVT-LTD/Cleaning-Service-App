@@ -21,7 +21,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         }
         return {
           secret,
-          signOptions: { expiresIn: '30d' },
+          signOptions: { expiresIn: '15m' },
         };
       },
     }),

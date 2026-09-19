@@ -1,10 +1,51 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage } from '../utils/tokenStorage';
 
-const BASE_URL = 'http://192.168.138.209:3000/v1';
-export const SOCKET_URL = 'http://192.168.138.209:3000';
+const BASE_URL = 'http://192.168.1.4:3000/v1';
+export const SOCKET_URL = 'http://192.168.1.4:3000';
 
-async function request(method: string, endpoint: string, data?: any) {
-  const token = await AsyncStorage.getItem('user_token');
+let isRefreshing = false;
+let refreshSubscribers: Array<() => void> = [];
+
+const EXCLUDED_FROM_REFRESH = ['/auth/otp/request', '/auth/otp/verify', '/auth/refresh', '/auth/logout'];
+
+function subscribeTokenRefresh(callback: () => void) {
+  refreshSubscribers.push(callback);
+}
+
+function onTokenRefreshed() {
+  refreshSubscribers.forEach(callback => callback());
+  refreshSubscribers = [];
+}
+
+async function refreshAccessToken(): Promise<void> {
+  const refreshToken = await tokenStorage.getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await fetch(`${BASE_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Refresh failed');
+  }
+
+  const data = await response.json();
+  const newAccessToken = data.accessToken;
+  const newRefreshToken = data.refreshToken;
+
+  await tokenStorage.setAccessToken(newAccessToken);
+  await tokenStorage.setRefreshToken(newRefreshToken);
+}
+
+async function request(method: string, endpoint: string, data?: any): Promise<{ data: any; status: number }> {
+  const token = await tokenStorage.getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   };
@@ -25,6 +66,34 @@ async function request(method: string, endpoint: string, data?: any) {
   const text = await response.text();
   let responseData: any = text;
   try { responseData = JSON.parse(text); } catch (e) {}
+
+  if (response.status === 401 && !EXCLUDED_FROM_REFRESH.some(path => endpoint.includes(path))) {
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh(async () => {
+          try {
+            const retryResponse = await request(method, endpoint, data);
+            resolve(retryResponse);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+    }
+
+    isRefreshing = true;
+    try {
+      await refreshAccessToken();
+      isRefreshing = false;
+      onTokenRefreshed();
+      return request(method, endpoint, data);
+    } catch (error) {
+      isRefreshing = false;
+      await tokenStorage.clearTokens();
+      await AsyncStorage.multiRemove(['user_id', 'guest_mode', 'push_token', 'user_phone', 'user_name', 'applied_coupon']);
+      throw error;
+    }
+  }
 
   if (!response.ok) {
     const error: any = new Error('Request failed');

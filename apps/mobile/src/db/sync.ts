@@ -1,8 +1,9 @@
 import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage } from '../utils/tokenStorage';
 
-const SYNC_URL = 'http://192.168.138.209:3000/v1/sync';
+const SYNC_URL = 'http://192.168.1.4:3000/v1/sync';
 
 let isSyncing = false;
 let pendingSyncRequested = false;
@@ -58,7 +59,7 @@ export async function syncDatabase() {
     await synchronize({
       database,
       pullChanges: async ({ lastPulledAt }) => {
-        const token = await AsyncStorage.getItem('user_token');
+        const token = await tokenStorage.getAccessToken();
         const userId = await AsyncStorage.getItem('user_id');
         const queryParams = new URLSearchParams({ lastPulledAt: (lastPulledAt || 0).toString() });
         if (userId && userId !== 'null') queryParams.append('userId', userId);
@@ -84,7 +85,7 @@ export async function syncDatabase() {
       },
 
       pushChanges: async ({ changes, lastPulledAt }) => {
-        const token = await AsyncStorage.getItem('user_token');
+        const token = await tokenStorage.getAccessToken();
         const response = await fetch(`${SYNC_URL}/push?lastPulledAt=${lastPulledAt || 0}`, {
           method: 'POST',
           headers: {

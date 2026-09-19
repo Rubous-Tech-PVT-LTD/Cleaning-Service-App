@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoLabel: {
-    color: 'rgba(255,255,255,0.8)',
+    color: Theme.white80,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 4,

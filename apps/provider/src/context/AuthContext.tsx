@@ -11,12 +11,9 @@ interface User {
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  isGuest: boolean;
   user: User | null;
   login: (accessToken: string, refreshToken: string, userData: User) => Promise<void>;
   logout: () => Promise<void>;
-  enterGuestMode: () => Promise<void>;
-  exitGuestMode: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -24,7 +21,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,20 +31,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loadAuthState = async () => {
     try {
       const accessToken = await tokenStorage.getAccessToken();
-      const guestMode = await AsyncStorage.getItem('guest_mode');
-      const userId = await AsyncStorage.getItem('user_id');
+      const userId = await AsyncStorage.getItem('provider_id');
 
-      if (guestMode === 'true') {
-        setIsGuest(true);
-        setIsAuthenticated(false);
-        setUser(null);
-      } else if (accessToken && userId) {
+      if (accessToken && userId) {
         setIsAuthenticated(true);
-        setIsGuest(false);
         setUser({ id: userId, phone: '' });
       } else {
         setIsAuthenticated(false);
-        setIsGuest(false);
         setUser(null);
       }
     } catch (error) {
@@ -61,11 +50,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await tokenStorage.setAccessToken(accessToken);
       await tokenStorage.setRefreshToken(refreshToken);
-      await AsyncStorage.setItem('user_id', userData.id);
-      await AsyncStorage.removeItem('guest_mode');
+      await AsyncStorage.setItem('provider_id', userData.id);
 
       setIsAuthenticated(true);
-      setIsGuest(false);
       setUser(userData);
     } catch (error) {
       throw error;
@@ -81,42 +68,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       await tokenStorage.clearTokens();
-      await AsyncStorage.multiRemove([
-        'user_id',
-        'guest_mode',
-        'push_token',
-        'user_phone',
-        'user_name',
-        'applied_coupon'
-      ]);
+      await AsyncStorage.multiRemove(['provider_id', 'provider_token']); // Clean up old token storage
 
-      setIsAuthenticated(false);
-      setIsGuest(false);
-      setUser(null);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const enterGuestMode = async () => {
-    try {
-      await AsyncStorage.setItem('guest_mode', 'true');
-      await tokenStorage.clearTokens();
-      await AsyncStorage.removeItem('user_id');
-
-      setIsGuest(true);
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const exitGuestMode = async () => {
-    try {
-      await AsyncStorage.removeItem('guest_mode');
-
-      setIsGuest(false);
       setIsAuthenticated(false);
       setUser(null);
     } catch (error) {
@@ -128,12 +81,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <AuthContext.Provider
       value={{
         isAuthenticated,
-        isGuest,
         user,
         login,
         logout,
-        enterGuestMode,
-        exitGuestMode,
         isLoading,
       }}
     >

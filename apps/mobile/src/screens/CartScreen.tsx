@@ -273,7 +273,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
               }}
               onPress={() => navigation.goBack()}
             >
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
+              <Text style={{ color: '#0F172A', fontSize: 16, fontWeight: 'bold' }}>
                 {t('cart.continue_shopping')}
               </Text>
             </TouchableOpacity>
@@ -632,7 +632,7 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
                     onPress={() => navigation.navigate('SearchLocation')}
                     style={{ backgroundColor: Theme.primary, paddingVertical: 16, borderRadius: 20, alignItems: 'center', width: '100%', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}
                   >
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>{t('cart.change_location')}</Text>
+                    <Text style={{ color: '#0F172A', fontSize: 16, fontWeight: '700' }}>{t('cart.change_location')}</Text>
                   </TouchableOpacity>
                 </View>
               );
@@ -650,9 +650,9 @@ const CartScreenBase = ({ navigation, addresses, services }: any) => {
                 disabled={confirming || updating}
               >
                 {confirming ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color="#0F172A" />
                 ) : (
-                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
+                  <Text style={{ color: '#0F172A', fontSize: 16, fontWeight: 'bold' }}>
                     {t('cart.confirm_booking')} • ₹{Math.round(finalAmount)}
                   </Text>
                 )}

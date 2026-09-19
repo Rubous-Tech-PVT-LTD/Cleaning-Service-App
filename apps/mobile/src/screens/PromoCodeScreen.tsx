@@ -67,19 +67,19 @@ export const PromoCodeScreen = ({ navigation }: any) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <LinearGradient colors={[Theme.primary, '#7C3AED']} style={{ paddingBottom: 28 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-            <ChevronLeft size={22} color="white" />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.white20, justifyContent: 'center', alignItems: 'center' }}>
+            <ChevronLeft size={22} color={Theme.white} />
           </TouchableOpacity>
-          <Text style={{ flex: 1, fontSize: 22, fontWeight: '900', color: 'white', marginLeft: 16 }}>Promo Codes</Text>
+          <Text style={{ flex: 1, fontSize: 22, fontWeight: '900', color: Theme.white, marginLeft: 16 }}>Promo Codes</Text>
         </View>
 
-        <View style={{ marginHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
-            <Wallet size={24} color="white" />
+        <View style={{ marginHorizontal: 20, backgroundColor: Theme.white15, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: Theme.white25, justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+            <Wallet size={24} color={Theme.white} />
           </View>
           <View>
-            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600' }}>Wallet Balance</Text>
-            <Text style={{ color: 'white', fontSize: 28, fontWeight: '900' }}>₹{walletBalance}</Text>
+            <Text style={{ color: Theme.white80, fontSize: 13, fontWeight: '600' }}>Wallet Balance</Text>
+            <Text style={{ color: Theme.white, fontSize: 28, fontWeight: '900' }}>₹{walletBalance}</Text>
           </View>
           {walletBalance > 0 && (
             <TouchableOpacity style={{ marginLeft: 'auto', backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
