@@ -368,9 +368,15 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                   </View>
                 ))
               ) : (() => {
-                const dailyHomeHelpCategory = (categories || []).find((c: any) => c?.nameEn === 'Daily Home Help');
+                const dailyHomeHelpCategory = (categories || []).find((c: any) => 
+                  c?.nameEn === 'Daily Home Help' || 
+                  c?.slug === 'daily-home-help' ||
+                  c?.nameEn?.toLowerCase()?.includes('daily home help')
+                );
                 const dailyHomeHelpCategoryId = dailyHomeHelpCategory?.id;
-                const filteredServices = services.filter((s: any) => s.categoryId === dailyHomeHelpCategoryId);
+                const filteredServices = dailyHomeHelpCategoryId
+                  ? services.filter((s: any) => s.categoryId === dailyHomeHelpCategoryId)
+                  : services.slice(0, 6);
 
                 return filteredServices.map((service: any, index: number) => {
                   const isComingSoon = service?.isComingSoon || false;

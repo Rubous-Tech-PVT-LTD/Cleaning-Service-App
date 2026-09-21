@@ -230,7 +230,7 @@ export const AddressPickerScreen = ({ navigation }: any) => {
       <View style={{ flex: 1, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' }}>
         <MapView
           ref={mapRef}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           initialRegion={region}
           onRegionChangeComplete={(newRegion) => {
             setRegion(newRegion);

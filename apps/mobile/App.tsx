@@ -70,11 +70,10 @@ const AppContent = () => {
       }
     };
 
-    const initialDelay = setTimeout(startSync, 3000);
+    startSync();
     const interval = setInterval(startSync, 60000);
 
     return () => {
-      clearTimeout(initialDelay);
       clearInterval(interval);
     };
   }, []);
@@ -122,19 +121,23 @@ const AppContent = () => {
   }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = response.notification.request.content.data as any;
-        if (data?.bookingId && navigationRef.current) {
-          setTimeout(() => {
-            navigationRef.current?.navigate('BookingDetail', {
-              bookingId: data.bookingId,
-            });
-          }, 500);
-        }
-      },
-    );
-    return () => subscription.remove();
+    try {
+      const subscription = Notifications.addNotificationResponseReceivedListener(
+        (response) => {
+          const data = response.notification.request.content.data as any;
+          if (data?.bookingId && navigationRef.current) {
+            setTimeout(() => {
+              navigationRef.current?.navigate('BookingDetail', {
+                bookingId: data.bookingId,
+              });
+            }, 500);
+          }
+        },
+      );
+      return () => subscription?.remove();
+    } catch (e) {
+      // Graceful fallback
+    }
   }, []);
 
   if (!initialRoute || !fontsLoaded) return null;

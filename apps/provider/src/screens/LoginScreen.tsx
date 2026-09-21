@@ -100,12 +100,8 @@ export const LoginScreen = ({ navigation }: any) => {
         navigation.navigate('OtpVerify', { phone: `+91${phone}` });
       }
     } catch (error: any) {
-      const errorMsg: string = error?.message || '';
-      if (errorMsg.includes('NONE') || errorMsg.includes('read-only') || errorMsg.includes('Hermes')) {
-        navigation.navigate('OtpVerify', { phone: `+91${phone}` });
-        return;
-      }
-      Alert.alert('Connection Failed', `Error: ${errorMsg}`);
+      const errorMsg: string = error?.response?.data?.message || error?.message || 'Connection failed';
+      Alert.alert('Connection Failed', errorMsg);
     } finally {
       setLoading(false);
     }

@@ -199,10 +199,6 @@ export const RegistrationScreen = ({ navigation }: any) => {
       } else if (error?.message) {
         msg = error.message;
       }
-      if (msg.includes('NONE') || msg.includes('read-only')) {
-        navigation.navigate('OtpVerify', { phone: `+91${form.phone}` });
-        return;
-      }
       Alert.alert(t('registration.registration_error'), msg);
     } finally {
       setLoading(false);

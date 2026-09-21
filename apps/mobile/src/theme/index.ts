@@ -21,7 +21,7 @@ export const originalTheme = {
   headerIcon: '#ffffff',
   headerIconBg: 'rgba(255, 255, 255, 0.2)',
   timePillBg: '#F1F5F9',
-  timePillText: '#33135C',
+  timePillText: '#000000',
   homeBanner: require('../assets/Header.png'),
 };
 
@@ -48,7 +48,7 @@ export const goldenTheme = {
   headerIcon: '#000000',
   headerIconBg: '#F9C935',
   timePillBg: '#F1F5F9',
-  timePillText: '#F9C935',
+  timePillText: '#000000',
   homeBanner: require('../assets/Home.png'),
 };
 

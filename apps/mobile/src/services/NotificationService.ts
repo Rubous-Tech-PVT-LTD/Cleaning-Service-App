@@ -16,41 +16,49 @@ Notifications.setNotificationHandler({
 
 export class NotificationService {
   static async registerForPushNotificationsAsync() {
-    let token;
+    let token: string | undefined;
 
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF231F7C',
-      });
-    }
-
-    if (Device.isDevice || Platform.OS === 'android') {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      if (finalStatus !== 'granted') {
-        return;
-      }
-      
-      try {
-        token = (await Notifications.getExpoPushTokenAsync()).data;
-        await AsyncStorage.setItem('push_token', token);
-      } catch (e) {
+    try {
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        }).catch(() => {});
       }
 
-      const userId = await AsyncStorage.getItem('user_id');
-      if (userId && token) {
+      if (Device.isDevice || Platform.OS === 'android') {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync().catch(() => ({ status: 'undetermined' }));
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+          const res = await Notifications.requestPermissionsAsync().catch(() => ({ status: 'denied' }));
+          finalStatus = res.status;
+        }
+        if (finalStatus !== 'granted') {
+          return undefined;
+        }
+
         try {
-          await api.post('/auth/push-token', { userId, token });
+          const pushTokenData = await Notifications.getExpoPushTokenAsync();
+          token = pushTokenData?.data;
+          if (token) {
+            await AsyncStorage.setItem('push_token', token);
+          }
         } catch (e) {
+          // Expo Go on Android SDK 53+ does not support remote push tokens
+        }
+
+        const userId = await AsyncStorage.getItem('user_id');
+        if (userId && token) {
+          try {
+            await api.post('/auth/push-token', { userId, token });
+          } catch (e) {
+          }
         }
       }
+    } catch (err) {
+      // Graceful fallback for simulator / Expo Go
     }
 
     return token;
