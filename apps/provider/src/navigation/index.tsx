@@ -8,7 +8,7 @@ import { OtpVerifyScreen } from '../screens/OtpVerifyScreen';
 import { RegistrationScreen } from '../screens/RegistrationScreen';
 import { LocationPromptScreen } from '../screens/LocationPromptScreen';
 import { SearchLocationScreen } from '../screens/SearchLocationScreen';
-import { ChatScreen } from '../screens/ChatScreen';
+import { UnderDevelopmentScreen } from '../screens/UnderDevelopmentScreen';
 import { TabNavigator } from './TabNavigator';
 import { TrackingScreen } from '../screens/TrackingScreen';
 import { ManageServicesScreen } from '../screens/ManageServicesScreen';
@@ -50,7 +50,7 @@ export const ProviderNavigation = () => {
     >
       <Stack.Screen name="Registration" component={RegistrationScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="Chat" component={UnderDevelopmentScreen} />
       <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} />
       <Stack.Screen name="LocationPrompt" component={LocationPromptScreen} />
       <Stack.Screen name="SearchLocation" component={SearchLocationScreen} />

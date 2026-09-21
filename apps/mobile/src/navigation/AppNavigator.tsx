@@ -19,7 +19,7 @@ import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { ReferEarnScreen } from '../screens/ReferEarnScreen';
 import { HelpCenterScreen } from '../screens/HelpCenterScreen';
 import { ReviewScreen } from '../screens/ReviewScreen';
-import { ChatScreen } from '../screens/ChatScreen';
+import { UnderDevelopmentScreen } from '../screens/UnderDevelopmentScreen';
 import { CancellationScreen } from '../screens/CancellationScreen';
 import { PromoCodeScreen } from '../screens/PromoCodeScreen';
 import { TermsScreen } from '../screens/TermsScreen';
@@ -63,7 +63,7 @@ export const AppNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?
       <Stack.Screen name="PromoCode" component={PromoCodeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Terms" component={TermsScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="Chat" component={UnderDevelopmentScreen} />
     </Stack.Navigator>
   );
 };
