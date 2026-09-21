@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       await tokenStorage.clearTokens();
-      await AsyncStorage.multiRemove(['provider_id', 'provider_token']); // Clean up old token storage
+      await AsyncStorage.removeItem('provider_id');
 
       setIsAuthenticated(false);
       setUser(null);

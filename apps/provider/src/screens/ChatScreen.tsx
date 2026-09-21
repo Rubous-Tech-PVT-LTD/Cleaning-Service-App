@@ -59,10 +59,10 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
       });
       setSocket(newSocket);
       newSocket.on('connect', () => {
-        newSocket.emit('register', { userId: providerId, role: 'PROVIDER' });
+        newSocket.emit('register', { role: 'PROVIDER' });
       });
       newSocket.on('reconnect', (attemptNumber) => {
-        newSocket.emit('register', { userId: providerId, role: 'PROVIDER' });
+        newSocket.emit('register', { role: 'PROVIDER' });
         syncDatabase().catch(err => {
         });
       });

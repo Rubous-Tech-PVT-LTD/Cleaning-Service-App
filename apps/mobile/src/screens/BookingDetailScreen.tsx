@@ -13,6 +13,7 @@ import { database } from '../db';
 import { Q } from '@nozbe/watermelondb';
 import { Theme } from '../theme';
 import api, { SOCKET_URL } from '../api';
+import { tokenStorage } from '../utils/tokenStorage';
 
 const BookingDetailScreenBase = ({ navigation, booking, service, address, services }: any) => {
   const { t, i18n } = useTranslation();
@@ -43,25 +44,40 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
   React.useEffect(() => {
     if (!isAcceptedOrInProgress) return;
 
-    const socket = io(SOCKET_URL);
+    let socket: any = null;
 
-    const initSocket = async () => {
-      const clientId = await AsyncStorage.getItem('user_id');
-      if (clientId) {
-        socket.emit('register', { userId: clientId, role: 'CLIENT' });
-      }
+    const setupSocket = async () => {
+      const token = await tokenStorage.getAccessToken();
+      socket = io(SOCKET_URL, {
+        auth: {
+          token: token ? `Bearer ${token}` : undefined,
+        },
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
+      });
+
+      const initSocket = async () => {
+        socket.emit('register', { role: 'CLIENT' });
+      };
+
+      socket.on('connect', () => {
+        initSocket();
+      });
+
+      socket.on('provider_location', (data: any) => {
+        if (data.bookingId === booking.id) {
+          setProviderLocation({ latitude: data.latitude, longitude: data.longitude });
+        }
+      });
     };
 
-    socket.on('connect', () => {
-      initSocket();
-    });
-
-    socket.on('provider_location', (data: any) => {
-      setProviderLocation({ latitude: data.latitude, longitude: data.longitude });
-    });
+    setupSocket();
 
     return () => {
-      socket.disconnect();
+      if (socket) {
+        socket.disconnect();
+      }
     };
   }, [booking.status]);
 

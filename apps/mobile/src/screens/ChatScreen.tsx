@@ -85,11 +85,11 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
       setSocket(newSocket);
 
       newSocket.on('connect', () => {
-        newSocket.emit('register', { userId, role: 'CLIENT' });
+        newSocket.emit('register', { role: 'CLIENT' });
       });
 
       newSocket.on('reconnect', (attemptNumber) => {
-        newSocket.emit('register', { userId, role: 'CLIENT' });
+        newSocket.emit('register', { role: 'CLIENT' });
         syncDatabase().catch(err => {});
       });
 

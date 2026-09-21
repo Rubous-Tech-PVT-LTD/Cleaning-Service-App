@@ -51,7 +51,7 @@ export const TrackingScreen = () => {
   const { booking } = route.params as { booking: any };
   const mapRef = useRef<MapView>(null);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const { socket: sharedSocket } = useBookings();
+  const { socket: sharedSocket, refreshBookings } = useBookings();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<any[]>([]);
   const [distance, setDistance] = useState<number>(0);
@@ -182,6 +182,7 @@ export const TrackingScreen = () => {
   const markArrived = async () => {
     try {
       await api.patch(`/bookings/${booking.id}/status`, { status: 'IN_PROGRESS' });
+      await refreshBookings();
       Alert.alert(t('provider.arrived_alert'), t('provider.arrived_message'));
       navigation.goBack();
     } catch (e: any) {

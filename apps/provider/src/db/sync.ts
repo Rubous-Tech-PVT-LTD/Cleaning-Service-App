@@ -1,7 +1,7 @@
 import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const SYNC_URL = 'http://192.168.138.209:3000/v1/sync';
+const SYNC_URL = 'http://192.168.156.209:3000/v1/sync';
 const STATUS_PRIORITY: Record<string, number> = {
   PENDING: 1,
   ACCEPTED: 2,

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage } from '../utils/tokenStorage';
 import { LoginScreen } from '../screens/LoginScreen';
 import { OtpVerifyScreen } from '../screens/OtpVerifyScreen';
 import { RegistrationScreen } from '../screens/RegistrationScreen';
@@ -20,10 +21,11 @@ export const ProviderNavigation = () => {
   const [hasLocation, setHasLocation] = useState<boolean>(false);
   useEffect(() => {
     const checkAuthAndLocation = async () => {
-      const token = await AsyncStorage.getItem('provider_token');
+      const token = await tokenStorage.getAccessToken();
+      const userId = await AsyncStorage.getItem('provider_id');
       const latitude = await AsyncStorage.getItem('provider_latitude');
       const longitude = await AsyncStorage.getItem('provider_longitude');
-      setIsLoggedIn(!!token);
+      setIsLoggedIn(!!token && !!userId);
       setHasLocation(!!latitude && !!longitude);
     };
     checkAuthAndLocation();

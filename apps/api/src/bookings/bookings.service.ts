@@ -81,6 +81,15 @@ export class BookingsService {
     if (!address || !address.latitude || !address.longitude) {
       throw new BadRequestException('Booking address must have valid coordinates');
     }
+
+    const service = await this.prisma.service.findUnique({
+      where: { id: createBookingDto.serviceId },
+    });
+    if (!service) {
+      throw new BadRequestException('Service not found');
+    }
+
+    let totalPrice = Number(service.basePrice);
     let assignedProviderId = createBookingDto.providerId;
     if (!assignedProviderId) {
       const suitableProviders = await this.findSuitableProviders(
@@ -107,7 +116,7 @@ export class BookingsService {
             if (compensatedProvider) {
               assignedProviderId = compensatedProvider.provider.id;
               const travelCompensation = 150;
-              createBookingDto.totalPrice = Number(createBookingDto.totalPrice) + travelCompensation;
+              totalPrice = totalPrice + travelCompensation;
             }
           }
         }
@@ -121,7 +130,7 @@ export class BookingsService {
         providerId: assignedProviderId,
         addressId: createBookingDto.addressId,
         scheduledAt: new Date(createBookingDto.scheduledAt),
-        totalPrice: createBookingDto.totalPrice,
+        totalPrice: totalPrice,
         offlineId: createBookingDto.offlineId,
         status: BookingStatus.PENDING,
         otp: otp,
@@ -215,7 +224,7 @@ export class BookingsService {
       const isOwner = booking.clientId === user.id || booking.providerId === user.id;
       const isAdmin = user.role === 'ADMIN';
       if (!isOwner && !isAdmin) {
-        throw new ForbiddenException('Access denied: You can only access your own bookings');
+        throw new NotFoundException('Booking not found');
       }
     }
     return booking;

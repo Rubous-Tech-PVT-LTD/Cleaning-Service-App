@@ -34,13 +34,12 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
   };
   useEffect(() => {
     let newSocket: Socket | null = null;
-    let reconnectTimer: NodeJS.Timeout | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     const initSocket = async () => {
-      const userId = await AsyncStorage.getItem('provider_id');
       const token = await tokenStorage.getAccessToken();
-      if (userId && newSocket && token) {
-        newSocket.emit('register', { userId, role: 'PROVIDER' });
+      if (newSocket && token) {
+        newSocket.emit('register', { role: 'PROVIDER' });
       }
     };
     const setup = async () => {

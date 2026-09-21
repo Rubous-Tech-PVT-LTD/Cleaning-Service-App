@@ -83,7 +83,7 @@ const AppContent = () => {
     if (!isAuthenticated || !user?.id) return;
 
     let socket: any = null;
-    let reconnectTimer: NodeJS.Timeout | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     const connectSocket = async () => {
       const token = await tokenStorage.getAccessToken();
@@ -101,7 +101,7 @@ const AppContent = () => {
       });
 
       socket.on('connect', () => {
-        socket.emit('register', { userId: user.id, role: 'CLIENT' });
+        socket.emit('register', { role: 'CLIENT' });
       });
 
       socket.on('sync_ping', () => {

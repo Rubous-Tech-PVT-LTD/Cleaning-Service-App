@@ -3,7 +3,7 @@ import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { tokenStorage } from '../utils/tokenStorage';
 
-const SYNC_URL = 'http://192.168.1.4:3000/v1/sync';
+const SYNC_URL = 'http://192.168.156.209:3000/v1/sync';
 
 let isSyncing = false;
 let pendingSyncRequested = false;

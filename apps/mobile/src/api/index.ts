@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { tokenStorage } from '../utils/tokenStorage';
 
-const BASE_URL = 'http://192.168.1.4:3000/v1';
-export const SOCKET_URL = 'http://192.168.1.4:3000';
+const BASE_URL = 'http://192.168.156.209:3000/v1';
+export const SOCKET_URL = 'http://192.168.156.209:3000';
 
 let isRefreshing = false;
 let refreshSubscribers: Array<() => void> = [];
