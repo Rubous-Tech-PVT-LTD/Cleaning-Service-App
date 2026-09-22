@@ -17,7 +17,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
     items = [];
   }
 
-  const primaryServiceTitle = service ? (i18n.language === 'hi' ? service.nameHi : service.nameEn) : 'Loading...';
+  const primaryServiceTitle = service ? (i18n.language === 'hi' ? (service.name_hi || service.nameHi) : (service.name_en || service.nameEn)) : 'Loading...';
 
   const getItemTitle = (item: any) => {
     if (item.serviceId) {
@@ -46,7 +46,11 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
             <Clock size={14} color={Theme.textSecondary} />
             <Text style={{ color: Theme.textSecondary, marginLeft: 6, fontSize: 13, fontWeight: '600' }}>
-              {new Date(booking.scheduledAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+              {(() => {
+                const scheduledDate = booking.scheduled_at || booking.scheduledAt;
+                const date = scheduledDate ? new Date(scheduledDate) : new Date();
+                return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+              })()}
             </Text>
           </View>
         </View>
@@ -60,11 +64,11 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
       <View style={{ height: 1, backgroundColor: '#F1F5F9', marginVertical: 16 }} />
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 16, fontWeight: '900', color: Theme.primary }}>₹{booking.totalPrice}</Text>
+        <Text style={{ fontSize: 16, fontWeight: '900', color: Theme.primary }}>₹{booking.total_price || booking.totalPrice}</Text>
         <View style={{ flexDirection: 'row' }}>
           {isChatEnabled && (
             <TouchableOpacity
-              onPress={() => navigation.navigate('Chat', { bookingId: booking.serverId || booking.id, serviceName: primaryServiceTitle, providerId: booking.providerId, clientId: booking.clientId })}
+              onPress={() => navigation.navigate('Chat', { bookingId: booking.id, serviceName: primaryServiceTitle, providerId: booking.provider_id, clientId: booking.client_id })}
               style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F4EDFF', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}
             >
               <MessageCircle size={20} color={Theme.primary} />
@@ -80,7 +84,7 @@ const BookingItemBase = ({ booking, service, navigation, t, i18n, services }: an
           )}
           {booking.status === 'COMPLETED' && (
             <TouchableOpacity
-              onPress={() => navigation.navigate('Review', { bookingId: booking.serverId || booking.offlineId || booking.id, serviceName: primaryServiceTitle })}
+              onPress={() => navigation.navigate('Review', { bookingId: booking.id, serviceName: primaryServiceTitle })}
               style={{ backgroundColor: Theme.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, justifyContent: 'center' }}
             >
               <Text style={{ fontSize: 12, fontWeight: '900', color: 'white' }}>{t('common.rate_service').toUpperCase()}</Text>

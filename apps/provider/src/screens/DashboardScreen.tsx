@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useBookings } from '../context/BookingContext';
 export const DashboardScreen = () => {
   const { t } = useTranslation();
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
   const { bookings, loading, refreshBookings, socket } = useBookings();
   const pendingBookings = bookings.filter((b: any) => b.status === 'PENDING');
   const completedBookings = bookings.filter((b: any) => b.status === 'COMPLETED');
@@ -19,16 +19,26 @@ export const DashboardScreen = () => {
     const saved = await AsyncStorage.getItem('provider_online');
     if (saved !== null) {
       setIsOnline(saved === 'true');
+      try {
+        await api.patch('/users/online-status', { isOnline: saved === 'true' });
+      } catch (error) {
+      }
     }
   };
   const toggleOnline = async (val: boolean) => {
     setIsOnline(val);
     await AsyncStorage.setItem('provider_online', String(val));
+    try {
+      await api.patch('/users/online-status', { isOnline: val });
+    } catch (error) {
+    }
     if (val && socket) {
       socket.connect();
     } else if (!val && socket) {
       socket.disconnect();
     }
+    // Auto-refresh bookings when online status changes
+    await refreshBookings();
   };
   useEffect(() => {
     loadOnlineStatus();

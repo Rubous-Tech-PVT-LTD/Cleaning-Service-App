@@ -5,75 +5,15 @@ import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { BookingStatus, Prisma, EscrowStatus, UserRole } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TrackingGateway } from '../tracking/tracking.gateway';
-const DISTANCE_TIERS = {
-  IDEAL: 5,
-  GOOD: 10,
-  ACCEPTABLE: 15,
-  COMPENSATED: 25,
-  FAR: 25,
-};
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+import { ProviderAssignmentService } from '../provider-assignment/provider-assignment.service';
 @Injectable()
 export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly trackingGateway: TrackingGateway,
+    private readonly providerAssignment: ProviderAssignmentService,
   ) { }
-  private async findSuitableProviders(clientLat: number, clientLon: number, serviceId: string) {
-    const providers = await this.prisma.user.findMany({
-      where: {
-        role: UserRole.PROVIDER,
-        profile: {
-          isVerified: true,
-          latitude: { not: null },
-          longitude: { not: null },
-          OR: [
-            { professionIds: { array_contains: serviceId } },
-            { professionId: serviceId }
-          ]
-        },
-      },
-      include: {
-        profile: true,
-      },
-    });
-    const providersWithDistance = providers
-      .map(provider => {
-        const distance = calculateDistance(
-          clientLat,
-          clientLon,
-          provider.profile!.latitude!,
-          provider.profile!.longitude!
-        );
-        const tier = this.getDistanceTier(distance);
-        return {
-          provider,
-          distance,
-          tier,
-        };
-      })
-      .filter(p => p.tier !== 'FAR')
-      .sort((a, b) => a.distance - b.distance);
-    return providersWithDistance;
-  }
-  private getDistanceTier(distance: number): string {
-    if (distance <= DISTANCE_TIERS.IDEAL) return 'IDEAL';
-    if (distance <= DISTANCE_TIERS.GOOD) return 'GOOD';
-    if (distance <= DISTANCE_TIERS.ACCEPTABLE) return 'ACCEPTABLE';
-    if (distance <= DISTANCE_TIERS.COMPENSATED) return 'COMPENSATED';
-    return 'FAR';
-  }
   async create(clientId: string, createBookingDto: CreateBookingDto) {
     const address = await this.prisma.address.findUnique({
       where: { id: createBookingDto.addressId },
@@ -92,34 +32,15 @@ export class BookingsService {
     let totalPrice = Number(service.basePrice);
     let assignedProviderId = createBookingDto.providerId;
     if (!assignedProviderId) {
-      const suitableProviders = await this.findSuitableProviders(
+      const assignment = await this.providerAssignment.assignBestProvider(
         address.latitude,
         address.longitude,
-        createBookingDto.serviceId
+        createBookingDto.serviceId,
+        { requireOnline: true }
       );
-      const idealProvider = suitableProviders.find(p => p.tier === 'IDEAL');
-      if (idealProvider) {
-        assignedProviderId = idealProvider.provider.id;
-      }
-      else {
-        const goodProvider = suitableProviders.find(p => p.tier === 'GOOD');
-        if (goodProvider) {
-          assignedProviderId = goodProvider.provider.id;
-        }
-        else {
-          const acceptableProvider = suitableProviders.find(p => p.tier === 'ACCEPTABLE');
-          if (acceptableProvider) {
-            assignedProviderId = acceptableProvider.provider.id;
-          }
-          else {
-            const compensatedProvider = suitableProviders.find(p => p.tier === 'COMPENSATED');
-            if (compensatedProvider) {
-              assignedProviderId = compensatedProvider.provider.id;
-              const travelCompensation = 150;
-              totalPrice = totalPrice + travelCompensation;
-            }
-          }
-        }
+      assignedProviderId = assignment.providerId || undefined;
+      if (assignment.travelCompensation) {
+        totalPrice = totalPrice + assignment.travelCompensation;
       }
     }
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
@@ -142,32 +63,20 @@ export class BookingsService {
       },
     });
     if (booking.providerId) {
-      this.trackingGateway.notifyUser(booking.providerId, 'new_booking', booking);
       const provider = await this.prisma.user.findUnique({
         where: { id: booking.providerId },
+        include: { profile: true },
       });
-      await this.notifications.notifyBookingStatusChange(
-        provider?.pushToken,
-        booking.id,
-        booking.status,
-        'new service request'
-      ).catch(() => { });
-    } else {
-      const matchingProviders = await this.prisma.user.findMany({
-        where: {
-          role: UserRole.PROVIDER,
-          profile: {
-            OR: [
-              { professionIds: { array_contains: createBookingDto.serviceId } },
-              { professionId: createBookingDto.serviceId }
-            ],
-          },
-        },
-      });
-      const matchingProviderIds = matchingProviders.map(p => p.id);
-      if (matchingProviderIds.length > 0) {
-        this.trackingGateway.notifyProviders(matchingProviderIds, 'new_booking', booking);
+      if ((provider?.profile as any)?.isOnline) {
+        this.trackingGateway.notifyUser(booking.providerId, 'new_booking', booking);
+        await this.notifications.notifyBookingStatusChange(
+          provider?.pushToken,
+          booking.id,
+          booking.status,
+          'new service request'
+        ).catch(() => { });
       }
+    } else {
     }
     return booking;
   }
@@ -183,26 +92,9 @@ export class BookingsService {
       });
     }
     if (role === 'PROVIDER') {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: { profile: true }
-      });
-      const professionIds: string[] = [];
-      if (user?.profile?.professionId) {
-        professionIds.push(user.profile.professionId);
-      }
-      if (user?.profile?.professionIds && Array.isArray(user.profile.professionIds)) {
-        professionIds.push(...(user.profile.professionIds as string[]));
-      }
       return this.prisma.booking.findMany({
         where: {
-          OR: [
-            { providerId: userId },
-            {
-              status: 'PENDING',
-              serviceId: { in: professionIds }
-            }
-          ]
+          providerId: userId
         },
         include: { service: true, client: true, provider: true, address: true },
         orderBy: { createdAt: 'desc' },

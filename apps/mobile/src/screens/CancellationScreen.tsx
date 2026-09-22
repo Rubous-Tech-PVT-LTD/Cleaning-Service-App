@@ -65,7 +65,7 @@ const CancellationScreenBase = ({ navigation, route, booking, service }: any) =>
     );
   };
 
-  const scheduledDate = booking?.scheduledAt ? new Date(booking.scheduledAt) : new Date();
+  const scheduledDate = booking?.scheduled_at || booking?.scheduledAt ? new Date(booking.scheduled_at || booking.scheduledAt) : new Date();
   const formattedDate = scheduledDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
   const formattedTime = scheduledDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
@@ -194,8 +194,7 @@ export const CancellationScreen = withObservables(['route'], ({ route }: any) =>
   return {
     booking,
     service: booking.pipe(
-
-      switchMap(b => b.service.observe())
+      switchMap((b: any) => b.service.observe())
     )
   };
 })(CancellationScreenBase);

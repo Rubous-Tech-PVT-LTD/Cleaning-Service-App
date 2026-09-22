@@ -117,6 +117,7 @@ model Profile {
   longitude     Float?
   rating        Float    @default(0.0)
   isVerified    Boolean  @default(false)
+  isOnline      Boolean  @default(false)
   availability  Json?
   version       Int      @default(1)
   lastModified  DateTime @updatedAt

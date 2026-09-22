@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { tokenStorage } from '../utils/tokenStorage';
 
-export const BASE_URL = 'http://192.168.156.209:3000/v1';
-export const SOCKET_URL = 'http://192.168.156.209:3000';
+export const BASE_URL = 'http://192.168.198.209:3000/v1';
+export const SOCKET_URL = 'http://192.168.198.209:3000';
 
 let isRefreshing = false;
 let refreshSubscribers: Array<(token: string) => void> = [];
@@ -21,11 +21,11 @@ function onTokenRefreshed(token: string) {
 async function refreshAccessToken(): Promise<string> {
   const refreshToken = await tokenStorage.getRefreshToken();
   if (!refreshToken) {
-    console.error('No refresh token available during refresh attempt');
+    
     throw new Error('No refresh token available');
   }
 
-  console.log('Attempting token refresh...');
+ 
 
   const response = await fetch(`${BASE_URL}/auth/refresh`, {
     method: 'POST',
@@ -35,16 +35,16 @@ async function refreshAccessToken(): Promise<string> {
     body: JSON.stringify({ refreshToken }),
   });
 
-  console.log('Refresh response status:', response.status);
+  
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Token refresh failed:', response.status, errorText);
+    
     throw new Error(`Refresh failed: ${response.status}`);
   }
 
   const data = await response.json();
-  console.log('Token refresh successful');
+
 
   const newAccessToken = data.accessToken;
   const newRefreshToken = data.refreshToken;

@@ -55,4 +55,8 @@ export class UpdateProfileDto {
   @IsArray()
   @IsString({ each: true })
   professionIds?: string[];
+  @ApiProperty({ required: false, description: 'Online status for providers' })
+  @IsOptional()
+  @IsBoolean()
+  isOnline?: boolean;
 }

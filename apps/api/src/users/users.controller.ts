@@ -38,7 +38,7 @@ export class UsersController {
     if (updateProfileDto.professionIds && userRole !== UserRole.PROVIDER && userRole !== UserRole.ADMIN) {
       throw new ForbiddenException('Only providers can update profession services');
     }
-    
+
     if (!userId) {
       const users = await this.prismaService.user.findMany({ take: 1 });
       if (users.length === 0) return { message: 'No users found' };
@@ -49,5 +49,17 @@ export class UsersController {
     const updatedUser = await this.usersService.updateProfile(userId, updateProfileDto);
     const { fullName, ...userWithoutFullName } = updatedUser;
     return { message: 'Profile updated successfully', data: { name: fullName, fullName, ...userWithoutFullName } };
+  }
+  @Patch('online-status')
+  @Roles(UserRole.PROVIDER)
+  @ApiOperation({ summary: 'Update provider online status' })
+  @ApiResponse({ status: 200, description: 'Online status updated successfully.' })
+  async updateOnlineStatus(@Req() req: any, @Body() body: { isOnline: boolean }) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new ForbiddenException('Authentication required');
+    }
+    const updatedUser = await this.usersService.updateProfile(userId, { isOnline: body.isOnline });
+    return { message: 'Online status updated successfully', data: { isOnline: body.isOnline } };
   }
 }

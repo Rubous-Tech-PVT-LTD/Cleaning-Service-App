@@ -131,7 +131,7 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
   };
 
   const items = booking.items ? JSON.parse(booking.items) : [];
-  const scheduledDate = new Date(booking.scheduledAt);
+  const scheduledDate = new Date(booking.scheduled_at || booking.scheduledAt);
 
   const isAcceptedOrInProgress = booking.status === 'ACCEPTED' || booking.status === 'IN_PROGRESS';
   const isNotCancelledOrCompleted = booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED';

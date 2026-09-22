@@ -43,22 +43,43 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     const setup = async () => {
+      // First, disconnect any existing socket connection
+      const existingSocketId = await AsyncStorage.getItem('socket_id');
+      if (existingSocketId) {
+      }
+
       await fetchBookings();
       const token = await tokenStorage.getAccessToken();
-      newSocket = io(SOCKET_URL, { 
+      const isOnline = await AsyncStorage.getItem('provider_online');
+      newSocket = io(SOCKET_URL, {
         autoConnect: false,
         auth: { token },
-        reconnection: true,
+        reconnection: false, // Disable auto reconnection to prevent unwanted connects
         reconnectionDelay: 1000,
         reconnectionAttempts: 5,
       });
       setSocket(newSocket);
-      newSocket.on('connect', () => {
-        initSocket();
+      newSocket.on('connect', async () => {
+        initSocket(); // Always register as provider when socket connects
+        const isOnline = await AsyncStorage.getItem('provider_online');
+        if (isOnline === 'true') {
+          try {
+            await api.patch('/users/online-status', { isOnline: true });
+            // Auto-refresh bookings when socket connects (provider comes online)
+            await fetchBookings();
+          } catch (error) {
+          }
+        } else {
+          if (newSocket) {
+            newSocket.disconnect();
+          }
+        }
       });
       newSocket.on('new_booking', async (booking: any) => {
         const currentStatus = await AsyncStorage.getItem('provider_online');
-        if (currentStatus === 'false') return;
+        if (currentStatus === 'false') {
+          return;
+        }
         await playSound();
         const currentLang = await AsyncStorage.getItem('user-language');
         const isHindi = currentLang === 'hi';
@@ -104,17 +125,23 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
         await fetchBookings();
       });
       newSocket.on('disconnect', () => {
+        // Auto-refresh bookings when socket disconnects (provider goes offline)
+        fetchBookings();
         reconnectTimer = setTimeout(async () => {
-          const newToken = await tokenStorage.getAccessToken();
-          if (newToken && newSocket) {
-            newSocket.auth = { token: newToken };
-            newSocket.connect();
+          const onlineStatus = await AsyncStorage.getItem('provider_online');
+          if (onlineStatus === 'true') {
+            const newToken = await tokenStorage.getAccessToken();
+            if (newToken && newSocket) {
+              newSocket.auth = { token: newToken };
+              newSocket.connect();
+            }
           }
         }, 2000);
       });
-      const isOnline = await AsyncStorage.getItem('provider_online');
-      if (isOnline !== 'false') {
+      // Only connect socket if provider is explicitly online
+      if (isOnline === 'true') {
         newSocket.connect();
+      } else {
       }
     };
     setup();

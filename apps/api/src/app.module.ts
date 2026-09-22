@@ -22,6 +22,7 @@ import { TrackingModule } from './tracking/tracking.module';
 import { CartModule } from './cart/cart.module';
 import { CitiesModule } from './cities/cities.module';
 import { SosModule } from './sos/sos.module';
+import { ProviderAssignmentModule } from './provider-assignment/provider-assignment.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -52,6 +53,7 @@ import { SosModule } from './sos/sos.module';
     CartModule,
     CitiesModule,
     SosModule,
+    ProviderAssignmentModule,
   ],
   controllers: [AppController, HealthController],
   providers: [

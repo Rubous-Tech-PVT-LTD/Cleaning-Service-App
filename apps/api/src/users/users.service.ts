@@ -39,7 +39,7 @@ export class UsersService {
     });
   }
   async updateProfile(userId: string, data: any) {
-    const { name, fullName, languagePref, avatar, addressLine1, addressLine2, city, state, pincode, latitude, longitude, bio, professionIds } = data;
+    const { name, fullName, languagePref, avatar, addressLine1, addressLine2, city, state, pincode, latitude, longitude, bio, professionIds, isOnline } = data;
     let avatarUrl = undefined;
     if (avatar && typeof avatar === 'string') {
       try {
@@ -61,6 +61,7 @@ export class UsersService {
     if (latitude !== undefined) profileUpdateData.latitude = latitude;
     if (longitude !== undefined) profileUpdateData.longitude = longitude;
     if (bio !== undefined) profileUpdateData.bio = bio;
+    if (isOnline !== undefined) profileUpdateData.isOnline = isOnline;
     if (professionIds !== undefined) {
       profileUpdateData.professionIds = professionIds;
       if (professionIds.length > 0) {
