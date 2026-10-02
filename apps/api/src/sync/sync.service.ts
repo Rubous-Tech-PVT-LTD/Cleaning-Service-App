@@ -1,61 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TrackingGateway } from '../tracking/tracking.gateway';
-const calculateDistance = (
-  latitude1: number,
-  longitude1: number,
-  latitude2: number,
-  longitude2: number,
-): number => {
-  const earthRadiusKm = 6371;
-  const latitudeDelta = (latitude2 - latitude1) * (Math.PI / 180);
-  const longitudeDelta = (longitude2 - longitude1) * (Math.PI / 180);
-  const a =
-    Math.sin(latitudeDelta / 2) ** 2 +
-    Math.cos(latitude1 * (Math.PI / 180)) *
-    Math.cos(latitude2 * (Math.PI / 180)) *
-    Math.sin(longitudeDelta / 2) ** 2;
-  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
+import { ProviderAssignmentService } from '../provider-assignment/provider-assignment.service';
 @Injectable()
 export class SyncService {
   constructor(
     private prisma: PrismaService,
     private trackingGateway: TrackingGateway,
+    private providerAssignment: ProviderAssignmentService,
   ) { }
-  private async findProviderForBooking(serviceId: string, address: any) {
-    if (!serviceId || address?.latitude == null || address?.longitude == null) {
-      return null;
-    }
-    const providers = await (this.prisma as any).user.findMany({
-      where: {
-        role: 'PROVIDER',
-        profile: {
-          isVerified: true,
-          latitude: { not: null },
-          longitude: { not: null },
-          OR: [
-            { professionIds: { array_contains: serviceId } },
-            { professionId: serviceId },
-          ],
-        },
-      },
-      include: { profile: true },
-    });
-    return providers
-      .map((provider: any) => ({
-        provider,
-        distance: calculateDistance(
-          address.latitude,
-          address.longitude,
-          provider.profile.latitude,
-          provider.profile.longitude,
-        ),
-      }))
-      .filter((candidate: any) => candidate.distance <= 25)
-      .sort((left: any, right: any) => left.distance - right.distance)[0]
-      ?.provider || null;
-  }
   async pullChanges(
     lastPulledAt: number | null,
     userId?: string,
@@ -144,16 +97,6 @@ export class SyncService {
       if (userId) {
         let isProvider = role === 'PROVIDER';
         const isInitialSync = !lastPulledAt || lastPulledAt === 0;
-        if (!isProvider && userId !== '1') {
-          const user = await (this.prisma as any).user.findUnique({
-            where: {
-              id: userId,
-            },
-          });
-          if (user && user.role === 'PROVIDER') {
-            isProvider = true;
-          }
-        }
         if (isProvider) {
           const providerUser = await (this.prisma as any).user.findUnique({
             where: { id: userId },
@@ -167,15 +110,9 @@ export class SyncService {
             professionIds.push(...(providerUser.profile.professionIds as string[]));
           }
           const providerBookingWhere = isInitialSync ? {
-            OR: [
-              { providerId: userId },
-              { status: 'PENDING', serviceId: { in: professionIds } }
-            ]
+            providerId: userId
           } : {
-            OR: [
-              { providerId: userId },
-              { status: 'PENDING', serviceId: { in: professionIds } }
-            ],
+            providerId: userId,
             updatedAt: { gt: lastPulledDate, lte: syncBoundaryDate }
           };
           bookings = await (this.prisma as any).booking.findMany({
@@ -365,8 +302,9 @@ export class SyncService {
         updated_at: r.updatedAt.getTime(),
       });
       const mapBooking = (r: any) => ({
-        id: r.offlineId || r.id,
+        id: r.id, // Always use server ID as the primary ID
         server_id: r.id,
+        offline_id: r.offlineId, // Keep offline ID as separate field for reference
         service_id: r.serviceId,
         client_id: r.clientId,
         provider_id: r.providerId,
@@ -393,6 +331,8 @@ export class SyncService {
           id: r.service.id,
           name_en: r.service.nameTranslations?.en || '',
           name_hi: r.service.nameTranslations?.hi || '',
+          nameHi: r.service.nameTranslations?.hi || '',
+          nameEn: r.service.nameTranslations?.en || '',
           base_price: Number(r.service.basePrice),
         } : null,
         client: r.client ? {
@@ -483,10 +423,13 @@ export class SyncService {
   async pushChanges(
     changes: any,
     lastPulledAt: number,
+    userId?: string,
+    userRole?: string,
   ) {
     try {
       if (changes.addresses) {
         for (const addr of changes.addresses.created || []) {
+          const addressUserId = userId || addr.user_id;
           await (this.prisma as any).address.upsert({
             where: {
               offlineId:
@@ -512,7 +455,7 @@ export class SyncService {
             create: {
               offlineId:
                 addr.offlineId || addr.id,
-              userId: addr.user_id,
+              userId: addressUserId,
               label: addr.label,
               addressLine1:
                 addr.address_line1,
@@ -565,8 +508,11 @@ export class SyncService {
           const bookingOfflineId =
             booking.offlineId || booking.id;
           const clientId =
-            booking.client_id ||
-            booking.clientId;
+            userId || (booking.client_id || booking.clientId);
+          if (userId && clientId !== userId && userRole !== 'ADMIN') {
+            throw new ForbiddenException('You can only create bookings for yourself');
+          }
+            
           const serviceId =
             booking.service_id ||
             booking.serviceId;
@@ -588,10 +534,20 @@ export class SyncService {
                 },
               })
               : null;
-          const assignedProvider = await this.findProviderForBooking(
-            serviceId,
-            bookingAddress,
-          );
+          
+          // Use unified provider assignment service
+          let assignedProvider = null;
+          let travelCompensation = 0;
+          if (bookingAddress?.latitude != null && bookingAddress?.longitude != null) {
+            const assignment = await this.providerAssignment.assignBestProvider(
+              bookingAddress.latitude,
+              bookingAddress.longitude,
+              serviceId,
+              { requireOnline: true } // For sync, we want online providers for immediate assignment
+            );
+            assignedProvider = assignment.providerId ? { id: assignment.providerId } : undefined;
+            travelCompensation = assignment.travelCompensation || 0;
+          }
           const newBooking =
             await (this.prisma as any).booking.upsert({
               where: {
@@ -636,9 +592,7 @@ export class SyncService {
                   booking.scheduled_at ||
                   booking.scheduledAt,
                 ),
-                totalPrice:
-                  booking.total_price ||
-                  booking.totalPrice,
+                totalPrice: (booking.total_price || booking.totalPrice || 0) + travelCompensation,
                 items: booking.items
                   ? JSON.parse(booking.items)
                   : [],
@@ -673,6 +627,7 @@ export class SyncService {
               where: {
                 role: 'PROVIDER',
                 profile: {
+                  isOnline: true,
                   OR: [
                     { professionIds: { array_contains: newBooking.serviceId } },
                     { professionId: newBooking.serviceId }

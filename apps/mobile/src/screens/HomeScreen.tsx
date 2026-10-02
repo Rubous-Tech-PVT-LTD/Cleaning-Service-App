@@ -13,8 +13,8 @@ import { FAQItem } from '../components/FAQItem';
 import { QUICK_CATEGORIES } from '../constants';
 import { syncDatabase } from '../db/sync';
 import { useAuthGuard } from '../hooks/useAuthGuard';
-import { useAppTheme } from '../contexts/ThemeContext';
 import { LoginRequiredModal } from '../components/LoginRequiredModal';
+import { CartFooter } from '../components/CartFooter';
 import { getActiveLocation, ActiveLocation } from '../services/locationService';
 import withObservables from '@nozbe/with-observables';
 import { database } from '../db';
@@ -23,7 +23,6 @@ import { parseEstimatedTime, calculatePriceForDuration, getNextDuration, getPrev
 
 const HomeScreen = ({ navigation, categories, services }: any) => {
   const { t, i18n } = useTranslation();
-  const { theme, themeMode } = useAppTheme();
   const { requireAuth, showLoginModal, handleLoginPress, handleCloseModal } = useAuthGuard();
   const [isOffline, setIsOffline] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,12 +31,13 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [savedAddress, setSavedAddress] = useState<ActiveLocation | null>(null);
   const [trendingServices, setTrendingServices] = useState<any[]>([]);
-
+  
   const [cart, setCart] = useState<any>(null);
   const [cartItemsMap, setCartItemsMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadAddress();
+    syncDatabase().catch(() => {});
     fetchTrendingServices();
     fetchCart();
   }, [navigation]);
@@ -167,17 +167,16 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.primary }}>
+    <View style={{ flex: 1, backgroundColor: Theme.primary }}>
       <View style={{ height: safeTop }} />
 
-      {!(savedAddress && !savedAddress.isSupported) && (
-        <Image
-          source={theme.homeBanner}
-          style={{ position: 'absolute', top: 160, left: 0, right: 0, height: '20%', width: '100%', zIndex: 0 }}
+    {!(savedAddress && !savedAddress.isSupported) && (
+      <Image 
+          source={require('../assets/Home.png')}
+          style={{ position: 'absolute', top: 160, left: 0, right: 0, height: '20%',width:'100%', zIndex: 0 }}
           resizeMode="cover"
         />
-      )}
-      {/* ===== HEADER ===== */}
+    )}
       <Animated.View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 999,
         opacity: stickyOpacity,
@@ -185,12 +184,12 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 12,
         paddingTop: safeTop,
       }}>
-
+        
         <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 }}>
-
-            <Search size={14} color={theme.textSecondary} />
-            <Text style={{ marginLeft: 8, fontSize: 13, color: theme.textSecondary, fontWeight: '500' }}>{t('search.sticky_placeholder')}</Text>
+            
+            <Search size={14} color={Theme.textSecondary} />
+            <Text style={{ marginLeft: 8, fontSize: 13, color: Theme.textSecondary, fontWeight: '500' }}>{t('search.sticky_placeholder')}</Text>
           </View>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 10 }} style={{ height: 56 }}>
@@ -219,7 +218,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                 style={{ alignItems: 'center', marginRight: 16, flexDirection: 'row', gap: 6, backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}
               >
                 <Image source={cat.img} style={{ width: 22, height: 22 }} resizeMode="contain" />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: theme.primary }}>{displayName}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: Theme.primary }}>{displayName}</Text>
               </TouchableOpacity>
             );
           })}
@@ -236,7 +235,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor="white"
-            colors={[theme.primary]}
+            colors={[Theme.primary]}
             progressViewOffset={safeTop + 60}
           />
         }
@@ -246,35 +245,34 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
             onPress={() => navigation.navigate('SearchLocation')}
             style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 }}
           >
-            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.headerIconBg, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-              <MapPin size={22} color={theme.headerIcon} />
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.white40, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+              <MapPin size={22} color="#0F172A" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: theme.headerTextSecondary }}>{savedAddress?.label || t('common.location')}</Text>
-              <Text style={{ fontSize: 15, fontFamily: 'Poppins_500Medium', color: theme.headerText }} numberOfLines={1}>
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: Theme.black60 }}>{savedAddress?.label || t('common.location')}</Text>
+              <Text style={{ fontSize: 15, fontFamily: 'Poppins_500Medium', color: '#0F172A' }} numberOfLines={1}>
                 {savedAddress?.address || t('address.select_location')}
               </Text>
             </View>
-            <DownArrow size={20} color={theme.headerIcon} />
+            <DownArrow size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {isOffline && <WifiOff size={20} color={theme.accent} style={{ marginRight: 16 }} />}
+            {isOffline && <WifiOff size={20} color={Theme.accent} style={{ marginRight: 16 }} />}
 
           </View>
         </View>
 
-        {/* Search Bar */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24, marginTop: 4 }}>
           <TouchableOpacity
             onPress={() => navigation.navigate('Search')}
             activeOpacity={0.8}
             style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 8 }}
           >
-            <Search size={20} color={theme.textSecondary} />
+            <Search size={20} color={Theme.textSecondary} />
             <View style={{ flex: 1, marginLeft: 12, height: 22, justifyContent: 'center', overflow: 'hidden' }}>
               <Animated.Text style={{
                 position: 'absolute',
-                color: theme.textSecondary,
+                color: Theme.textSecondary,
                 fontSize: 15,
                 fontWeight: '600',
                 transform: [{ translateY: placeholderAnim }]
@@ -285,63 +283,58 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
           </TouchableOpacity>
         </View>
 
-        {/* Quick Action Cards */}
         {!(savedAddress && !savedAddress.isSupported) && (
-          <View style={{ paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 150 }}>
+          <View style={{ paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', gap: 12,marginTop:150}}>
             <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => navigation.navigate('InstantService')}
-              style={{ flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 16, height: 110, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
-            >
-              <Text style={{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: theme.textPrimary, lineHeight: 20, marginBottom: 12 }}>{t('home.instant_service')}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.timePillBg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start' }}>
-                <Zap size={14} color={theme.timePillText} />
-                <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: theme.timePillText, marginLeft: 4 }}>{t('home.instant_eta')}</Text>
-              </View>
-              <View style={{ position: 'absolute', right: -6, bottom: -6 }}>
-                <Zap size={48} color={theme.primary} opacity={0.1} />
-              </View>
-            </TouchableOpacity>
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('InstantService')}
+                style={{ flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 16, height: 110, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
+              >
+                <Text style={{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, lineHeight: 20, marginBottom: 12 }}>{t('home.instant_service')}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.muted, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start' }}>
+                  <Zap size={14} color={Theme.primary} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: Theme.primary, marginLeft: 4 }}>{t('home.instant_eta')}</Text>
+                </View>
+                <View style={{ position: 'absolute', right: -6, bottom: -6 }}>
+                  <Zap size={48} color={Theme.primary} opacity={0.1} />
+                </View>
+              </TouchableOpacity>
 
             <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => navigation.navigate('ServiceSelection')}
-              style={{ flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 16, height: 110, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
-            >
-              <Text style={{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: theme.textPrimary, lineHeight: 20, marginBottom: 12 }}>{t('home.schedule_later')}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.timePillBg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start' }}>
-                <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: theme.timePillText }}>{t('home.schedule_prefix')}
-                  {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              </View>
-              <View style={{ position: 'absolute', right: -6, bottom: -6 }}>
-                <Calendar size={48} color={theme.primary} opacity={0.1} />
-              </View>
-            </TouchableOpacity>
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('ServiceSelection')}
+                style={{ flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 16, height: 110, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}
+              >
+                <Text style={{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: Theme.textPrimary, lineHeight: 20, marginBottom: 12 }}>{t('home.schedule_later')}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.muted, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start' }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: Theme.primary }}>{t('home.schedule_prefix')}
+                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+                <View style={{ position: 'absolute', right: -6, bottom: -6 }}>
+                  <Calendar size={48} color={Theme.primary} opacity={0.1} />
+                </View>
+              </TouchableOpacity>
           </View>
         )}
 
-        {/* Coming Soon Section - Full width when location not supported */}
         {savedAddress && !savedAddress.isSupported && (
           <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
             <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 32, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 }}>
               <Text style={{ fontSize: 28, fontWeight: '900', color: '#6B7280', textAlign: 'center', lineHeight: 36, marginBottom: 12 }}>
                 {t('home.coming_soon_title_prefix')}<Text style={{ color: Theme.primary }}>{t('home.coming_soon_title_suffix')}</Text>
               </Text>
-
+              
               <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22, marginBottom: 24, paddingHorizontal: 16 }}>
                 {t('home.coming_soon_body')}
               </Text>
 
-
-              {/* Notify Me Button */}
               <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.primary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 30, marginBottom: 16, shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 }}>
                 <MessageCircle size={18} color="white" style={{ marginRight: 8 }} />
                 <Text style={{ fontSize: 15, fontWeight: '700', color: 'white' }}>{t('home.notify_me')}</Text>
               </TouchableOpacity>
 
-              {/* Change Location Link */}
-              <TouchableOpacity
+              <TouchableOpacity 
                 onPress={() => navigation.navigate('SearchLocation')}
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
               >
@@ -361,65 +354,61 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
               {(!services || services.length === 0) ? (
-                [1, 2, 3, 4, 5, 6].map((i) => (
+                  [1, 2, 3, 4, 5, 6].map((i) => (
                   <View key={i} style={{ width: '31.33%', marginRight: i % 3 === 0 ? 0 : '3%', marginBottom: 16, alignItems: 'center' }}>
                     <Skeleton style={{ width: '100%', aspectRatio: 1, borderRadius: 24, marginBottom: 12 }} />
                     <Skeleton style={{ width: '70%', height: 12, borderRadius: 6 }} />
                   </View>
                 ))
               ) : (() => {
-                const dailyHomeHelpCategory = (categories || []).find((c: any) => 
-                  c?.nameEn === 'Daily Home Help' || 
-                  c?.slug === 'daily-home-help' ||
-                  c?.nameEn?.toLowerCase()?.includes('daily home help')
-                );
-                const dailyHomeHelpCategoryId = dailyHomeHelpCategory?.id;
-                const filteredServices = dailyHomeHelpCategoryId
-                  ? services.filter((s: any) => s.categoryId === dailyHomeHelpCategoryId)
-                  : services.slice(0, 6);
+                  const dailyHomeHelpCategory = (categories || []).find((c: any) => c?.nameEn === 'Daily Home Help');
+                  const dailyHomeHelpCategoryId = dailyHomeHelpCategory?.id;
+                  const filteredServices = services.filter((s: any) => s.categoryId === dailyHomeHelpCategoryId);
 
-                return filteredServices.map((service: any, index: number) => {
-                  const isComingSoon = service?.isComingSoon || false;
+                  return filteredServices.map((service: any, index: number) => {
+                    const isComingSoon = service?.isComingSoon || false;
 
-                  const cartItem = cartItemsMap[service.id];
-                  const isInCart = !!cartItem;
-                  const isFlexibleDuration = service.durationType !== 'FIXED';
-
-                  const baseTime = Math.round(parseEstimatedTime(service.estimatedTime));
-                  let currentDuration = baseTime;
-                  if (cartItem && cartItem.duration) {
-                    const cartTime = Math.round(parseEstimatedTime(cartItem.duration.label || cartItem.duration));
-                    if (baseTime > 0) {
-                      currentDuration = cartTime;
-                    }
-                  }
-
-                  const basePrice = Number(service.basePrice);
-                  const currentEstimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseTime, currentDuration));
-
-                  const handleIncrease = () => {
-                    const newDuration = Math.round(getNextDuration(currentDuration, baseTime));
-                    if (isDurationAtMaximum(newDuration)) {
-                      Alert.alert(
-                        'Maximum Duration Reached',
-                        getMaxDurationMessage()
-                      );
-                      return;
-                    }
-                    handleAddToCart(service, newDuration);
-                  };
-
-                  const handleDecrease = () => {
-                    if (currentDuration === baseTime) {
-                      handleRemoveFromCart(service.id);
-                      return;
-                    }
+                    const cartItem = cartItemsMap[service.id];
+                    const isInCart = !!cartItem;
                     
-                    const newDuration = Math.round(getPrevDuration(currentDuration, baseTime));
-                    handleAddToCart(service, newDuration);
-                  };
 
-                  return (
+                    const isFlexibleDuration = service.durationType !== 'FIXED';
+
+                    const baseTime = Math.round(parseEstimatedTime(service.estimatedTime));
+                    let currentDuration = baseTime;
+                    if (cartItem && cartItem.duration) {
+                      const cartTime = Math.round(parseEstimatedTime(cartItem.duration.label || cartItem.duration));
+                      if (baseTime > 0) {
+                        currentDuration = cartTime;
+                      }
+                    }
+
+                    const basePrice = Number(service.basePrice);
+                    const currentEstimatedPrice = Math.round(calculatePriceForDuration(basePrice, baseTime, currentDuration));
+
+                    const handleIncrease = () => {
+                      const newDuration = Math.round(getNextDuration(currentDuration, baseTime));
+                      if (isDurationAtMaximum(newDuration)) {
+                        Alert.alert(
+                          'Maximum Duration Reached',
+                          getMaxDurationMessage()
+                        );
+                        return;
+                      }
+                      handleAddToCart(service, newDuration);
+                    };
+
+                    const handleDecrease = () => {
+                      if (currentDuration === baseTime) {
+                        handleRemoveFromCart(service.id);
+                        return;
+                      }
+                      
+                      const newDuration = Math.round(getPrevDuration(currentDuration, baseTime));
+                      handleAddToCart(service, newDuration);
+                    };
+
+                    return (
                     <TouchableOpacity
                       key={service.id}
                       onPress={() => navigation.navigate('ServiceDetail', { serviceId: service.id })}
@@ -427,12 +416,14 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                       style={{ width: '31.33%', marginRight: (index + 1) % 3 === 0 ? 0 : '3%', backgroundColor: 'white', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, paddingBottom: 12 }}
                     >
                       <View style={{ width: '100%', aspectRatio: 1, backgroundColor: '#F8FAFC', borderTopLeftRadius: 16, borderTopRightRadius: 16, position: 'relative', overflow: 'hidden' }}>
-                        <Image
-                          source={service.imageUrl ? { uri: service.imageUrl } : require('../assets/Cleaning-Kit-Image.png')}
-                          style={{ width: '100%', height: '100%', position: 'absolute' }}
-                          resizeMode="cover"
-                        />
-                        <View style={{ position: 'absolute', top: 6, alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 }}>
+                        {service.imageUrl ? (
+                          <Image source={{ uri: service.imageUrl }} style={{ width: '100%', height: '100%', position: 'absolute' }} resizeMode="cover" />
+                        ) : (
+                          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.border, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', top: '30%' }}>
+                            <Home size={20} color={Theme.textSecondary} />
+                          </View>
+                        )}
+                        <View style={{ position: 'absolute', top: 6, alignSelf: 'center', backgroundColor: Theme.white95, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 }}>
                           <Star size={10} color="#f59e0b" fill="#f59e0b" />
                           <Text style={{ fontSize: 9, fontWeight: '800', color: Theme.textPrimary, marginLeft: 4 }}>4.9 (4k)</Text>
                         </View>
@@ -459,7 +450,6 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                         )}
                       </View>
 
-                      {/* Plus Button / Increment Decrement */}
                       {!isComingSoon && (
                         <View style={{ position: 'absolute', right: 8, top: '48%', zIndex: 10 }}>
                           {isInCart ? (
@@ -489,7 +479,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                               </TouchableOpacity>
                             )
                           ) : (
-                            <TouchableOpacity
+                            <TouchableOpacity 
                               onPress={() => handleAddToCart(service, baseTime)}
                               style={{ backgroundColor: 'white', borderRadius: 8, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 }}
                             >
@@ -499,19 +489,18 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                         </View>
                       )}
                     </TouchableOpacity>
-                  );
-                });
+                    );
+                  });
               })()}
-            </View>
+              </View>
           </View>
 
-          {/* Categories Section Restored */}
           <View style={{ paddingHorizontal: 24, paddingBottom: 40, marginTop: 10 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('common.categories', 'Categories')}</Text>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-              {(!categories || categories.length === 0) ? (
-                [1, 2, 3, 4, 5, 6].map((i) => (
+                {(!categories || categories.length === 0) ? (
+                  [1, 2, 3, 4, 5, 6].map((i) => (
                   <View key={i} style={{ width: '31.33%', marginRight: i % 3 === 0 ? 0 : '3%', marginBottom: 16, alignItems: 'center' }}>
                     <Skeleton style={{ width: '100%', aspectRatio: 1, borderRadius: 24, marginBottom: 12 }} />
                     <Skeleton style={{ width: '70%', height: 12, borderRadius: 6 }} />
@@ -525,11 +514,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
               }, []).sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((item: any, index: number) => {
                 const nameEn = item?.nameEn || '';
                 const displayName = i18n.language === 'hi' ? (item?.nameHi || nameEn) : nameEn;
-                const quickCatMatch = QUICK_CATEGORIES.find((qc: any) =>
-                  (item?.slug && qc?.slug && qc.slug.toLowerCase() === item.slug.toLowerCase()) ||
-                  (qc?.nameEn && nameEn && qc.nameEn.toLowerCase() === nameEn.toLowerCase())
-                );
-                const imageSource = item?.iconUrl ? { uri: item.iconUrl } : (quickCatMatch ? quickCatMatch.img : require('../assets/Cleaning-Kit-Image.png'));
+                const imageSource = item?.iconUrl ? { uri: item.iconUrl } : null;
 
                 const mockPrice = 25 + (index * 5);
                 const mockOldPrice = mockPrice + 100;
@@ -565,7 +550,13 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                         <Text style={{ fontSize: 9 }}>⭐</Text>
                         <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 9, color: '#666', marginLeft: 2 }}>{mockRating} ({mockReviews})</Text>
                       </View>
-                      <Image source={imageSource} style={{ width: '85%', height: '85%' }} resizeMode="contain" />
+                      {imageSource ? (
+                        <Image source={imageSource} style={{ width: '85%', height: '85%' }} resizeMode="contain" />
+                      ) : (
+                        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.border, justifyContent: 'center', alignItems: 'center' }}>
+                          <Home size={20} color={Theme.textSecondary} />
+                        </View>
+                      )}
                     </View>
                     <View style={{ paddingTop: 8, paddingHorizontal: 2 }}>
                       <Text
@@ -582,12 +573,10 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
                   </TouchableOpacity>
                 );
               })}
-            </View>
+              </View>
           </View>
 
-          {/* Exclusive Offers */}
-
-          <View style={{ paddingBottom: 40 }}>
+           <View style={{ paddingBottom: 40 }}>
             <View style={{ paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>{t('home.exclusive_offers')}</Text>
               <TouchableOpacity><Text style={{ color: Theme.primary, fontWeight: '700' }}>{t('home.see_all')}</Text></TouchableOpacity>
@@ -606,8 +595,7 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
             </ScrollView>
           </View>
 
-          {/* Trust Section */}
-          <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
+        <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('home.why_houcee')}</Text>
             <View style={{ backgroundColor: Theme.background, borderRadius: 32, padding: 28, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               <TrustItem icon={<ShieldCheck size={24} color={Theme.primary} />} label={t('home.trust_verified_pro')} />
@@ -617,29 +605,27 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
             </View>
           </View>
 
-          {/* Trending Services */}
-          <View style={{ paddingBottom: 60 }}>
+         <View style={{ paddingBottom: 60 }}>
             <View style={{ paddingHorizontal: 24, marginBottom: 16 }}><Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary }}>{t('home.trending_now')}</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
               {trendingServices.map((service: any, index: number) => {
                 const isComingSoon = service?.isComingSoon || false;
                 return (
-                  <TrendingCard
-                    key={service.id}
-                    index={index}
-                    title={i18n.language === 'hi' ? service.nameTranslations?.hi : service.nameTranslations?.en}
-                    price={`₹${service.basePrice}`}
-                    image={service.imageUrl ? { uri: service.imageUrl } : require('../assets/Cleaning-Kit-Image.png')}
-                    onPress={() => navigation.navigate('ServiceDetail', { serviceId: service.id })}
-                    isComingSoon={isComingSoon}
-                  />
+                <TrendingCard
+                  key={service.id}
+                  index={index}
+                  title={i18n.language === 'hi' ? service.nameTranslations?.hi : service.nameTranslations?.en}
+                  price={`₹${service.basePrice}`}
+                  image={service.imageUrl ? { uri: service.imageUrl } : require('../assets/Cleaning-Kit-Image.png')}
+                  onPress={() => navigation.navigate('ServiceDetail', { serviceId: service.id })}
+                  isComingSoon={isComingSoon}
+                />
                 );
               })}
             </ScrollView>
           </View>
 
-          {/* FAQ Section */}
-          <View style={{ paddingHorizontal: 24, paddingBottom: 120, marginTop: 10 }}>
+   <View style={{ paddingHorizontal: 24, paddingBottom: 120, marginTop: 10 }}>
             <Text style={{ fontSize: 20, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('home.common_questions')}</Text>
             {Array.isArray(faqs) && faqs.map((f: any, i: number) => (
               <FAQItem key={i} question={f.q} answer={f.a} />
@@ -648,13 +634,17 @@ const HomeScreen = ({ navigation, categories, services }: any) => {
         </View>
       </Animated.ScrollView>
       <MaintenanceBanner />
-      <BottomNav
+     <BottomNav
         active="home"
         onTabPress={(tab: string) => {
           if (tab === 'profile') requireAuth(() => navigation.navigate('Profile'));
           if (tab === 'services') navigation.navigate('Search');
           if (tab === 'chat') requireAuth(() => navigation.navigate('MyBookings'));
         }}
+      />
+      <CartFooter
+        itemCount={cart?.items?.length || 0}
+        onNavigateToCart={() => navigation.navigate('Cart')}
       />
       <LoginRequiredModal
         visible={showLoginModal}
@@ -712,7 +702,7 @@ const MaintenanceBanner = () => {
 const OfferCard = ({ title, subtitle, code, codePrefix, label }: any) => (
   <TouchableOpacity style={{ width: 300, height: 160, borderRadius: 32, marginRight: 20, overflow: 'hidden' }}>
     <LinearGradient colors={[Theme.primary, Theme.primary]} style={{ flex: 1, padding: 24 }} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-      <Text style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>{label}</Text>
+      <Text style={{ color: Theme.white80, fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>{label}</Text>
       <Text style={{ color: 'white', fontWeight: '900', fontSize: 28, marginTop: 4 }}>{title}</Text>
       <Text style={{ color: 'white', fontSize: 14, marginTop: 8, opacity: 0.9 }}>{subtitle}</Text>
       <View style={{ position: 'absolute', bottom: 16, left: 24, backgroundColor: 'white', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10 }}>
@@ -731,29 +721,29 @@ const BottomNav = ({ active, onTabPress }: any) => {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   return (
-    <View style={{
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 65 + insets.bottom,
-      backgroundColor: 'white',
-      flexDirection: 'row',
-      borderTopLeftRadius: 30,
-      borderTopRightRadius: 30,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -10 },
-      shadowOpacity: 0.05,
-      shadowRadius: 15,
-      elevation: 20,
+    <View style={{ 
+      position: 'absolute', 
+      bottom: 0, 
+      left: 0, 
+      right: 0, 
+      height: 65 + insets.bottom, 
+      backgroundColor: 'white', 
+      flexDirection: 'row', 
+      borderTopLeftRadius: 30, 
+      borderTopRightRadius: 30, 
+      shadowColor: '#000', 
+      shadowOffset: { width: 0, height: -10 }, 
+      shadowOpacity: 0.05, 
+      shadowRadius: 15, 
+      elevation: 20, 
       zIndex: 999,
-      paddingHorizontal: 20,
-      justifyContent: 'space-between',
+      paddingHorizontal: 20, 
+      justifyContent: 'space-between', 
       alignItems: 'center',
       paddingBottom: insets.bottom
     }}>
       <NavTab icon={<Home size={24} />} label={t('home.nav_home')} active={active === 'home'} onPress={() => onTabPress('home')} />
-
+     
       <NavTab icon={<History size={24} />} label={t('home.nav_my_booking')} active={active === 'chat'} onPress={() => onTabPress('chat')} />
       <NavTab icon={<User size={24} />} label={t('home.nav_profile')} active={active === 'profile'} onPress={() => onTabPress('profile')} />
     </View>

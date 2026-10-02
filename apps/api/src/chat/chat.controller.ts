@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/strategies/jwt-auth.guard';
 @Controller('chats')
@@ -6,6 +7,7 @@ import { JwtAuthGuard } from '../auth/strategies/jwt-auth.guard';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
   @Post('init')
+  @Throttle({ default: { limit: 30, ttl: 60000 } }) // 30 requests per minute
   async initChat(@Body() data: { bookingId: string; clientId: string; providerId: string }, @Request() req: any) {
     const isAuthorized = await this.chatService.verifyBookingAccess(data.bookingId, req.user.id);
     if (!isAuthorized) {
@@ -18,6 +20,7 @@ export class ChatController {
     return this.chatService.getUserChats(req.user.id);
   }
   @Get(':chatId/messages')
+  @Throttle({ default: { limit: 100, ttl: 60000 } }) // 100 requests per minute
   async getMessages(@Param('chatId') chatId: string, @Request() req: any) {
     const isParticipant = await this.chatService.isParticipant(chatId, req.user.id);
     if (!isParticipant) {

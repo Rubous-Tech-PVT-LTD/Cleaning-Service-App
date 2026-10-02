@@ -229,7 +229,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Theme.background, position: 'relative' }}>
       <View style={{ position: 'absolute', top: 60, left: 24, zIndex: 100 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 10 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: Theme.white90, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 10 }}>
           <ChevronLeft size={24} color={Theme.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -283,7 +283,7 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
                     onPress={handleBookButton}
                     style={{ backgroundColor: Theme.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, alignItems: 'center', shadowColor: Theme.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 }}
                   >
-                    <Text style={{ color: 'white', fontWeight: '900', fontSize: 16 }}>{t('common.book')}</Text>
+                    <Text style={{ color: 'black', fontWeight: '900', fontSize: 16 }}>{t('common.book')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -395,7 +395,6 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
             )}
           </View>
 
-          {/* Related Services Section */}
           {relatedServices && relatedServices.length > 0 && (
             <View style={{ marginBottom: 40 }}>
               <Text style={{ fontSize: 22, fontWeight: '900', color: Theme.textPrimary, marginBottom: 20 }}>{t('service.related_title')}</Text>
@@ -477,13 +476,13 @@ const ServiceDetailScreenBase = ({ route, navigation, service, relatedServices }
           >
             {isCurrentServiceInCart ? (
               <>
-                <ShoppingCart size={20} color="white" style={{ marginRight: 10 }} />
-                <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('common.go_to_cart').toUpperCase()}</Text>
+                <ShoppingCart size={20} color="black" style={{ marginRight: 10 }} />
+                <Text style={{ color: 'black', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('common.go_to_cart').toUpperCase()}</Text>
               </>
             ) : (
               <>
-                <ShoppingCart size={20} color="white" style={{ marginRight: 10 }} />
-                <Text style={{ color: 'white', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('common.add_to_cart').toUpperCase()}</Text>
+                <ShoppingCart size={20} color="black" style={{ marginRight: 10 }} />
+                <Text style={{ color: 'black', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{t('common.add_to_cart').toUpperCase()}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -532,7 +531,7 @@ const InclusionItem = ({ text, included }: { text: string; included: boolean }) 
     <View style={{ marginTop: 2, width: 16, height: 16, borderRadius: 8, backgroundColor: included ? '#22C55E' : '#EF4444', justifyContent: 'center', alignItems: 'center' }}>
       <Text style={{ color: 'white', fontSize: 10, fontWeight: '900' }}>{included ? '✓' : '✕'}</Text>
     </View>
-    <Text style={{ fontSize: 12, fontWeight: '600', color: included ? '#166534' : '#991B1B', flex: 1 }}>{text}</Text>
+    <Text style={{ fontSize: 14, fontWeight: '600', color: included ? '#166534' : '#991B1B', flex: 1 }}>{text}</Text>
   </View>
 );
 

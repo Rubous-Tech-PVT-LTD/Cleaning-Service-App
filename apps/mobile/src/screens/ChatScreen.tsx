@@ -13,17 +13,28 @@ import { Theme } from '../theme';
 import { syncDatabase } from '../db/sync';
 import { io, Socket } from 'socket.io-client';
 import { SOCKET_URL } from '../api';
+import { tokenStorage } from '../utils/tokenStorage';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { messageSchema } from '../validation/schemas';
+
+type MessageFormData = z.infer<typeof messageSchema>;
 
 const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   const { t } = useTranslation();
   const { bookingId, serviceName, providerId, clientId } = route.params;
-  const [text, setText] = useState('');
   const [myId, setMyId] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [localChatId, setLocalChatId] = useState<string>('');
   const [serverChatId, setServerChatId] = useState<string>('');
   const scrollViewRef = React.useRef<ScrollView>(null);
+
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<MessageFormData>({
+    resolver: zodResolver(messageSchema),
+    defaultValues: { text: '' }
+  });
 
   useEffect(() => {
     const ensureChat = async () => {
@@ -60,7 +71,7 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
   useEffect(() => {
     const loadUser = async () => {
       const userId = await AsyncStorage.getItem('user_id');
-      const token = await AsyncStorage.getItem('user_token');
+      const token = await tokenStorage.getAccessToken();
       if (userId) setMyId(userId);
 
       const newSocket = io(SOCKET_URL, {
@@ -74,11 +85,11 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
       setSocket(newSocket);
 
       newSocket.on('connect', () => {
-        newSocket.emit('register', { userId, role: 'CLIENT' });
+        newSocket.emit('register', { role: 'CLIENT' });
       });
 
       newSocket.on('reconnect', (attemptNumber) => {
-        newSocket.emit('register', { userId, role: 'CLIENT' });
+        newSocket.emit('register', { role: 'CLIENT' });
         syncDatabase().catch(err => {});
       });
 
@@ -194,12 +205,12 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
     }
   }, [uniqueMessages.length]);
 
-  const handleSend = async () => {
-    if (!text.trim() || !myId || isSending) return;
+  const handleSend = async (data: MessageFormData) => {
+    if (!data.text.trim() || !myId || isSending) return;
     setIsSending(true);
 
-    const messageContent = text.trim();
-    setText('');
+    const messageContent = data.text.trim();
+    reset();
 
     try {
       if (!serverChatId) {
@@ -265,22 +276,33 @@ const ChatScreenBase = ({ route, navigation, messages, chat }: any) => {
             marginBottom: 12, maxWidth: '80%'
           }}>
             <Text style={{ color: m.senderId === myId ? 'white' : Theme.textPrimary, fontWeight: '500' }}>{m.content}</Text>
-            <Text style={{ fontSize: 10, color: m.senderId === myId ? 'rgba(255,255,255,0.6)' : Theme.textSecondary, marginTop: 4 }}>
+            <Text style={{ fontSize: 10, color: m.senderId === myId ? Theme.white60 : Theme.textSecondary, marginTop: 4 }}>
               {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
         ))}
       </ScrollView>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ padding: 20, borderTopWidth: 1, borderTopColor: Theme.border, flexDirection: 'row', alignItems: 'center' }}>
-        <TextInput
-          style={{ flex: 1, backgroundColor: Theme.background, borderRadius: 24, paddingHorizontal: 20, paddingVertical: 14, fontSize: 16 }}
-          placeholder={t('common.type_message')}
-          value={text}
-          onChangeText={setText}
-        />
-        <TouchableOpacity onPress={handleSend} disabled={isSending} style={[{ marginLeft: 16, backgroundColor: Theme.primary, width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' }, isSending && { opacity: 0.6 }]}>
-          <Send size={24} color="white" />
-        </TouchableOpacity>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ padding: 20, borderTopWidth: 1, borderTopColor: Theme.border }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Controller
+            control={control}
+            name="text"
+            render={({ field: { onChange, value } }) => (
+              <TextInput
+                style={{ flex: 1, backgroundColor: Theme.background, borderRadius: 24, paddingHorizontal: 20, paddingVertical: 14, fontSize: 16, borderWidth: 2, borderColor: errors.text ? Theme.error : 'transparent' }}
+                placeholder={t('common.type_message')}
+                value={value}
+                onChangeText={onChange}
+              />
+            )}
+          />
+          <TouchableOpacity onPress={handleSubmit(handleSend)} disabled={isSending} style={[{ marginLeft: 16, backgroundColor: Theme.primary, width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' }, isSending && { opacity: 0.6 }]}>
+            <Send size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+        {errors.text && (
+          <Text style={{ marginTop: 4, fontSize: 12, color: Theme.error }}>{errors.text.message}</Text>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

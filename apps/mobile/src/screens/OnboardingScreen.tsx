@@ -12,7 +12,7 @@ const SLIDES = [
     emoji: '🏠',
     title: 'Home Services\nAt Your Door',
     subtitle: 'Book trusted professionals for cleaning, plumbing, electrical work & more — in just a few taps.',
-    gradient: ['#5B21B6', '#7C3AED'] as [string, string],
+    gradient: [Theme.primary, Theme.primaryDark] as [string, string],
   },
   {
     id: '2',
@@ -56,8 +56,15 @@ export const OnboardingScreen = ({ navigation }: any) => {
 
   const renderSlide = ({ item }: { item: typeof SLIDES[0] }) => (
     <LinearGradient colors={item.gradient} style={{ width, height, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
-      <View style={{ width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: 48 }}>
-        <Text style={{ fontSize: 80 }}>{item.emoji}</Text>
+      <View style={{ marginBottom: 32, marginTop: -150, alignItems: 'center' }}>
+        <View style={{ width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: 80, marginTop: -15 }}>{item.emoji}</Text>
+        </View>
+        {item.emoji === '🏠' && (
+          <Text style={{ fontSize: 20, fontWeight: '900', color: 'white', marginTop: -40 }}>
+            Houcee
+          </Text>
+        )}
       </View>
 
       <Text style={{ fontSize: 36, fontWeight: '900', color: 'white', textAlign: 'center', lineHeight: 44, marginBottom: 20 }}>

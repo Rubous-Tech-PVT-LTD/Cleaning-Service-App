@@ -1,9 +1,7 @@
 import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const SYNC_URL = 'http://192.168.0.199:3000/v1/sync';
-
+const SYNC_URL = 'http://192.168.198.209:3000/v1/sync';
 const STATUS_PRIORITY: Record<string, number> = {
   PENDING: 1,
   ACCEPTED: 2,
@@ -11,7 +9,6 @@ const STATUS_PRIORITY: Record<string, number> = {
   COMPLETED: 4,
   CANCELLED: 5,
 };
-
 function conflictResolver(
   table: string,
   local: Record<string, any>,
@@ -20,28 +17,33 @@ function conflictResolver(
   if (table === 'bookings') {
     const localStatus = local.status as string;
     const remoteStatus = remote.status as string;
-
     if (localStatus === 'CANCELLED') {
       return { ...remote, status: 'CANCELLED' };
     }
-
     const localPriority = STATUS_PRIORITY[localStatus] ?? 0;
     const remotePriority = STATUS_PRIORITY[remoteStatus] ?? 0;
-
     if (remotePriority > localPriority) {
       return remote;
     }
-
     return { ...remote, status: localStatus, scheduled_at: local.scheduled_at };
   }
-
   if (table === 'addresses') {
     return { ...remote, is_default: local.is_default };
   }
-
   return remote;
 }
-
+function xhrFetch(method: string, url: string, headers: Record<string, string>, body?: string): Promise<{ ok: boolean; status: number; text: string }> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url, true);
+    xhr.timeout = 15000;
+    Object.keys(headers).forEach(k => xhr.setRequestHeader(k, headers[k]));
+    xhr.onload = () => resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, text: xhr.responseText });
+    xhr.onerror = () => reject(new Error(`[Sync] Network error reaching ${SYNC_URL}`));
+    xhr.ontimeout = () => reject(new Error(`[Sync] Request timed out`));
+    xhr.send(body || null);
+  });
+}
 export async function syncDatabase() {
   await synchronize({
     database,
@@ -51,41 +53,29 @@ export async function syncDatabase() {
       const url = `${SYNC_URL}/pull?lastPulledAt=${lastPulledAt || 0}&userId=${userId || ''}&role=PROVIDER`;
       const headers: Record<string, string> = { 
         'Content-Type': 'application/json',
+        'Bypass-Tunnel-Reminder': 'true'
       };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
-
+      const response = await xhrFetch('GET', url, headers);
       if (!response.ok) {
         throw new Error(`[Sync] Pull failed: ${response.status}`);
       }
-
-      const data = await response.json();
+      const data = JSON.parse(response.text);
       return { changes: data.changes, timestamp: data.timestamp };
     },
-
     pushChanges: async ({ changes, lastPulledAt }) => {
       const token = await AsyncStorage.getItem('provider_token');
       const url = `${SYNC_URL}/push?lastPulledAt=${lastPulledAt || 0}`;
       const headers: Record<string, string> = { 
         'Content-Type': 'application/json',
+        'Bypass-Tunnel-Reminder': 'true'
       };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ changes, lastPulledAt }),
-      });
-
+      const response = await xhrFetch('POST', url, headers, JSON.stringify({ changes, lastPulledAt }));
       if (!response.ok) {
         throw new Error(`[Sync] Push failed: ${response.status}`);
       }
     },
-
     conflictResolver,
   });
 }

@@ -1,9 +1,10 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
@@ -21,18 +22,21 @@ import { TrackingModule } from './tracking/tracking.module';
 import { CartModule } from './cart/cart.module';
 import { CitiesModule } from './cities/cities.module';
 import { SosModule } from './sos/sos.module';
+import { ProviderAssignmentModule } from './provider-assignment/provider-assignment.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '../../.env',
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 100,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 100,
+        },
+      ],
+    }),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -49,9 +53,16 @@ import { SosModule } from './sos/sos.module';
     CartModule,
     CitiesModule,
     SosModule,
+    ProviderAssignmentModule,
   ],
   controllers: [AppController, HealthController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   private readonly logger = new Logger('HTTP');

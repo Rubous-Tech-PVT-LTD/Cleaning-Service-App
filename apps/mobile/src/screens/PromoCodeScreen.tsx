@@ -7,7 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Tag, Gift, Check, Wallet } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Theme } from '../theme';
+import { promoCodeSchema } from '../validation/schemas';
+
+type PromoCodeFormData = z.infer<typeof promoCodeSchema>;
 
 const MOCK_COUPONS = [
   { code: 'CLEAN200', discount: 200, type: 'flat', desc: '₹200 off on first cleaning service', minOrder: 999 },
@@ -16,11 +22,15 @@ const MOCK_COUPONS = [
 ];
 
 export const PromoCodeScreen = ({ navigation }: any) => {
-  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [walletBalance] = useState(0);
   const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<PromoCodeFormData>({
+    resolver: zodResolver(promoCodeSchema),
+    defaultValues: { code: '' }
+  });
 
   const shake = () => {
     Animated.sequence([
@@ -31,8 +41,8 @@ export const PromoCodeScreen = ({ navigation }: any) => {
     ]).start();
   };
 
-  const applyCode = async (promoCode?: string) => {
-    const codeToApply = (promoCode || code).toUpperCase().trim();
+  const applyCode = async (data: PromoCodeFormData) => {
+    const codeToApply = data.code.toUpperCase().trim();
     if (!codeToApply) return;
     setLoading(true);
     await new Promise(r => setTimeout(r, 800));
@@ -49,7 +59,7 @@ export const PromoCodeScreen = ({ navigation }: any) => {
 
   const removeCoupon = async () => {
     setAppliedCoupon(null);
-    setCode('');
+    reset();
     await AsyncStorage.removeItem('applied_coupon');
   };
 
@@ -57,19 +67,19 @@ export const PromoCodeScreen = ({ navigation }: any) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <LinearGradient colors={[Theme.primary, '#7C3AED']} style={{ paddingBottom: 28 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-            <ChevronLeft size={22} color="white" />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.white20, justifyContent: 'center', alignItems: 'center' }}>
+            <ChevronLeft size={22} color={Theme.white} />
           </TouchableOpacity>
-          <Text style={{ flex: 1, fontSize: 22, fontWeight: '900', color: 'white', marginLeft: 16 }}>Promo Codes</Text>
+          <Text style={{ flex: 1, fontSize: 22, fontWeight: '900', color: Theme.white, marginLeft: 16 }}>Promo Codes</Text>
         </View>
 
-        <View style={{ marginHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
-            <Wallet size={24} color="white" />
+        <View style={{ marginHorizontal: 20, backgroundColor: Theme.white15, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: Theme.white25, justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+            <Wallet size={24} color={Theme.white} />
           </View>
           <View>
-            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600' }}>Wallet Balance</Text>
-            <Text style={{ color: 'white', fontSize: 28, fontWeight: '900' }}>₹{walletBalance}</Text>
+            <Text style={{ color: Theme.white80, fontSize: 13, fontWeight: '600' }}>Wallet Balance</Text>
+            <Text style={{ color: Theme.white, fontSize: 28, fontWeight: '900' }}>₹{walletBalance}</Text>
           </View>
           {walletBalance > 0 && (
             <TouchableOpacity style={{ marginLeft: 'auto', backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
@@ -83,26 +93,34 @@ export const PromoCodeScreen = ({ navigation }: any) => {
         <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 24, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12 }}>
           <Text style={{ fontSize: 15, fontWeight: '800', color: Theme.textPrimary, marginBottom: 14 }}>Enter Promo Code</Text>
           <Animated.View style={{ flexDirection: 'row', gap: 12, transform: [{ translateX: shakeAnim }] }}>
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, borderWidth: 2, borderColor: '#E2E8F0', paddingHorizontal: 14 }}>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, borderWidth: 2, borderColor: errors.code ? Theme.error : '#E2E8F0', paddingHorizontal: 14 }}>
               <Tag size={18} color={Theme.primary} />
-              <TextInput
-                value={code}
-                onChangeText={t => setCode(t.toUpperCase())}
-                placeholder="e.g. CLEAN200"
-                placeholderTextColor="#94A3B8"
-                autoCapitalize="characters"
-                style={{ flex: 1, paddingVertical: 14, marginLeft: 10, fontSize: 16, fontWeight: '800', color: Theme.textPrimary, letterSpacing: 1 }}
+              <Controller
+                control={control}
+                name="code"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    value={value}
+                    onChangeText={t => onChange(t.toUpperCase())}
+                    placeholder="e.g. CLEAN200"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="characters"
+                    style={{ flex: 1, paddingVertical: 14, marginLeft: 10, fontSize: 16, fontWeight: '800', color: Theme.textPrimary, letterSpacing: 1 }}
+                  />
+                )}
               />
             </View>
-            <TouchableOpacity onPress={() => applyCode()} disabled={loading || !code} style={{ backgroundColor: Theme.primary, paddingHorizontal: 20, borderRadius: 14, justifyContent: 'center' }}>
+            <TouchableOpacity onPress={handleSubmit(applyCode)} disabled={loading} style={{ backgroundColor: Theme.primary, paddingHorizontal: 20, borderRadius: 14, justifyContent: 'center', opacity: loading ? 0.5 : 1 }}>
               {loading ? <ActivityIndicator color="white" size="small" /> : (
                 <Text style={{ color: 'white', fontWeight: '900', fontSize: 14 }}>Apply</Text>
               )}
             </TouchableOpacity>
           </Animated.View>
+          {errors.code && (
+            <Text style={{ marginTop: 4, fontSize: 12, color: Theme.error }}>{errors.code.message}</Text>
+          )}
         </View>
 
-        {/* Applied Coupon */}
         {appliedCoupon && (
           <View style={{ backgroundColor: '#F0FDF4', borderRadius: 20, padding: 18, marginBottom: 24, borderWidth: 2, borderColor: '#10B981' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -120,7 +138,6 @@ export const PromoCodeScreen = ({ navigation }: any) => {
           </View>
         )}
 
-        {/* Available Coupons */}
         <Text style={{ fontSize: 17, fontWeight: '800', color: Theme.textPrimary, marginBottom: 16 }}>Available Offers</Text>
         <View style={{ gap: 14 }}>
           {MOCK_COUPONS.map((coupon) => (
@@ -129,7 +146,10 @@ export const PromoCodeScreen = ({ navigation }: any) => {
                 <Gift size={18} color={Theme.primary} />
                 <Text style={{ marginLeft: 8, fontSize: 15, fontWeight: '900', color: Theme.primary, letterSpacing: 0.5 }}>{coupon.code}</Text>
                 <TouchableOpacity
-                  onPress={() => applyCode(coupon.code)}
+                  onPress={() => {
+                    reset({ code: coupon.code });
+                    handleSubmit(applyCode)();
+                  }}
                   style={{ marginLeft: 'auto', borderWidth: 2, borderColor: Theme.primary, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10 }}
                 >
                   <Text style={{ color: Theme.primary, fontWeight: '800', fontSize: 12 }}>Apply</Text>

@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StatusBar, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Theme } from '../theme';
-import api from '../api';
+import { Theme } from '../theme/index';
+import api from '../api/index';
 import { Switch } from 'react-native';
-import i18n from '../i18n';
+import i18n from '../i18n/index';
 import { useTranslation } from 'react-i18next';
 import { useBookings } from '../context/BookingContext';
 export const DashboardScreen = () => {
   const { t } = useTranslation();
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
   const { bookings, loading, refreshBookings, socket } = useBookings();
   const pendingBookings = bookings.filter((b: any) => b.status === 'PENDING');
   const completedBookings = bookings.filter((b: any) => b.status === 'COMPLETED');
@@ -19,16 +19,26 @@ export const DashboardScreen = () => {
     const saved = await AsyncStorage.getItem('provider_online');
     if (saved !== null) {
       setIsOnline(saved === 'true');
+      try {
+        await api.patch('/users/online-status', { isOnline: saved === 'true' });
+      } catch (error) {
+      }
     }
   };
   const toggleOnline = async (val: boolean) => {
     setIsOnline(val);
     await AsyncStorage.setItem('provider_online', String(val));
+    try {
+      await api.patch('/users/online-status', { isOnline: val });
+    } catch (error) {
+    }
     if (val && socket) {
       socket.connect();
     } else if (!val && socket) {
       socket.disconnect();
     }
+    // Auto-refresh bookings when online status changes
+    await refreshBookings();
   };
   useEffect(() => {
     loadOnlineStatus();
@@ -75,7 +85,7 @@ export const DashboardScreen = () => {
             <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.primary }}>{pendingBookings.length}</Text>
           </View>
           <View style={{ flex: 1, backgroundColor: Theme.primary, padding: 24, borderRadius: 24, elevation: 8, shadowColor: Theme.primary, shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 6 } }}>
-            <Text style={{ fontSize: 13, fontWeight: '800', color: 'rgba(255,255,255,0.8)', marginBottom: 8 }}>{t('provider.earnings')}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: Theme.white80, marginBottom: 8 }}>{t('provider.earnings')}</Text>
             <Text style={{ fontSize: 32, fontWeight: '900', color: Theme.white }}>₹{totalEarnings.toLocaleString()}</Text>
           </View>
         </View>

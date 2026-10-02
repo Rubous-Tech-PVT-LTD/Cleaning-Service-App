@@ -16,16 +16,16 @@ const TERMS_SECTIONS = [
     content: 'Houcee is a marketplace platform that connects clients with local service providers for home services including cleaning, plumbing, electrical work, painting, and other household services.',
   },
   {
-    title: '3. User Accounts',
-    content: 'You must provide accurate and complete information when creating your account. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.',
+    title: '3. User Accounts and Responsibility',
+    content: 'Users must provide accurate and up-to-date information when creating an account or making a booking. Users are responsible for maintaining the security of their account and login credentials.Users must provide accurate service, address, date, and time details and ensure that the service location is safe and accessible. Any fraudulent, unlawful, abusive, or inappropriate use of the App is prohibited.',
   },
   {
     title: '4. Booking & Payments',
-    content: 'All bookings are subject to provider availability. Payments are processed securely through our payment gateway. Refunds are subject to our cancellation policy.',
+    content: 'Users are responsible for providing accurate booking details, including the selected service, duration, date, time, and service address. Bookings are subject to service and provider availability.The applicable charges will be displayed before booking confirmation. Payments must be made through the payment methods available in the App. Any cancellation or refund will be handled in accordance with our Cancellation & Refund Policy.',
   },
   {
-    title: '5. Cancellation Policy',
-    content: 'Free cancellation is available up to 2 hours before the scheduled service. Cancellations within 2 hours may incur a 50% charge. Same-day cancellations are non-refundable.',
+    title: '5. Cancellation & Refund Policy',
+    content: 'Users may cancel a booking subject to the applicable cancellation period. Cancellations made more than 2 hours before the scheduled service are eligible for a 100% refund of the service amount, with a 5% transaction charge applicable. Cancellations made between 1 and 2 hours before the scheduled service will incur a 50% cancellation charge, with the remaining eligible amount refunded, and the booking may be rescheduled to the next available slot where applicable. No refund will be provided for cancellations made less than 1 hour before the scheduled service.',
   },
   {
     title: '6. Provider Responsibility',
@@ -50,6 +50,13 @@ const PRIVACY_SECTIONS = [
     title: 'How We Use Your Data',
     content: 'Your data is used to provide and improve our services, match you with appropriate service providers, send booking confirmations and updates, process payments, and comply with legal obligations.',
   },
+   {
+    title: 'Location Information',
+    content: 'We collect location and address information provided by you to determine service availability, process bookings, assign service providers, and provide services at the requested location. Location information is used only for purposes described in this Privacy Policy and applicable services.',
+  },
+ 
+
+
   {
     title: 'Data Sharing',
     content: 'We share your contact information with service providers for booked services. We do not sell your personal data to third parties. We may share data with payment processors and legal authorities when required.',

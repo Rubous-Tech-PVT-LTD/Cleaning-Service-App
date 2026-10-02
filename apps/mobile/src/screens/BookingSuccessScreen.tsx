@@ -75,7 +75,6 @@ export const BookingSuccessScreen = ({ route, navigation }: any) => {
           </Text>
         </Animated.View>
 
-        {/* Booking Summary Card */}
         <Animated.View style={[{
           width: '100%',
           backgroundColor: 'white',

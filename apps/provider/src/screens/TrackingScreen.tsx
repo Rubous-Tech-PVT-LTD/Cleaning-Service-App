@@ -4,9 +4,9 @@ import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Socket } from 'socket.io-client';
-import { Theme } from '../theme';
+import { Theme } from '../theme/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../api';
+import api from '../api/index';
 import { useTranslation } from 'react-i18next';
 import { searchPlaces } from '../services/nominatim';
 import { useBookings } from '../context/BookingContext';
@@ -51,7 +51,7 @@ export const TrackingScreen = () => {
   const { booking } = route.params as { booking: any };
   const mapRef = useRef<MapView>(null);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const { socket: sharedSocket } = useBookings();
+  const { socket: sharedSocket, refreshBookings } = useBookings();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<any[]>([]);
   const [distance, setDistance] = useState<number>(0);
@@ -182,6 +182,7 @@ export const TrackingScreen = () => {
   const markArrived = async () => {
     try {
       await api.patch(`/bookings/${booking.id}/status`, { status: 'IN_PROGRESS' });
+      await refreshBookings();
       Alert.alert(t('provider.arrived_alert'), t('provider.arrived_message'));
       navigation.goBack();
     } catch (e: any) {
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoLabel: {
-    color: 'rgba(255,255,255,0.8)',
+    color: Theme.white80,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 4,

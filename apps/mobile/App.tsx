@@ -9,7 +9,8 @@ import { io } from 'socket.io-client';
 import { SOCKET_URL } from './src/api';
 import { NotificationService } from './src/services/NotificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
+import { tokenStorage } from './src/utils/tokenStorage';
+
 import {
   useFonts,
   Poppins_400Regular,
@@ -19,7 +20,6 @@ import {
 } from '@expo-google-fonts/poppins';
 import './src/i18n';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { ThemeProvider } from './src/contexts/ThemeContext';
 import { fetchSupportedCities } from './src/services/locationService';
 
 applyWorkarounds();
@@ -70,10 +70,11 @@ const AppContent = () => {
       }
     };
 
-    startSync();
+    const initialDelay = setTimeout(startSync, 3000);
     const interval = setInterval(startSync, 60000);
 
     return () => {
+      clearTimeout(initialDelay);
       clearInterval(interval);
     };
   }, []);
@@ -81,63 +82,77 @@ const AppContent = () => {
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
 
-    const socket = io(SOCKET_URL);
-    socket.on('connect', () => {
-      socket.emit('register', { userId: user.id, role: 'CLIENT' });
-    });
+    let socket: any = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    socket.on('sync_ping', () => {
-      syncDatabase().catch((err) => {});
-    });
+    const connectSocket = async () => {
+      const token = await tokenStorage.getAccessToken();
+      if (!token) return;
 
-    socket.on('booking_status_changed', async (payload: { bookingId: string, offlineId?: string, status: string, otp?: string, updatedAt?: string }) => {
-      try {
-        const bookingsCollection = database.collections.get('bookings');
-        const targetId = payload.offlineId || payload.bookingId;
-        const booking = await bookingsCollection.find(targetId);
-        
-        await database.write(async () => {
-          await booking.update((b: any) => {
-            b.status = payload.status;
-            if (payload.otp) {
-              b.otp = payload.otp;
-            }
-            if (payload.updatedAt) {
-              b.updatedAt = new Date(payload.updatedAt);
-            }
-          });
-        });
-      } catch (err) {
+      if (socket) {
+        socket.disconnect();
       }
-    });
 
-    socket.on('booking_accepted', async (payload: any) => {
-      syncDatabase().catch((err) => {});
-    });
+      socket = io(SOCKET_URL, {
+        auth: { token },
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
+      });
+
+      socket.on('connect', () => {
+        socket.emit('register', { role: 'CLIENT' });
+      });
+
+      socket.on('sync_ping', () => {
+        syncDatabase().catch((err) => {});
+      });
+
+      socket.on('booking_status_changed', async (payload: { bookingId: string, offlineId?: string, status: string, otp?: string, updatedAt?: string }) => {
+        try {
+          const bookingsCollection = database.collections.get('bookings');
+          const targetId = payload.offlineId || payload.bookingId;
+          const booking = await bookingsCollection.find(targetId);
+          
+          await database.write(async () => {
+            await booking.update((b: any) => {
+              b.status = payload.status;
+              if (payload.otp) {
+                b.otp = payload.otp;
+              }
+              if (payload.updatedAt) {
+                b.updatedAt = new Date(payload.updatedAt);
+              }
+            });
+          });
+        } catch (err) {
+        }
+      });
+
+      socket.on('booking_accepted', async (payload: any) => {
+        syncDatabase().catch((err) => {});
+      });
+
+      socket.on('disconnect', () => {
+        if (isAuthenticated) {
+          reconnectTimer = setTimeout(connectSocket, 2000);
+        }
+      });
+    };
+
+    connectSocket();
 
     return () => {
-      socket.disconnect();
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      if (socket) {
+        socket.disconnect();
+      }
     };
   }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
-    try {
-      const subscription = Notifications.addNotificationResponseReceivedListener(
-        (response) => {
-          const data = response.notification.request.content.data as any;
-          if (data?.bookingId && navigationRef.current) {
-            setTimeout(() => {
-              navigationRef.current?.navigate('BookingDetail', {
-                bookingId: data.bookingId,
-              });
-            }, 500);
-          }
-        },
-      );
-      return () => subscription?.remove();
-    } catch (e) {
-      // Graceful fallback
-    }
   }, []);
 
   if (!initialRoute || !fontsLoaded) return null;
@@ -153,10 +168,8 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

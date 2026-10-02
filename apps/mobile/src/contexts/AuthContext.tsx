@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage } from '../utils/tokenStorage';
+import api from '../api';
 
 interface User {
   id: string;
@@ -11,7 +13,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isGuest: boolean;
   user: User | null;
-  login: (token: string, userData: User) => Promise<void>;
+  login: (accessToken: string, refreshToken: string, userData: User) => Promise<void>;
   logout: () => Promise<void>;
   enterGuestMode: () => Promise<void>;
   exitGuestMode: () => Promise<void>;
@@ -32,7 +34,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loadAuthState = async () => {
     try {
-      const token = await AsyncStorage.getItem('user_token');
+      const accessToken = await tokenStorage.getAccessToken();
       const guestMode = await AsyncStorage.getItem('guest_mode');
       const userId = await AsyncStorage.getItem('user_id');
 
@@ -40,7 +42,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsGuest(true);
         setIsAuthenticated(false);
         setUser(null);
-      } else if (token && userId) {
+      } else if (accessToken && userId) {
         setIsAuthenticated(true);
         setIsGuest(false);
         setUser({ id: userId, phone: '' });
@@ -55,9 +57,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const login = async (token: string, userData: User) => {
+  const login = async (accessToken: string, refreshToken: string, userData: User) => {
     try {
-      await AsyncStorage.setItem('user_token', token);
+      await tokenStorage.setAccessToken(accessToken);
+      await tokenStorage.setRefreshToken(refreshToken);
       await AsyncStorage.setItem('user_id', userData.id);
       await AsyncStorage.removeItem('guest_mode');
 
@@ -71,9 +74,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('user_token');
-      await AsyncStorage.removeItem('user_id');
-      await AsyncStorage.removeItem('guest_mode');
+      const refreshToken = await tokenStorage.getRefreshToken();
+      try {
+        await api.post('/auth/logout', { refreshToken });
+      } catch (error) {
+      }
+
+      await tokenStorage.clearTokens();
+      await AsyncStorage.multiRemove([
+        'user_id',
+        'guest_mode',
+        'push_token',
+        'user_phone',
+        'user_name',
+        'applied_coupon'
+      ]);
 
       setIsAuthenticated(false);
       setIsGuest(false);
@@ -86,7 +101,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const enterGuestMode = async () => {
     try {
       await AsyncStorage.setItem('guest_mode', 'true');
-      await AsyncStorage.removeItem('user_token');
+      await tokenStorage.clearTokens();
       await AsyncStorage.removeItem('user_id');
 
       setIsGuest(true);

@@ -13,6 +13,7 @@ import { database } from '../db';
 import { Q } from '@nozbe/watermelondb';
 import { Theme } from '../theme';
 import api, { SOCKET_URL } from '../api';
+import { tokenStorage } from '../utils/tokenStorage';
 
 const BookingDetailScreenBase = ({ navigation, booking, service, address, services }: any) => {
   const { t, i18n } = useTranslation();
@@ -43,25 +44,40 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
   React.useEffect(() => {
     if (!isAcceptedOrInProgress) return;
 
-    const socket = io(SOCKET_URL);
+    let socket: any = null;
 
-    const initSocket = async () => {
-      const clientId = await AsyncStorage.getItem('user_id');
-      if (clientId) {
-        socket.emit('register', { userId: clientId, role: 'CLIENT' });
-      }
+    const setupSocket = async () => {
+      const token = await tokenStorage.getAccessToken();
+      socket = io(SOCKET_URL, {
+        auth: {
+          token: token ? `Bearer ${token}` : undefined,
+        },
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
+      });
+
+      const initSocket = async () => {
+        socket.emit('register', { role: 'CLIENT' });
+      };
+
+      socket.on('connect', () => {
+        initSocket();
+      });
+
+      socket.on('provider_location', (data: any) => {
+        if (data.bookingId === booking.id) {
+          setProviderLocation({ latitude: data.latitude, longitude: data.longitude });
+        }
+      });
     };
 
-    socket.on('connect', () => {
-      initSocket();
-    });
-
-    socket.on('provider_location', (data: any) => {
-      setProviderLocation({ latitude: data.latitude, longitude: data.longitude });
-    });
+    setupSocket();
 
     return () => {
-      socket.disconnect();
+      if (socket) {
+        socket.disconnect();
+      }
     };
   }, [booking.status]);
 
@@ -115,7 +131,7 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
   };
 
   const items = booking.items ? JSON.parse(booking.items) : [];
-  const scheduledDate = new Date(booking.scheduledAt);
+  const scheduledDate = new Date(booking.scheduled_at || booking.scheduledAt);
 
   const isAcceptedOrInProgress = booking.status === 'ACCEPTED' || booking.status === 'IN_PROGRESS';
   const isNotCancelledOrCompleted = booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED';
@@ -218,7 +234,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
 
      
 
-        {/* Help Center Shortcut */}
         <TouchableOpacity
           onPress={() => navigation.navigate('HelpCenter')}
           style={styles.helpCard}
@@ -246,7 +261,6 @@ const BookingDetailScreenBase = ({ navigation, booking, service, address, servic
             )}
           </TouchableOpacity>
         )}
-        {/* Action Buttons */}
         {isNotCancelledOrCompleted && (
           <View style={styles.actionContainer}>
             <TouchableOpacity
@@ -463,7 +477,7 @@ export const BookingDetailScreen = withObservables(['route'], ({ route }: any) =
       switchMap((b: any) => database.collections.get('addresses').query(
         Q.where('id', b.addressId || '')
       ).observe()),
-      map((addresses: any) => addresses[0] || null)
+      map((addresses: any[]) => addresses[0] || null)
     ),
     services: database.collections.get('services').query().observe(),
   };
